@@ -313,11 +313,23 @@ const DICT: Record<string, string> = {
   "Gambar maksimal 5 MB": "Image max 5 MB",
   "Gagal membaca file": "Failed to read file",
   "50000": "50000",
+  /* Receipt scanner */
+  "Membaca nota…": "Reading receipt…",
+  "Membaca…": "Reading…",
+  "Scan nota": "Scan receipt",
+  "Nota terbaca — periksa lalu simpan": "Receipt read — review, then save",
+  "Gagal membaca nota": "Failed to read receipt",
+  /* Misc leftovers */
+  "terlambat": "late by",
+  "hari lagi": "days left",
+  "kurs otomatis harian": "daily automatic rate",
+  "Pembayaran tercatat": "Payment recorded",
   /* 404 / errors */
   "Halaman tidak ditemukan": "Page not found",
   "Halaman gagal dimuat": "Failed to load page",
   "Coba lagi": "Try again",
   "Kembali": "Back",
+
 };
 
 const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (s: string) => string }>({
