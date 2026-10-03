@@ -367,6 +367,8 @@ export type Database = {
           category_id: string;
           amount: number;
           alert_percent: number;
+          /** v11 */
+          rollover?: boolean;
           created_at: string;
         };
         Insert: {
@@ -374,6 +376,7 @@ export type Database = {
           category_id: string;
           amount: number;
           alert_percent?: number;
+          rollover?: boolean;
           created_at?: string;
         };
         Update: {
@@ -381,6 +384,7 @@ export type Database = {
           category_id?: string;
           amount?: number;
           alert_percent?: number;
+          rollover?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -818,6 +822,33 @@ export type Database = {
             columns: ["category_id"];
             isOneToOne: false;
             referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      /** v11: threshold alerts already sent (one per budget, month and level). */
+      budget_alerts: {
+        Row: { id: string; budget_id: string; month: string; level: number; created_at: string };
+        Insert: {
+          id?: string;
+          budget_id: string;
+          month: string;
+          level: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          budget_id?: string;
+          month?: string;
+          level?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "budget_alerts_budget_id_fkey";
+            columns: ["budget_id"];
+            isOneToOne: false;
+            referencedRelation: "budgets";
             referencedColumns: ["id"];
           },
         ];
