@@ -12,13 +12,14 @@ vi.mock("@/lib/auth.functions", () => ({
   logout: vi.fn(),
 }));
 
-function renderAt(path: string) {
+async function renderAt(path: string) {
   const queryClient = new QueryClient();
   const router = createRouter({
     routeTree,
     context: { queryClient },
     history: createMemoryHistory({ initialEntries: [path] }),
   });
+  await router.load();
   return render(<RouterProvider router={router} />);
 }
 
