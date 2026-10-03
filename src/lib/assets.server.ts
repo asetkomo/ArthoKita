@@ -20,6 +20,12 @@ import {
 } from "./assets";
 import type { GoldInput, ReceivableInput } from "./schemas";
 import { fetchAll } from "./paginate";
+import type { Tables } from "./database.types";
+
+type GoldPriceRow = Pick<
+  Tables<"gold_prices">,
+  "price_date" | "source" | "buy" | "buyback" | "estimated"
+>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const ANTAM_PREMIUM = 1.12; // fallback estimate when no Antam price is reachable
@@ -71,7 +77,9 @@ async function fetchAntam(): Promise<{ buy: number; buyback: number } | null> {
   };
 }
 
-async function cached(source: "world" | "antam"): Promise<{ row: any | null; ready: boolean }> {
+async function cached(
+  source: "world" | "antam",
+): Promise<{ row: GoldPriceRow | null; ready: boolean }> {
   const res = await db()
     .from("gold_prices")
     .select("price_date, source, buy, buyback, estimated")
@@ -83,7 +91,7 @@ async function cached(source: "world" | "antam"): Promise<{ row: any | null; rea
   return { row: res.data, ready: true };
 }
 
-const toPrice = (r: any, source: "world" | "antam"): GoldPrice => ({
+const toPrice = (r: GoldPriceRow, source: "world" | "antam"): GoldPrice => ({
   source,
   date: String(r.price_date),
   buy: Number(r.buy),
@@ -209,7 +217,7 @@ export async function saveGold(id: string | null, v: GoldInput) {
       .eq("id", id)
       .maybeSingle();
     if (prev.error && /transaction_id/i.test(prev.error.message)) linkReady = false;
-    else prevTx = (prev.data as any)?.transaction_id ?? null;
+    else prevTx = prev.data?.transaction_id ?? null;
   }
   const link = linkReady ? goldLinkedTx(v) : null;
   const action = linkReady ? goldLinkAction(prevTx, v.account_id) : "none";
@@ -266,7 +274,7 @@ export async function goldGramsByMonth(): Promise<{ month: string; grams: number
     db().from("gold_purchases").select("kind, occurred_at, grams").order("id").range(from, to),
   );
   if (res.error) return [];
-  return (res.data ?? []).map((r: any) => ({
+  return (res.data ?? []).map((r) => ({
     month: String(r.occurred_at).slice(0, 7),
     grams: (r.kind === "sell" ? -1 : 1) * Number(r.grams),
   }));
@@ -385,7 +393,7 @@ export async function payReceivable(
 ) {
   const r = await db().from("receivables").select("*").eq("id", id).single();
   if (r.error) throw new Error(r.error.message);
-  const rec: any = r.data;
+  const rec = r.data;
   const paidAt = date ?? today();
   const acc = accountId ?? rec.account_id ?? null;
   let transaction_id: string | null = null;
@@ -413,7 +421,7 @@ export async function payReceivable(
     .insert({ receivable_id: id, amount, paid_at: paidAt, account_id: acc, transaction_id });
   if (ins.error) throw new Error(ins.error.message);
   const pays = await db().from("receivable_payments").select("amount").eq("receivable_id", id);
-  const paid = (pays.data ?? []).reduce((a: number, x: any) => a + Number(x.amount), 0);
+  const paid = (pays.data ?? []).reduce((a, x) => a + Number(x.amount), 0);
   if (paid >= Number(rec.amount))
     await db().from("receivables").update({ status: "paid" }).eq("id", id);
   await logActivity("receivable.pay", "receivables", {
@@ -443,7 +451,7 @@ export async function setReceivableStatus(id: string, status: "active" | "paid")
 export async function deleteReceivablePayment(id: string) {
   const p = await db().from("receivable_payments").select("*").eq("id", id).single();
   if (p.error) throw new Error(p.error.message);
-  const row: any = p.data;
+  const row = p.data;
   await db().from("receivable_payments").delete().eq("id", id);
   if (row.transaction_id) await db().from("transactions").delete().eq("id", row.transaction_id);
   await db().from("receivables").update({ status: "active" }).eq("id", row.receivable_id);
@@ -460,16 +468,15 @@ export async function deleteReceivable(id: string) {
     .from("receivable_payments")
     .select("transaction_id")
     .eq("receivable_id", id);
-  const txIds = [
-    (r.data as any)?.transaction_id,
-    ...((pays.data ?? []) as any[]).map((x) => x.transaction_id),
-  ].filter(Boolean);
+  const txIds = [r.data?.transaction_id, ...(pays.data ?? []).map((x) => x.transaction_id)].filter(
+    (x): x is string => !!x,
+  );
   const del = await db().from("receivables").delete().eq("id", id);
   if (del.error) throw new Error(del.error.message);
   if (txIds.length) await db().from("transactions").delete().in("id", txIds);
   await logActivity("receivables.delete", "receivables", {
-    name: (r.data as any)?.name ?? null,
-    amount: (r.data as any)?.amount ?? null,
+    name: r.data?.name ?? null,
+    amount: r.data?.amount ?? null,
   });
 }
 
@@ -494,21 +501,21 @@ export async function receivableDeltasByMonth(
     ),
   ]);
   if (r.error || p.error) return [];
-  const cur = new Map((r.data ?? []).map((x: any) => [x.id, x]));
+  const cur = new Map((r.data ?? []).map((x) => [x.id, x]));
   const out: { month: string; delta: number }[] = [];
   // Only linked loans left the account balance; unlinked ones never entered net worth.
   for (const x of r.data ?? [])
-    if ((x as any).account_id)
+    if (x.account_id)
       out.push({
-        month: String((x as any).lent_at).slice(0, 7),
-        delta: Number((x as any).amount) * ((x as any).currency === "USD" ? rate : 1),
+        month: String(x.lent_at).slice(0, 7),
+        delta: Number(x.amount) * (x.currency === "USD" ? rate : 1),
       });
   for (const y of p.data ?? []) {
-    const rec: any = cur.get((y as any).receivable_id);
+    const rec = cur.get(y.receivable_id);
     if (rec?.account_id)
       out.push({
-        month: String((y as any).paid_at).slice(0, 7),
-        delta: -Number((y as any).amount) * (rec.currency === "USD" ? rate : 1),
+        month: String(y.paid_at).slice(0, 7),
+        delta: -Number(y.amount) * (rec.currency === "USD" ? rate : 1),
       });
   }
   return out;
@@ -524,7 +531,7 @@ export async function assetsOverview() {
     listReceivables({ limit: 10000 }),
   ]);
   const groups: Record<string, number> = { cash: 0, investment: 0, credit: 0 };
-  for (const b of (bal.data ?? []) as any[]) {
+  for (const b of bal.data ?? []) {
     const v = Number(b.balance) * (b.currency === "USD" ? rate : 1);
     if (b.type === "investment") groups["investment"]! += v;
     else if (b.type === "credit_card") groups["credit"]! += v;
@@ -561,7 +568,7 @@ export async function assetsOverview() {
         0,
       )
     : 0;
-  const g = (goals.data ?? []) as any[];
+  const g = goals.data ?? [];
   const goalsSaved = g.reduce((a, x) => a + Number(x.saved_amount), 0);
   const goalsTarget = g.reduce((a, x) => a + Number(x.target_amount), 0);
   const goldValue = (goldInfo as any).antam?.value ?? (goldInfo as any).world?.value ?? 0;

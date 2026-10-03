@@ -132,3 +132,7 @@ help - Bantuan
 4. Menonaktifkan / ganti HP: hapus atau ganti `APP_TOTP_SECRET` lalu redeploy. Simpan cadangan kunci; kalau hilang, akses Vercel adalah jalan pemulihannya.
 
 Catatan: toleransi jam ±30 detik; kode yang sudah dipakai ditolak (per instance server); salah kode ikut dihitung batas percobaan login (8 gagal / 15 menit).
+
+## Tipe database (TypeScript)
+`src/lib/database.types.ts` berisi tipe `Database` (format `supabase gen types`) yang dipakai `db()` sehingga nama kolom yang salah tertangkap saat `npm run typecheck`. File ini ditulis manual dari `supabase/schema.sql`; kolom dari bagian skema opsional ditandai opsional.
+Untuk membuat ulang dari project Supabase Anda: login Supabase CLI (`npx supabase login`), lalu `SUPABASE_PROJECT_ID=<ref> npm run gen:types` (perlu CLI `supabase` di PATH, mis. `npm i -g supabase`). Setelah regenerate, jalankan `npm run typecheck`. Bila mengubah tabel di `schema.sql`, perbarui juga file tipe ini.

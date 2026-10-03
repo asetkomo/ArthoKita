@@ -5,12 +5,29 @@ import type { ExternalTx, TransactionInput } from "./schemas";
 import { dupKey } from "./csv";
 import { fetchAll } from "./paginate";
 import { planGoalFunds } from "./goals";
+import type { Json, Tables, TablesInsert } from "./database.types";
+
+type TxRow = Tables<"transactions">;
+type TxInsert = TablesInsert<"transactions">;
+type NamedRef = { name: string } | null;
+type CatRef = { name: string; color: string | null } | null;
+/** Joined select rows (PostgREST embeds); Number() still guards numeric-as-string values. */
+type TxListRow = TxRow & {
+  category: { id: string; name: string; color: string | null } | null;
+  account: { id: string; name: string } | null;
+  to_account: { id: string; name: string } | null;
+};
+type AmountRow = Pick<TxRow, "kind" | "amount_idr" | "occurred_at">;
+type DupRow = Pick<TxRow, "occurred_at" | "kind" | "amount" | "currency" | "description">;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type Res<T> = { data: T | null; error: { message: string } | null };
-function must<T>(res: Res<T>): T {
+type Res = { data: unknown; error: { message: string } | null };
+/** Unwraps a PostgREST result: throws on error, otherwise returns `data` (non-null on success). */
+function must<T = never, R extends Res = Res>(
+  res: R,
+): [T] extends [never] ? NonNullable<R["data"]> : T {
   if (res.error) throw new Error(res.error.message);
-  return res.data as T;
+  return res.data as [T] extends [never] ? NonNullable<R["data"]> : T;
 }
 
 export const today = () => todayStr(process.env["APP_TIMEZONE"] || "Asia/Jakarta");
@@ -33,7 +50,7 @@ export async function logActivity(action: string, entity?: string | null, detail
   try {
     const res = await db()
       .from("activity_log")
-      .insert({ action, entity: entity ?? null, detail: detail ?? null });
+      .insert({ action, entity: entity ?? null, detail: (detail ?? null) as Json });
     if (res.error && !isMissingTable(res.error))
       console.error("activity log failed", res.error.message);
   } catch (e) {
@@ -50,12 +67,12 @@ export async function listActivity(limit = 30) {
       .limit(limit);
     if (res.error) {
       if (!isMissingTable(res.error)) console.error("activity list failed", res.error.message);
-      return [] as any[];
+      return [] as Tables<"activity_log">[];
     }
-    return (res.data ?? []) as any[];
+    return res.data ?? [];
   } catch (e) {
     console.error("activity list failed", e);
-    return [] as any[];
+    return [] as Tables<"activity_log">[];
   }
 }
 
@@ -93,8 +110,8 @@ async function loadUsdIdr(d: string): Promise<{ rate: number; fresh: boolean }> 
   if (cached.data) return { rate: Number(cached.data.rate), fresh: true };
   try {
     const res = await fetch("https://open.er-api.com/v6/latest/USD");
-    const j: any = await res.json();
-    const rate = Number(j?.rates?.IDR);
+    const j = (await res.json()) as { rates?: Record<string, unknown> } | null;
+    const rate = Number(j?.rates?.["IDR"]);
     if (rate > 0) {
       await db().from("fx_rates").upsert({ rate_date: d, base: "USD", quote: "IDR", rate });
       return { rate, fresh: true };
@@ -151,7 +168,7 @@ export function pickBestNameMatch<T extends { id: string; name: string }>(
 
 export async function ensureCategory(name: string, kind: "income" | "expense"): Promise<string> {
   const clean = name.trim().replace(/\s+/g, " ");
-  const rows = must<any[]>(
+  const rows = must(
     await db()
       .from("categories")
       .select("id, name")
@@ -161,8 +178,8 @@ export async function ensureCategory(name: string, kind: "income" | "expense"): 
   const found = rows
     .filter((r) => normName(r.name) === normName(clean))
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0];
-  if (found) return found.id as string;
-  const created = must<any>(
+  if (found) return found.id;
+  const created = must(
     await db().from("categories").insert({ name: clean, kind }).select("id").single(),
   );
   return created.id;
@@ -171,13 +188,13 @@ export async function ensureCategory(name: string, kind: "income" | "expense"): 
 export async function findAccount(name?: string | null): Promise<string | null> {
   const q = (name ?? "").trim().replace(/\s+/g, " ");
   if (!q) return null;
-  const rows = must<any[]>(
+  const rows = must(
     await db()
       .from("accounts")
       .select("id, name")
       .ilike("name", `%${escapeLike(q)}%`),
   );
-  return pickBestNameMatch(rows as { id: string; name: string }[], q)?.id ?? null;
+  return pickBestNameMatch(rows, q)?.id ?? null;
 }
 
 /* ---------------- Transactions ---------------- */
@@ -200,7 +217,7 @@ function isMissingExternalColumn(err: { message?: string } | null) {
   return !!err?.message && err.message.includes("external_id");
 }
 
-async function insertTxRow(row: Record<string, unknown>) {
+async function insertTxRow(row: TxInsert): Promise<TxRow> {
   let current = row;
   for (let i = 0; i < 3; i++) {
     const res = await db().from("transactions").insert(current).select().single();
@@ -214,9 +231,9 @@ async function insertTxRow(row: Record<string, unknown>) {
       current = rest;
       continue;
     }
-    return must<any>(res);
+    return must(res);
   }
-  return must<any>(await db().from("transactions").insert(current).select().single());
+  return must(await db().from("transactions").insert(current).select().single());
 }
 
 export async function insertTransaction(
@@ -227,7 +244,7 @@ export async function insertTransaction(
   const tx = await insertTxRow({
     ...normalizeTx(input),
     amount_idr: await toIdr(input.amount, input.currency),
-    raw: raw ?? null,
+    raw: (raw ?? null) as Json,
     ...(extra?.external_id ? { external_id: extra.external_id } : {}),
   });
   const fee = Number(input.fee) || 0;
@@ -263,14 +280,12 @@ export async function insertTransaction(
 export async function updateTransaction(id: string, input: TransactionInput) {
   const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
   const res = await db().from("transactions").update(row).eq("id", id).select().single();
-  let data: Record<string, unknown>;
+  let data: TxRow;
   if (res.error && isMissingReceiptColumn(res.error)) {
     const { receipt_path: _drop, ...fallback } = row;
-    data = must<any>(
-      await db().from("transactions").update(fallback).eq("id", id).select().single(),
-    );
+    data = must(await db().from("transactions").update(fallback).eq("id", id).select().single());
   } else {
-    data = must<any>(res);
+    data = must(res);
   }
   await logActivity("transaction.update", "transactions", {
     kind: input.kind,
@@ -278,7 +293,7 @@ export async function updateTransaction(id: string, input: TransactionInput) {
     currency: input.currency,
     description: input.description ?? null,
   });
-  return data as any;
+  return data;
 }
 
 /** Account used by the bot when none is mentioned (env BOT_DEFAULT_ACCOUNT, matched by name). */
@@ -286,7 +301,7 @@ export async function defaultAccountId(): Promise<string | null> {
   return findAccount(process.env["BOT_DEFAULT_ACCOUNT"] || null);
 }
 
-export async function findByExternalId(externalId: string): Promise<any | null> {
+export async function findByExternalId(externalId: string): Promise<TxRow | null> {
   const r = await db()
     .from("transactions")
     .select("*")
@@ -327,7 +342,7 @@ export async function createFromExternal(t: ExternalTx) {
     notes: t.notes ?? null,
     receipt_path: t.receipt_path ?? null,
   };
-  let tx: any;
+  let tx: TxRow;
   try {
     tx = await insertTransaction(input, t.raw, { external_id: t.external_id ?? null });
   } catch (e) {
@@ -400,7 +415,7 @@ export async function listTransactions(f: TxFilters) {
   const limit = f.limit ?? 500;
   const offset = f.offset ?? 0;
   const q = orderedTxList(f).range(offset, offset + limit - 1);
-  return must<any[]>(await applyTxFilters(q, f));
+  return must(await applyTxFilters(q, f));
 }
 
 export async function countTransactions(f: TxFilters) {
@@ -415,10 +430,13 @@ export async function countTransactions(f: TxFilters) {
 export async function exportCsv(month?: string) {
   // Same order/filters as listTransactions, paged past PostgREST's 1000-row cap (id = stable tie-break).
   const f: TxFilters = { month };
-  const rows = must<any[]>(
-    await fetchAll((from, to) => applyTxFilters(orderedTxList(f).order("id"), f).range(from, to), {
-      hardCap: 10000,
-    }),
+  const rows = must<TxListRow[]>(
+    await fetchAll<TxListRow>(
+      (from, to) => applyTxFilters(orderedTxList(f).order("id"), f).range(from, to),
+      {
+        hardCap: 10000,
+      },
+    ),
   );
   const head = [
     "Tanggal",
@@ -472,8 +490,8 @@ export async function computeBudgets(month: string) {
         .range(from, to),
     ),
   ]);
-  const budgets = must<any[]>(budgetsRes);
-  const tx = must<any[]>(txRes);
+  const budgets = must(budgetsRes);
+  const tx = must<Pick<TxRow, "category_id" | "amount_idr">[]>(txRes);
   const spent = new Map<string, number>();
   for (const t of tx)
     if (t.category_id)
@@ -500,8 +518,8 @@ export async function computeDebts() {
     db().from("debts").select("*").order("created_at"),
     db().from("debt_payments").select("*").order("installment_no"),
   ]);
-  const debts = must<any[]>(debtsRes);
-  const pays = must<any[]>(paysRes);
+  const debts = must(debtsRes);
+  const pays = must(paysRes);
   return debts.map((d) => {
     const payments = pays.filter((p) => p.debt_id === d.id);
     const paid = payments.length;
@@ -531,7 +549,7 @@ export async function computeDebts() {
 }
 
 export async function payDebt(debtId: string, accountId: string | null, date: string | null) {
-  const d = must<any>(await db().from("debts").select("*").eq("id", debtId).single());
+  const d = must(await db().from("debts").select("*").eq("id", debtId).single());
   const { count } = await db()
     .from("debt_payments")
     .select("id", { count: "exact", head: true })
@@ -577,15 +595,15 @@ export async function payDebt(debtId: string, accountId: string | null, date: st
 }
 
 export async function deleteDebtPayment(id: string) {
-  const p = must<any>(await db().from("debt_payments").select("*").eq("id", id).single());
+  const p = must(await db().from("debt_payments").select("*").eq("id", id).single());
   const d = await db().from("debts").select("name, currency").eq("id", p.debt_id).maybeSingle();
   must(await db().from("debt_payments").delete().eq("id", id));
   if (p.transaction_id) await db().from("transactions").delete().eq("id", p.transaction_id);
   await db().from("debts").update({ status: "active" }).eq("id", p.debt_id);
   return {
-    name: (d.data as any)?.name ?? null,
+    name: d.data?.name ?? null,
     amount: Number(p.amount),
-    currency: (d.data as any)?.currency ?? "IDR",
+    currency: d.data?.currency ?? "IDR",
     installment: p.installment_no,
   };
 }
@@ -602,7 +620,7 @@ export async function addGoalFunds(
   accountId: string | null,
   date: string | null,
 ) {
-  const g = must<any>(await db().from("goals").select("*").eq("id", goalId).single());
+  const g = must(await db().from("goals").select("*").eq("id", goalId).single());
   const plan = planGoalFunds({
     goalId,
     goalName: g.name,
@@ -615,7 +633,7 @@ export async function addGoalFunds(
   let names: Record<string, string> = {};
   if (plan.transfer) {
     const t = plan.transfer;
-    const accs = must<any[]>(
+    const accs = must(
       await db()
         .from("accounts")
         .select("id, name, currency")
@@ -654,7 +672,7 @@ export async function addGoalFunds(
 
 /* ---------------- Subscriptions ---------------- */
 export async function paySubscription(id: string, accountId: string | null, date: string | null) {
-  const s = must<any>(await db().from("subscriptions").select("*").eq("id", id).single());
+  const s = must(await db().from("subscriptions").select("*").eq("id", id).single());
   const cat = s.category_id ?? (await ensureCategory("Langganan", "expense"));
   const total = withTax(Number(s.amount), s.tax_percent);
   await insertTransaction({
@@ -732,7 +750,7 @@ export async function computeReminders(days = 30, pre: ReminderInputs = {}): Pro
       overdue: d.next_due < t,
     });
   }
-  const subs = must<any[]>(subsRes);
+  const subs = must(subsRes);
   for (const s of subs) {
     const amt = withTax(Number(s.amount), s.tax_percent);
     out.push({
@@ -747,7 +765,7 @@ export async function computeReminders(days = 30, pre: ReminderInputs = {}): Pro
       overdue: s.next_due < t,
     });
   }
-  for (const a of must<any[]>(accRes)) {
+  for (const a of must(accRes)) {
     if (!(Number(a.monthly_fee) > 0)) continue;
     let due = feeDate(t.slice(0, 7), Number(a.monthly_fee_day) || 1);
     if (due < t) due = feeDate(shiftMonth(t.slice(0, 7), 1), Number(a.monthly_fee_day) || 1);
@@ -818,14 +836,14 @@ export async function applyMonthlyFees(): Promise<number> {
       .like("notes", `[auto:monthly_fee:%:${t.slice(0, 7)}]`),
   ]);
   if (accRes.error) return 0;
-  const candidates = (accRes.data ?? []).filter((a: any) => Number(a.monthly_fee) > 0);
+  const candidates = (accRes.data ?? []).filter((a) => Number(a.monthly_fee) > 0);
   if (!candidates.length) return 0;
-  const recorded = new Set<string>((existing.data ?? []).map((r: any) => String(r.notes)));
-  const due = dueMonthlyFees(candidates as any[], t, recorded);
+  const recorded = new Set<string>((existing.data ?? []).map((r) => String(r.notes)));
+  const due = dueMonthlyFees(candidates, t, recorded);
   if (!due.length) return 0;
   const cat = await ensureCategory(FEE_CATEGORY, "expense");
   for (const d of due) {
-    const a: any = d.account;
+    const a = d.account;
     await insertTxRow({
       kind: "expense",
       amount: Number(a.monthly_fee),
@@ -908,7 +926,8 @@ export async function computeDashboard(month: string) {
       budgetsP,
       remindersP,
     ]);
-  const tx = must<any[]>(txRes);
+  const tx =
+    must<(Pick<TxRow, "kind" | "amount_idr" | "category_id"> & { category: CatRef })[]>(txRes);
   let income = 0;
   let expense = 0;
   const byCat = new Map<string, { name: string; color: string | null; value: number }>();
@@ -934,7 +953,7 @@ export async function computeDashboard(month: string) {
   }
   const catTotals = new Map<string, number>();
   const catByMonth = new Map<string, Map<string, number>>();
-  for (const t of must<any[]>(trendRes)) {
+  for (const t of must<(AmountRow & { category: NamedRef })[]>(trendRes)) {
     const m = String(t.occurred_at).slice(0, 7);
     const row = trendMap.get(m);
     if (!row) continue;
@@ -960,7 +979,7 @@ export async function computeDashboard(month: string) {
     for (const c of topCats) row[c] = mm?.get(c) ?? 0;
     return row;
   });
-  const balances = must<any[]>(balRes).map((b) => ({
+  const balances = must(balRes).map((b) => ({
     ...b,
     balance: Number(b.balance),
     balance_idr: b.currency === "USD" ? Number(b.balance) * rate : Number(b.balance),
@@ -971,7 +990,7 @@ export async function computeDashboard(month: string) {
       (a, d) => a + (d.currency === "USD" ? d.remaining_amount * rate : d.remaining_amount),
       0,
     );
-  const subsMonthlyIdr = must<any[]>(subsRes).reduce((a, s) => {
+  const subsMonthlyIdr = must(subsRes).reduce((a, s) => {
     const v = withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? rate : 1);
     return a + (s.cycle === "yearly" ? v / 12 : v);
   }, 0);
@@ -994,8 +1013,8 @@ export async function computeDashboard(month: string) {
     subsMonthlyIdr,
     budgets,
     reminders: reminders.slice(0, 6),
-    recent: must<any[]>(recentRes),
-    goals: must<any[]>(goalsRes).map((g) => ({
+    recent: must(recentRes),
+    goals: must(goalsRes).map((g) => ({
       ...g,
       target_amount: Number(g.target_amount),
       saved_amount: Number(g.saved_amount),
@@ -1024,11 +1043,11 @@ export async function parseContext(): Promise<import("./ocr.server").ParseContex
     db().from("categories").select("name, kind").order("name"),
     db().from("accounts").select("name").eq("archived", false).order("name"),
   ]);
-  const rows = must<any[]>(cats);
+  const rows = must(cats);
   return {
     income: rows.filter((r) => r.kind === "income").map((r) => String(r.name)),
     expense: rows.filter((r) => r.kind === "expense").map((r) => String(r.name)),
-    accounts: (accs.data ?? []).map((a: any) => String(a.name)),
+    accounts: (accs.data ?? []).map((a) => String(a.name)),
   };
 }
 
@@ -1036,7 +1055,7 @@ export async function parseContext(): Promise<import("./ocr.server").ParseContex
 export async function computeYearly(year: string) {
   const start = `${year}-01-01`;
   const end = `${Number(year) + 1}-01-01`;
-  const rows = must<any[]>(
+  const rows = must<(AmountRow & { category: CatRef })[]>(
     await fetchAll((from, to) =>
       db()
         .from("transactions")
@@ -1229,7 +1248,7 @@ export async function importCsv(text: string) {
     const dates = items.map((i) => i.date);
     const min = dates.reduce((a, b) => (a < b ? a : b));
     const max = dates.reduce((a, b) => (a > b ? a : b));
-    const existing = must<any[]>(
+    const existing = must<DupRow[]>(
       await fetchAll(
         (from, to) =>
           db()
@@ -1298,7 +1317,11 @@ export async function categoryTrend(months: number, endMonth: string) {
   const first = shiftMonth(endMonth, -(months - 1));
   const { start } = monthRange(first);
   const { end } = monthRange(endMonth);
-  const rows = must<any[]>(
+  const rows = must<
+    (Pick<TxRow, "amount_idr" | "occurred_at" | "category_id"> & {
+      category: { id: string; name: string; color: string | null } | null;
+    })[]
+  >(
     await fetchAll(
       (from, to) =>
         db()
@@ -1339,7 +1362,7 @@ export async function categoryTrend(months: number, endMonth: string) {
 }
 
 export async function yearlySummary(year: number) {
-  const rows = must<any[]>(
+  const rows = must<AmountRow[]>(
     await fetchAll(
       (from, to) =>
         db()
@@ -1388,20 +1411,20 @@ export async function importTransactions(
   rows: import("./schemas").ImportRowInput[],
   createMissing: boolean,
 ) {
-  const cats = must<any[]>(await db().from("categories").select("id, name, kind"));
-  const accs = must<any[]>(await db().from("accounts").select("id, name"));
+  const cats = must(await db().from("categories").select("id, name, kind"));
+  const accs = must(await db().from("accounts").select("id, name"));
   const catMap = new Map(
     cats.map((c) => [`${c.kind}:${String(c.name).toLowerCase()}`, c.id as string]),
   );
   const accMap = new Map(accs.map((a) => [String(a.name).toLowerCase(), a.id as string]));
   const rate = await getUsdIdr();
-  const out: any[] = [];
+  const out: TxInsert[] = [];
   let createdCategories = 0;
   let createdAccounts = 0;
   let duplicates = 0;
   const dates = rows.map((r) => r.date);
   const existing = dates.length
-    ? must<any[]>(
+    ? must<DupRow[]>(
         await fetchAll(
           (from, to) =>
             db()
@@ -1450,7 +1473,7 @@ export async function importTransactions(
       const key2 = `${r.kind}:${r.category.toLowerCase()}`;
       category_id = catMap.get(key2) ?? null;
       if (!category_id && createMissing) {
-        category_id = must<any>(
+        category_id = must(
           await db()
             .from("categories")
             .insert({ name: r.category, kind: r.kind })
@@ -1466,7 +1489,7 @@ export async function importTransactions(
       const key2 = r.account.toLowerCase();
       account_id = accMap.get(key2) ?? null;
       if (!account_id && createMissing) {
-        account_id = must<any>(
+        account_id = must(
           await db()
             .from("accounts")
             .insert({ name: r.account, type: "other", currency: r.currency })
@@ -1561,8 +1584,8 @@ export async function netWorthSeries(months = 12, endMonth: string) {
     assets.getGoldPrices().catch(() => ({ world: null, antam: null })),
     rateP.then((r) => assets.receivableDeltasByMonth(r)),
   ]);
-  const accs = must<any[]>(accRes);
-  const rows = must<any[]>(txRes);
+  const accs = must(accRes);
+  const rows = must<Pick<TxRow, "occurred_at" | "kind" | "amount_idr">[]>(txRes);
   let initial = 0;
   for (const a of accs) initial += Number(a.initial_balance) * (a.currency === "USD" ? rate : 1);
   const first = shiftMonth(endMonth, -(months - 1));
@@ -1705,14 +1728,14 @@ export async function botCommand(text: string): Promise<{ message: string; type:
 async function botPay(target: string, clean: (s: string) => string): Promise<string> {
   if (!target) return "Sebutkan namanya juga, mis. 'sudah bayar Netflix' atau 'bayar cicilan KTA'.";
   const token = clean(target);
-  const subs = must<any[]>(
+  const subs = must(
     await db()
       .from("subscriptions")
       .select("id, name")
       .ilike("name", `%${escapeLike(token)}%`)
       .limit(5),
   );
-  const debts = must<any[]>(
+  const debts = must(
     await db()
       .from("debts")
       .select("id, name")

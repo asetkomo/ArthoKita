@@ -17,10 +17,12 @@ import {
   type InlineKeyboard,
 } from "./bot";
 import { addDays } from "./dates";
+import type { Tables } from "./database.types";
 import { withTax } from "./fees";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fin = () => import("./finance.server");
+type TxKind = Tables<"transactions">["kind"];
 const DRAFT_TTL_HOURS = 48;
 const BOT_SOURCES = ["telegram", "whatsapp", "ocr"];
 
@@ -127,14 +129,14 @@ async function existingDraft(externalId: string): Promise<DraftRow | null> {
     if ((await fin()).isMissingTable(r.error)) return null;
     throw new Error(r.error.message);
   }
-  return (r.data as DraftRow) ?? null;
+  return (r.data as unknown as DraftRow | null) ?? null;
 }
 
 async function storeDraft(
   externalId: string,
   chatId: string,
   payload: DraftPayload,
-  source: string,
+  source: "telegram" | "whatsapp" | "ocr",
   receiptPath: string | null,
 ): Promise<DraftRow> {
   const res = await db()
@@ -164,7 +166,7 @@ async function storeDraft(
     .delete()
     .lt("created_at", new Date(Date.now() - 10 * 86400000).toISOString())
     .then(() => undefined);
-  return res.data as DraftRow;
+  return res.data as unknown as DraftRow;
 }
 
 async function previewReply(row: DraftRow, asEdit = false): Promise<BotReply> {
@@ -178,7 +180,7 @@ async function historyCategory(description: string, kind: string): Promise<strin
   const r = await db()
     .from("transactions")
     .select("category:categories(name)")
-    .eq("kind", kind)
+    .eq("kind", kind as TxKind)
     .ilike("description", description.replace(/[%_]/g, ""))
     .not("category_id", "is", null)
     .order("created_at", { ascending: false })
@@ -506,7 +508,7 @@ async function txIn(
       .gte("occurred_at", start)
       .lt("occurred_at", end)
       .neq("kind", "transfer");
-    if (kind) q = q.eq("kind", kind);
+    if (kind) q = q.eq("kind", kind as TxKind);
     // Tie-break on id so pages are stable when many rows share a date.
     return q.order("occurred_at", { ascending: false }).order("id").range(from, to);
   };
