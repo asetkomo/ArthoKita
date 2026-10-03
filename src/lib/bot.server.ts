@@ -409,7 +409,14 @@ async function saveDraft(row: DraftRow): Promise<BotReply> {
     ? (await db().from("accounts").select("name").eq("id", r.transaction.account_id).maybeSingle())
         .data?.name
     : null;
-  return edit(`${r.message}${acc ? ` • ${acc}` : ""}`, undoKeyboard(r.transaction.id), "Tersimpan");
+  // v11: append budget threshold alerts (never throws; "" when none or on failure).
+  const { budgetAlertsFor, budgetAlertLines } = await import("./budget.server");
+  const alerts = r.duplicate ? "" : budgetAlertLines(await budgetAlertsFor(r.transaction));
+  return edit(
+    `${r.message}${acc ? ` • ${acc}` : ""}${alerts}`,
+    undoKeyboard(r.transaction.id),
+    "Tersimpan",
+  );
 }
 
 /* ---------------- Undo ---------------- */
