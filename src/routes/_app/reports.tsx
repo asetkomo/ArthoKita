@@ -70,10 +70,10 @@ function CategoryTrend() {
             {cats.map((c, i) => {
               const on = sel.includes(c.id);
               return (
-                <button key={c.id} onClick={() => toggle(c.id)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary/10 font-semibold text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                <Button key={c.id} size="sm" variant={on ? "secondary" : "outline"} aria-pressed={on} onClick={() => toggle(c.id)} className="h-7 rounded-full px-3 text-xs">
                   <span className="size-2.5 rounded-full" style={{ background: c.color ?? FALLBACK[i % FALLBACK.length] }} />
                   {c.name} <span className="num opacity-70">{compact(c.total)}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
