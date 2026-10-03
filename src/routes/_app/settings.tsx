@@ -20,7 +20,7 @@ import type { Category } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => pageHead("Pengaturan", "Kategori, kurs, cadangan data, dan integrasi bot n8n."),
-  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery()), context.queryClient.ensureQueryData(activityQuery(30))]),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery())]),
   errorComponent: RouteError,
   component: SettingsPage,
 });
@@ -72,8 +72,8 @@ function SettingsPage() {
             </div>
             <ul className="divide-y">
               {categories.filter((c) => c.kind === kind).map((c) => (
-                <li key={c.id} className="flex items-center justify-between py-1.5 text-sm">
-                  <span className="flex items-center gap-2"><span className="size-3 rounded-full" style={{ background: c.color ?? "var(--muted-foreground)" }} />{c.name}</span>
+                 <li key={c.id} className="flex min-w-0 items-center justify-between gap-2 py-1.5 text-sm">
+                   <span className="flex min-w-0 flex-1 items-center gap-2"><span className="size-3 shrink-0 rounded-full" style={{ background: c.color ?? "var(--muted-foreground)" }} /><span className="truncate">{c.name}</span></span>
                   <RowActions onEdit={() => crud.openEdit({ ...c })} onDelete={() => crud.remove(c.id, `kategori ${c.name}`)} />
                 </li>
               ))}

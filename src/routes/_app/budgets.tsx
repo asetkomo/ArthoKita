@@ -38,8 +38,8 @@ function BudgetsPage() {
             const tone = b.percent >= 100 ? "text-expense" : b.percent >= b.alert_percent ? "text-warning" : "text-income";
             return (
               <Card key={b.id} className="p-5">
-                <div className="flex items-start justify-between">
-                  <p className="flex items-center gap-2 font-display text-lg font-semibold"><span className="size-3 rounded-full" style={{ background: b.color ?? "var(--primary)" }} />{b.category}</p>
+                 <div className="flex items-start justify-between gap-2">
+                   <p className="flex min-w-0 flex-1 items-center gap-2 font-display text-lg font-semibold"><span className="size-3 shrink-0 rounded-full" style={{ background: b.color ?? "var(--primary)" }} /><span className="truncate">{b.category}</span></p>
                   <RowActions onEdit={() => crud.openEdit({ id: b.id, category_id: b.category_id, amount: b.amount, alert_percent: b.alert_percent })} onDelete={() => crud.remove(b.id, `${t("budget")} ${b.category}`)} />
                 </div>
                 <p className="mt-3 text-sm"><span className={`num text-xl font-semibold ${tone}`}>{money(b.spent)}</span> <span className="text-muted-foreground">/ {money(b.amount)}</span></p>

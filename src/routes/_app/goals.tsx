@@ -66,15 +66,15 @@ function GoalCard({ g, onEdit, onDelete }: { g: Goal; onEdit: () => void; onDele
   }
   return (
     <Card className="p-5">
-      <div className="flex items-start justify-between">
-        <p className="flex items-center gap-2 font-display text-lg font-semibold"><span className="size-3 rounded-full" style={{ background: g.color ?? "var(--accent)" }} />{g.name}</p>
+       <div className="flex items-start justify-between gap-2">
+         <p className="flex min-w-0 flex-1 items-center gap-2 font-display text-lg font-semibold"><span className="size-3 shrink-0 rounded-full" style={{ background: g.color ?? "var(--accent)" }} /><span className="truncate">{g.name}</span></p>
         <RowActions onEdit={onEdit} onDelete={onDelete} />
       </div>
       <p className="mt-3"><span className="num text-xl font-semibold">{money(saved)}</span> <span className="text-sm text-muted-foreground">/ {money(target)}</span></p>
       <Progress className="mt-3" value={Math.min(100, pct)} />
       <p className="mt-2 text-xs text-muted-foreground">{Math.round(pct)}%{g.deadline ? ` · ${t("tenggat")} ${dateLabel(g.deadline)}` : ""}{perMonth ? ` · ${t("perlu")} ${money(perMonth)}/${t("bln")}` : ""}</p>
-      <div className="mt-4 flex gap-2">
-        <Input className="num" inputMode="decimal" placeholder={t("Nominal")} value={amt} onChange={(e) => setAmt(e.target.value)} />
+       <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
+         <Input className="num min-w-0" inputMode="decimal" placeholder={t("Nominal")} value={amt} onChange={(e) => setAmt(e.target.value)} />
         <Button variant="secondary" onClick={() => submit(1)}>+ {t("Tambah")}</Button>
         <Button variant="ghost" onClick={() => submit(-1)}>−</Button>
       </div>

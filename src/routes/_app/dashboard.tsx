@@ -190,7 +190,7 @@ function Dashboard() {
             <ul className="space-y-3">
               {d.budgets.map((b: any) => (
                 <li key={b.id} className="text-sm">
-                  <div className="mb-1 flex justify-between"><span>{b.category}</span><span className={`num ${b.percent >= 100 ? "text-expense" : "text-muted-foreground"}`}>{Math.round(b.percent)}%</span></div>
+                   <div className="mb-1 flex min-w-0 justify-between gap-2"><span className="min-w-0 truncate">{b.category}</span><span className={`num shrink-0 ${b.percent >= 100 ? "text-expense" : "text-muted-foreground"}`}>{Math.round(b.percent)}%</span></div>
                   <Progress value={Math.min(100, b.percent)} />
                 </li>
               ))}
@@ -218,7 +218,7 @@ function Dashboard() {
                 <li key={t2.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{t2.description || t2.merchant || t2.category?.name || "Transaksi"}</p>
-                    <p className="text-xs text-muted-foreground">{dateLabel(t2.occurred_at, locale)} · {t2.category?.name ?? (t2.kind === "transfer" ? t("Transfer") : "-")}{t2.account?.name ? ` · ${t2.account.name}` : ""}</p>
+                     <p className="truncate text-xs text-muted-foreground">{dateLabel(t2.occurred_at, locale)} · {t2.category?.name ?? (t2.kind === "transfer" ? t("Transfer") : "-")}{t2.account?.name ? ` · ${t2.account.name}` : ""}</p>
                   </div>
                   <span className={`num shrink-0 font-medium ${t2.kind === "income" ? "text-income" : t2.kind === "expense" ? "text-expense" : ""}`}>{t2.kind === "income" ? "+" : t2.kind === "expense" ? "−" : ""}{money(t2.amount, t2.currency)}</span>
                 </li>
@@ -234,7 +234,7 @@ function Dashboard() {
                 const p = g.target_amount ? (g.saved_amount / g.target_amount) * 100 : 0;
                 return (
                   <li key={g.id}>
-                    <div className="mb-1 flex justify-between"><span>{g.name}</span><span className="num text-muted-foreground">{Math.round(p)}%</span></div>
+                     <div className="mb-1 flex min-w-0 justify-between gap-2"><span className="min-w-0 truncate">{g.name}</span><span className="num shrink-0 text-muted-foreground">{Math.round(p)}%</span></div>
                     <Progress value={Math.min(100, p)} />
                   </li>
                 );

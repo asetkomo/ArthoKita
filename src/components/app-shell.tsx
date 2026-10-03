@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { BarChart3, Bell, Coins, CreditCard, HandCoins, LayoutDashboard, Languages, LogOut, Moon, PiggyBank, Receipt, Repeat, Settings, Sun, Target, Wallet } from "lucide-react";
 import { logout } from "@/lib/auth.functions";
 import { useI18n } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,24 +35,26 @@ export function ThemeToggle({ className }: { className?: string }) {
     setDark(d);
   }
   return (
-    <button onClick={toggle} aria-label={dark ? t("Mode terang") : t("Mode gelap")} className={className ?? "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}>
+    <Button type="button" variant="ghost" onClick={toggle} aria-label={dark ? t("Mode terang") : t("Mode gelap")} className={className ?? "flex w-full justify-start gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}>
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
       {className === undefined ? (dark ? t("Mode terang") : t("Mode gelap")) : null}
-    </button>
+    </Button>
   );
 }
 
 export function LanguageToggle({ className }: { className?: string }) {
   const { lang, setLang, t } = useI18n();
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
       onClick={() => setLang(lang === "id" ? "en" : "id")}
       aria-label={t("Ganti bahasa")}
-      className={className ?? "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}
+      className={className ?? "flex w-full justify-start gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}
     >
       <Languages className="size-4" />
       {className === undefined ? (lang === "id" ? "EN" : "ID") : <span className="text-xs font-semibold">{lang.toUpperCase()}</span>}
-    </button>
+    </Button>
   );
 }
 
@@ -66,8 +69,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     await navigate({ to: "/login" });
   }
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
-      <aside className="no-print sticky top-0 hidden h-screen flex-col overflow-y-auto bg-sidebar p-4 text-sidebar-foreground lg:flex">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
+      <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[240px] flex-col overflow-y-auto bg-sidebar p-4 text-sidebar-foreground lg:flex">
         <div className="mb-8 px-2 pt-2">
           <p className="font-display text-2xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
           <p className="text-xs text-ink-muted">{t("buku kas pribadi")}</p>
@@ -82,19 +85,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex flex-col gap-0.5">
           <ThemeToggle />
           <LanguageToggle />
-          <button onClick={out} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent">
+          <Button type="button" variant="ghost" onClick={out} className="w-full justify-start gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent">
             <LogOut className="size-4" /> {t("Keluar")}
-          </button>
+          </Button>
         </div>
       </aside>
-      <div className="min-w-0">
+      <div className="min-w-0 lg:col-start-2">
         <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <p className="font-display text-xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
-            <div className="flex items-center gap-1">
-              <LanguageToggle className="p-2" />
-              <ThemeToggle className="p-2" />
-              <button onClick={out} aria-label={t("Keluar")}><LogOut className="size-4" /></button>
+           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3">
+             <p className="min-w-0 truncate font-display text-xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
+             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+               <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />
+               <ThemeToggle className="size-9 shrink-0 p-0" />
+               <Button type="button" size="icon" variant="ghost" className="size-9 shrink-0" onClick={out} aria-label={t("Keluar")}><LogOut className="size-4" /></Button>
             </div>
           </div>
           <nav className="no-scrollbar flex max-w-full gap-1 overflow-x-auto px-3 pb-3">
@@ -113,12 +116,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 max-sm:grid-cols-1">
       <div className="min-w-0">
         <h1 className="break-words text-3xl font-bold sm:text-4xl">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="no-print flex max-w-full flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="no-print flex min-w-0 max-w-full flex-wrap gap-2 sm:justify-end">{actions}</div> : null}
     </div>
   );
 }

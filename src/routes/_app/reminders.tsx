@@ -54,16 +54,16 @@ function RemindersPage() {
       {list.length === 0 ? <Empty text={t("Aman! Tidak ada tagihan dalam periode ini.")} /> : (
         <Card className="divide-y">
           {list.map((r) => (
-            <div key={r.type + r.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <span className={`flex size-9 items-center justify-center rounded-full ${r.overdue ? "bg-destructive/10 text-expense" : "bg-secondary text-secondary-foreground"}`}>
+             <div key={r.type + r.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+               <span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${r.overdue ? "bg-destructive/10 text-expense" : "bg-secondary text-secondary-foreground"}`}>
                 {r.type === "budget" ? <PiggyBank className="size-4" /> : r.overdue ? <AlertTriangle className="size-4" /> : <CalendarClock className="size-4" />}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-medium">{r.title}</p>
+                 <p className="truncate font-medium">{r.title}</p>
                 <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? t("Peringatan budget bulan ini") : `${dateLabel(r.due_date, locale)} · ${r.overdue ? `${t("terlambat")} ${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("hari ini") : `${r.days_left} ${t("hari lagi")}`}`}</p>
               </div>
-              <p className="num font-semibold">{money(r.amount, r.currency)}</p>
-              {r.type === "debt" || r.type === "subscription" ? <Button size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> {t("Bayar")}</Button> : null}
+               <p className="num shrink-0 text-right font-semibold">{money(r.amount, r.currency)}</p>
+               {r.type === "debt" || r.type === "subscription" ? <Button className="col-start-2 col-end-4 justify-self-end" size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> {t("Bayar")}</Button> : null}
             </div>
           ))}
         </Card>
