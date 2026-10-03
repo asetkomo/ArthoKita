@@ -33,12 +33,21 @@ function LoginPage() {
     const fd = new FormData(e.currentTarget);
     setBusy(true);
     try {
-      await run({
+      const res = await run({
         data: {
           username: String(fd.get("username") ?? ""),
           password: String(fd.get("password") ?? ""),
         },
       });
+      if (!res.ok) {
+        toast.error(
+          res.locked
+            ? t("Terlalu banyak percobaan masuk yang gagal. Coba lagi dalam 15 menit.")
+            : t("Username atau password salah"),
+        );
+        setBusy(false);
+        return;
+      }
       window.location.href = "/dashboard";
     } catch {
       toast.error(t("Username atau password salah"));

@@ -346,6 +346,7 @@ const DICT: Record<string, string> = {
   "Total tagihan:": "Total due:",
   "Tren pengeluaran per kategori": "Spending trend by category",
   "Username atau password salah": "Incorrect username or password",
+  "Terlalu banyak percobaan masuk yang gagal. Coba lagi dalam 15 menit.": "Too many failed sign-in attempts. Try again in 15 minutes.",
   "kategori": "category",
   "akun": "account",
   "akun baru dibuat": "new account(s) created",
