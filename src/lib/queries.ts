@@ -21,6 +21,7 @@ import {
   listTransactions,
   saveRow,
 } from "./finance.functions";
+import { getRecurring } from "./recurring.functions";
 import type { CrudTable } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -101,6 +102,8 @@ export const netWorthQuery = (months: number, end: string) =>
     queryFn: () => getNetWorth({ data: { months, end } }),
     staleTime: FRESH,
   });
+export const recurringQuery = () =>
+  queryOptions({ queryKey: ["recurring"], queryFn: () => getRecurring(), staleTime: FRESH });
 export const activityQuery = (limit: number) =>
   queryOptions({
     queryKey: ["activity", limit],
@@ -155,6 +158,8 @@ const AFFECTS: Record<string, string[]> = {
   goals: ["rows", "dashboard", "activity", "assets"],
   gold_purchases: [...MONEY, "rows", "gold"],
   receivables: [...MONEY, "receivables"],
+  // Posting a recurring item creates transactions, so it touches every money aggregate.
+  recurring_transactions: [...MONEY, "rows", "recurring"],
 };
 
 export function invalidateFor(qc: QueryClient, table: string) {

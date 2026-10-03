@@ -538,6 +538,7 @@ export async function reportData(spec: string) {
   const p = resolvePeriod(spec, today);
   if (!p) return null;
   await f.applyMonthlyFees();
+  await f.applyRecurringLazy();
   const prev = previousRange(p);
   const [cur, prevRes] = await Promise.all([
     txIn(p.start, p.end),

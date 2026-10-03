@@ -780,7 +780,7 @@ export async function paySubscription(id: string, accountId: string | null, date
 
 /* ---------------- Reminders ---------------- */
 export type Reminder = {
-  type: "debt" | "subscription" | "budget" | "fee";
+  type: "debt" | "subscription" | "budget" | "fee" | "recurring";
   id: string;
   title: string;
   amount: number;
@@ -803,7 +803,10 @@ export type ReminderInputs = {
 };
 
 export async function computeReminders(days = 30, pre: ReminderInputs = {}): Promise<Reminder[]> {
-  if (!pre.skipFees) await applyMonthlyFees();
+  if (!pre.skipFees) {
+    await applyMonthlyFees();
+    await applyRecurringLazy();
+  }
   const t = today();
   const limit = addDays(t, days);
   const [rate, debts, subsRes, accRes, budgets] = await Promise.all([
@@ -876,7 +879,16 @@ export async function computeReminders(days = 30, pre: ReminderInputs = {}): Pro
       });
     }
   }
+  // v10: manual recurring items (auto_post off) — empty when the table does not exist yet.
+  const { recurringReminders } = await import("./recurring.server");
+  out.push(...(await recurringReminders(t, limit, rate)));
   return out.sort((a, b) => a.due_date.localeCompare(b.due_date));
+}
+
+/** v10: post due auto recurring transactions (never throws; no-op before schema v10). */
+export async function applyRecurringLazy(): Promise<number> {
+  const { applyRecurring } = await import("./recurring.server");
+  return applyRecurring();
 }
 
 export function remindersText(list: Reminder[]): string {
@@ -952,6 +964,7 @@ export async function applyMonthlyFees(): Promise<number> {
 
 export async function computeDashboard(month: string) {
   await applyMonthlyFees();
+  await applyRecurringLazy();
   const { start, end } = monthRange(month);
   const trendStart = monthRange(shiftMonth(month, -5)).start;
   const curMonth = today().slice(0, 7);
