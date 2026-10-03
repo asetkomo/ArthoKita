@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Paperclip } from "lucide-react";
 import { CURRENCY_OPTIONS, EntityDialog, type FieldDef } from "./entity-dialog";
-import { errMsg, rowsQuery } from "@/lib/queries";
+import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
@@ -48,7 +48,7 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
       initial={initial}
       onSubmit={async (v) => {
         await save({ data: { id: id ?? null, values: v as never } });
-        await qc.invalidateQueries();
+        await invalidateFor(qc, "transactions");
       }}
       extra={(v, set) => (
         <div className="space-y-3">

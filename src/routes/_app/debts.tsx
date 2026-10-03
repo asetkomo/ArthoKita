@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { debtsQuery, errMsg, rowsQuery } from "@/lib/queries";
+import { debtsQuery, errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { deleteRow, payDebt } from "@/lib/finance.functions";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
@@ -50,11 +50,11 @@ function DebtsPage() {
 
   async function doPay(d: any) {
     if (!(await ask.confirm(`${t("Catat pembayaran cicilan ke-")}${d.paid_count + 1}${t("?")}`, { description: `${d.name} · ${money(d.installment_amount, d.currency)} — ${t("otomatis tercatat sebagai pengeluaran.")}`, confirmLabel: t("Ya, catat") }))) return;
-    try { await pay({ data: { debt_id: d.id } }); await qc.invalidateQueries(); toast.success(t("Cicilan tercatat & masuk ke pengeluaran")); } catch (e) { toast.error(errMsg(e)); }
+    try { await pay({ data: { debt_id: d.id } }); await invalidateFor(qc, "debt_payments"); toast.success(t("Cicilan tercatat & masuk ke pengeluaran")); } catch (e) { toast.error(errMsg(e)); }
   }
   async function undo(id: string) {
     if (!(await ask.confirm(t("Batalkan pembayaran ini?"), { description: t("Transaksi pengeluaran terkait juga akan dihapus."), confirmLabel: t("Ya, batalkan"), destructive: true }))) return;
-    try { await del({ data: { table: "debt_payments", id } }); await qc.invalidateQueries(); } catch (e) { toast.error(errMsg(e)); }
+    try { await del({ data: { table: "debt_payments", id } }); await invalidateFor(qc, "debt_payments"); } catch (e) { toast.error(errMsg(e)); }
   }
 
   return (

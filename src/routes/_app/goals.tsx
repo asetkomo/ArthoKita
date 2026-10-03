@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { errMsg, rowsQuery } from "@/lib/queries";
+import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { addGoalFunds } from "@/lib/finance.functions";
 import { dateLabel, diffDays, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
@@ -62,7 +62,7 @@ function GoalCard({ g, onEdit, onDelete }: { g: Goal; onEdit: () => void; onDele
   async function submit(sign: 1 | -1) {
     const n = Number(amt);
     if (!n) return;
-    try { await add({ data: { id: g.id, amount: n * sign } }); setAmt(""); await qc.invalidateQueries(); } catch (e) { toast.error(errMsg(e)); }
+    try { await add({ data: { id: g.id, amount: n * sign } }); setAmt(""); await invalidateFor(qc, "goals"); } catch (e) { toast.error(errMsg(e)); }
   }
   return (
     <Card className="p-5">

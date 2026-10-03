@@ -10,7 +10,7 @@ import { Empty } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { errMsg, remindersQuery } from "@/lib/queries";
+import { errMsg, remindersQuery, invalidateFor } from "@/lib/queries";
 import { payDebt, paySubscription } from "@/lib/finance.functions";
 import { dateLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
@@ -38,7 +38,7 @@ function RemindersPage() {
     try {
       if (r.type === "debt") await pd({ data: { debt_id: r.id } });
       else await ps({ data: { id: r.id } });
-      await qc.invalidateQueries();
+      await invalidateFor(qc, "debt_payments");
       toast.success(t("Pembayaran tercatat"));
     } catch (e) { toast.error(errMsg(e)); }
   }
