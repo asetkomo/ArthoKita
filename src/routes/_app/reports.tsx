@@ -74,7 +74,7 @@ function CategoryTrend() {
   const [months, setMonths] = useState(6);
   const { data } = useQuery({ ...trendQuery(months, currentMonth()), placeholderData: (p) => p });
   const [selected, setSelected] = useState<string[] | null>(null);
-  const cats = data?.categories ?? [];
+  const cats = useMemo(() => data?.categories ?? [], [data]);
   useEffect(() => {
     if (selected === null && cats.length) setSelected(cats.slice(0, 5).map((c) => c.id));
   }, [cats, selected]);

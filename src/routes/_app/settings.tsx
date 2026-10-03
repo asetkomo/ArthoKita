@@ -80,11 +80,13 @@ const ENDPOINTS = [
   },
 ];
 
+type ActivityRow = { id: string; action: unknown; detail: unknown; created_at: string };
+
 function SettingsPage() {
   const { t, lang } = useI18n();
   const categories = useSuspenseQuery(rowsQuery("categories")).data as Category[];
   const { usdIdr } = useSuspenseQuery(fxQuery()).data;
-  const activity = (useQuery(activityQuery(30)).data ?? []) as any[];
+  const activity = (useQuery(activityQuery(30)).data ?? []) as ActivityRow[];
   const crud = useCrudDialog("categories", { kind: "expense", color: "#d0703c" });
   const backup = useServerFn(exportBackupJson);
   const [origin, setOrigin] = useState("");

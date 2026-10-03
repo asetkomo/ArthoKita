@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- loosely typed in-memory DB fakes */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /* Tiny PostgREST-like fake whose ILIKE honours `\` escapes, so wildcard escaping is actually exercised. */

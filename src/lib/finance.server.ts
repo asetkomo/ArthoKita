@@ -1169,7 +1169,7 @@ function parseAmount(s: string): number {
 
 /** Import CSV dengan format hasil ekspor (Tanggal, Jenis, Kategori, Akun, ...). */
 export async function importCsv(text: string) {
-  const rows = parseCsv(text.replace(/^﻿/, ""));
+  const rows = parseCsv(text.replace(/^\uFEFF/, ""));
   const head = (rows[0] ?? []).map((h) => h.trim().toLowerCase());
   const idx = (name: string) => head.indexOf(name);
   if (idx("tanggal") < 0 || idx("jenis") < 0 || idx("jumlah") < 0) {

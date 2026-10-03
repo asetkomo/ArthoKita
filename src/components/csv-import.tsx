@@ -31,8 +31,10 @@ export function CsvImport() {
     "line",
   );
   const [direction, setDirection] = useState<SortDirection>("asc");
-  const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
-  const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
+  const categoriesData = useQuery(rowsQuery("categories")).data;
+  const accountsData = useQuery(rowsQuery("accounts")).data;
+  const categories = useMemo(() => (categoriesData ?? []) as Category[], [categoriesData]);
+  const accounts = useMemo(() => (accountsData ?? []) as Account[], [accountsData]);
   const run = useServerFn(importCsvTransactions);
   const qc = useQueryClient();
 

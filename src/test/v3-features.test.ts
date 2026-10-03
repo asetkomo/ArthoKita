@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- loosely typed in-memory DB fakes */
 import { describe, expect, it, vi } from "vitest";
 import { activityDetail, activityLabel } from "../lib/activity";
 import { classifyBotCommand, parseAmount } from "../lib/bot";

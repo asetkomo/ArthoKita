@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- loosely typed in-memory DB fakes */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /* Minimal in-memory PostgREST-like fake, enough for the bot flow. */
