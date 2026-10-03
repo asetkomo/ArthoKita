@@ -1,5 +1,5 @@
 import { draftSchema, type Draft } from "./schemas";
-import { matchCategory } from "./bot";
+import { isValidDate, matchCategory } from "./bot";
 
 /** What the model may pick from. Names only — never the "(expense)" suffix, which models echo back. */
 export type ParseContext = { income: string[]; expense: string[]; accounts?: string[] };
@@ -58,7 +58,7 @@ function normalize(d: Draft, ctx: ParseContext): Draft {
     ...d,
     category,
     account,
-    date: d.date && /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : null,
+    date: d.date && isValidDate(d.date) ? d.date : null,
   };
 }
 

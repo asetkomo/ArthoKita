@@ -141,13 +141,41 @@ export function botSearchToken(target: string): string {
   return target.replace(STRIP, "").trim();
 }
 
-/** "500rb" → 500000, "1,5jt" → 1500000, "250.000" → 250000. */
+/**
+ * "25.000" → 25000, "25.000,50" → 25000.5, "1.5" → 1.5, "1,299.99" → 1299.99.
+ * A final "." or "," followed by 1–2 digits is the decimal mark; separators before 3 digits are thousands.
+ */
+export function parseNumber(num: string): number {
+  const dec = num.match(/^(.*?)[.,](\d{1,2})$/);
+  const n = dec
+    ? Number(`${dec[1]!.replace(/[.,]/g, "") || "0"}.${dec[2]}`)
+    : Number(num.replace(/[.,]/g, ""));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/** "500rb" → 500000, "1,5jt" / "1.5jt" → 1500000, "250.000" → 250000, "25.000,50" → 25000.5. */
 export function parseAmount(num: string, unit?: string): number {
   const mult = !unit ? 1 : /^(rb|ribu|k)$/.test(unit) ? 1_000 : 1_000_000;
-  const n = unit
-    ? Number(num.replace(/\./g, "").replace(",", "."))
-    : Number(num.replace(/[.,]/g, ""));
-  return Number.isFinite(n) ? Math.round(n * mult) : 0;
+  const n = parseNumber(num);
+  if (!Number.isFinite(n)) return 0;
+  return unit ? Math.round(n * mult) : Math.round(n * 100) / 100;
+}
+
+/** Real calendar date check ("2026-02-31" and "2026-13-01" are rejected). */
+export function isValidDate(d: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  const t = new Date(d + "T00:00:00Z");
+  return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d;
+}
+
+/** Telegram rejects messages over 4096 characters; cut at a line boundary with a note. */
+export const TELEGRAM_TEXT_MAX = 4096;
+export function clampMessage(text: string, max = TELEGRAM_TEXT_MAX): string {
+  if (text.length <= max) return text;
+  const note = "\n… (terpotong, lihat selengkapnya di web)";
+  const room = max - note.length;
+  const cut = text.lastIndexOf("\n", room);
+  return text.slice(0, cut > room / 2 ? cut : room) + note;
 }
 
 /* ---------------- Periods ---------------- */
@@ -207,9 +235,10 @@ export function resolvePeriod(spec: string, today: string): Period | null {
   }
   if (/^\d{4}-\d{2}$/.test(spec.trim())) {
     const m = spec.trim();
+    if (!isValidDate(`${m}-01`)) return null;
     return { ...monthRange(m), label: fmtMonth(m), key: m };
   }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(spec.trim())) return day(spec.trim(), "Tanggal", spec.trim());
+  if (isValidDate(spec.trim())) return day(spec.trim(), "Tanggal", spec.trim());
   return null;
 }
 
@@ -481,6 +510,7 @@ export type QuickDraft = {
 
 const INCOME =
   /\b(gaji|gajian|bonus|thr|pemasukan|income|masuk|terima|diterima|dapat|dapet|cashback|refund|dividen|bunga|jual|dibayar|transferan|komisi|honor)\b/;
+const INCOME_OR_FILLER = /\b(beli|bayar|buat|untuk|utk|masuk|pemasukan|pengeluaran|topup|top up|isi)\b/gi;
 const AMBIGUOUS =
   /\b(tgl|tanggal|lusa|minggu lalu|bulan lalu|senin|selasa|rabu|kamis|jumat|sabtu|cicil|pinjam|minjem|hutang|utang|transfer ke|tf ke|kirim ke|bagi|split|patungan)\b/;
 const AMOUNT_RE =
@@ -503,11 +533,12 @@ export function quickParse(raw: string, today: string, accounts: string[]): Quic
   const prefix = (pick[1] ?? "").replace(".", "");
   const unit = pick[3];
   const usd = prefix === "$" || prefix === "usd" || /^(usd|dolar|dollar)$/.test(unit ?? "");
-  let amount: number;
-  if (usd) amount = Number(pick[2]!.replace(/,/g, ""));
-  else
-    amount = parseAmount(pick[2]!, unit && /^(rb|ribu|k|jt|juta)$/.test(unit) ? unit : undefined);
-  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const amount = parseAmount(
+    pick[2]!,
+    !usd && unit && /^(rb|ribu|k|jt|juta)$/.test(unit) ? unit : undefined,
+  );
+  // numeric(18,2) overflows above 1e16; anything this large is a typo, let AI/the user decide.
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 1e12) return null;
   if (!usd && !unit && amount < 100) return null; // "2 kopi" etc. — too ambiguous
 
   text = (text.slice(0, pick.index) + " " + text.slice(pick.index! + pick[0].length)).trim();
@@ -534,11 +565,15 @@ export function quickParse(raw: string, today: string, accounts: string[]): Quic
     if (account) text = text.slice(0, via.index).trim();
   }
   if (!account) {
-    for (const a of accounts) {
-      const re = new RegExp(`\\b${a.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-      if (a.length >= 3 && re.test(text)) {
+    // Bare account name only as the trailing word(s) ("makan 30rb gopay"), and only when something
+    // else remains as the description — so "dana darurat 500rb" / "bayar dana" keep "dana" as a word.
+    for (const a of [...accounts].sort((x, y) => y.length - x.length)) {
+      const esc = a.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(`(^|\\s)${esc}[\\s.,!]*$`, "i");
+      const rest = text.replace(re, " ").trim();
+      if (a.length >= 3 && re.test(text) && /[a-z]{2}/i.test(rest.replace(INCOME_OR_FILLER, ""))) {
         account = a;
-        text = text.replace(re, " ");
+        text = rest;
         break;
       }
     }
@@ -636,7 +671,7 @@ export function pickerKeyboard(
 ): InlineKeyboard {
   const buttons = options
     .slice(0, 40)
-    .map((o, i) => ({ text: o.slice(0, 30), callback_data: `d:${op}:${id}:${i}` }));
+    .map((o, i) => ({ text: Array.from(o).slice(0, 30).join(""), callback_data: `d:${op}:${id}:${i}` }));
   if (extra) buttons.push({ text: extra.text, callback_data: `d:${op}:${id}:${extra.idx}` });
   const rows: { text: string; callback_data: string }[][] = [];
   for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
