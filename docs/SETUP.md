@@ -74,6 +74,12 @@ Berkas dikirim per potongan ≤ 500 baris / ≤ 2 MB (batas body Vercel 4,5 MB),
 
 **Backup otomatis via n8n:** `GET /api/public/n8n/backup` (header `x-api-key`) mengembalikan JSON yang sama + `filename`. Workflow `n8n/05-dompetku-backup.json` menyimpannya ke Google Drive tiap Minggu 02:00 (lihat `n8n/README.md`).
 
+## 7b. Monitoring error
+Error server (SSR, middleware, semua endpoint `/api/public/n8n/*`) dicatat sebagai **satu baris JSON** di log Vercel: `{"level":"error","scope":"n8n:bot","message":…,"stack":…,"path":…,"timestamp":…}`. Cari di Vercel → Logs dengan filter `"level":"error"` atau `scope`. Query string tidak dicatat.
+- Opsional `SENTRY_DSN` (Sentry → Settings → Client Keys): event juga dikirim ke Sentry lewat endpoint envelope (tanpa SDK, timeout 3 detik, tidak pernah menggagalkan request). Atur notifikasi email/Slack di Sentry → Alerts.
+- Notifikasi Telegram langsung dari web **tidak** tersedia: token bot hanya ada di n8n. Untuk kegagalan workflow pakai `n8n/03-dompetku-error-handler.json`.
+- Error di browser (gagal memuat halaman) muncul di console browser dengan `scope: "client:route"`.
+
 ## 8. PWA & bahasa
 - Aplikasi bisa dipasang di layar utama HP (ikon aplikasi, tampilan penuh layar) — buka di browser HP → "Tambahkan ke layar utama". Tidak ada mode luring.
 - Sakelar **ID/EN** di sidebar (atau header di HP) mengganti bahasa tampilan; pilihan disimpan di browser.

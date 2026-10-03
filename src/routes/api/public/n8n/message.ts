@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { reportServerError, withErrorLogging } from "@/lib/monitoring";
 import { z } from "zod";
 
 // POST /api/public/n8n/message — { text: "makan siang 25rb", save?: true, source?: "telegram", account?: "GoPay" }
@@ -13,7 +14,7 @@ const schema = z.object({
 export const Route = createFileRoute("/api/public/n8n/message")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: withErrorLogging("n8n:message", async ({ request }) => {
         const { checkApiKey, json } = await import("@/lib/api-key.server");
         const denied = checkApiKey(request);
         if (denied) return denied;
@@ -45,10 +46,10 @@ export const Route = createFileRoute("/api/public/n8n/message")({
           });
           return json({ ok: true, draft, ...r });
         } catch (e) {
-          console.error(e);
+          await reportServerError("n8n:message", e, request);
           return json({ ok: false, error: e instanceof Error ? e.message : "Gagal" }, 500);
         }
-      },
+      }),
     },
   },
 });

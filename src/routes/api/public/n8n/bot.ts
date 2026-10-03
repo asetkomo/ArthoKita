@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { reportServerError, withErrorLogging } from "@/lib/monitoring";
 import { botUpdateSchema, readJsonBody } from "@/lib/bot-request";
 
 // POST /api/public/n8n/bot — satu pintu untuk semua update Telegram dari n8n.
@@ -9,7 +10,7 @@ import { botUpdateSchema, readJsonBody } from "@/lib/bot-request";
 export const Route = createFileRoute("/api/public/n8n/bot")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: withErrorLogging("n8n:bot", async ({ request }) => {
         const { checkApiKey, json } = await import("@/lib/api-key.server");
         const denied = checkApiKey(request);
         if (denied) return denied;
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/api/public/n8n/bot")({
           const r = await handleBotUpdate(parsed.data);
           return json({ ok: true, ...r });
         } catch (e) {
-          console.error(e);
+          await reportServerError("n8n:bot", e, request);
           const msg = e instanceof Error ? e.message : "Gagal";
           // Tetap 200 agar n8n bisa mengirim pesan error yang ramah ke pengguna.
           return json({
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/api/public/n8n/bot")({
             reply_markup: null,
           });
         }
-      },
+      }),
     },
   },
 });
