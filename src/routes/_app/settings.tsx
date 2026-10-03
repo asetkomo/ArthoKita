@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { CsvImport } from "@/components/csv-import";
+import { TwoFactorCard } from "@/components/two-factor-card";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -229,6 +230,8 @@ function SettingsPage() {
           <p className="mt-3 text-sm text-muted-foreground">{t("Belum ada aktivitas.")}</p>
         )}
       </Card>
+
+      <TwoFactorCard />
 
       <Card className="mt-4 min-w-0 p-5">
         <h2 className="text-lg font-semibold">
