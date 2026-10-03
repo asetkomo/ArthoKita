@@ -35,7 +35,7 @@ export const saveRow = createServerFn({ method: "POST" })
     const run = (v: any) => (data.id ? db().from(data.table).update(v).eq("id", data.id) : db().from(data.table).insert(v)).select().single();
     let res = await run(values);
     // Optional v4 columns may not exist yet in the user's database: retry without them.
-    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : data.table === "gold_purchases" ? ["gold_type", "product_number"] : [];
+    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : [];
     if (res.error && optional.some((c) => res.error!.message.includes(c))) {
       const v: any = { ...(values as any) };
       for (const c of optional) delete v[c];
