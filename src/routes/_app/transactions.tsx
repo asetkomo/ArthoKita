@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Banknote, ChevronLeft, ChevronRight, Download, Paperclip, Pencil, Plus, Printer, Trash2, Upload } from "lucide-react";
+import { useRef, useState } from "react";
+import { Banknote, ChevronLeft, ChevronRight, Download, MoreHorizontal, Paperclip, Pencil, Plus, Printer, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { Pagination } from "@/components/pagination";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errMsg, invalidateFor, rowsQuery, txCountQuery, txQuery, type TxFilter } from "@/lib/queries";
@@ -58,6 +59,7 @@ function TransactionsPage() {
   const imp = useServerFn(importTransactionsCsv);
   const receipt = useServerFn(getReceiptUrl);
   const [importing, setImporting] = useState(false);
+  const csvRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const ask = useConfirm();
 
@@ -127,27 +129,38 @@ function TransactionsPage() {
         actions={
           <>
             <ReceiptScanner onDraft={(draft) => setDlg({ open: true, draft, id: null })} />
-            <Button variant="outline" onClick={download}><Download className="size-4" /> {t("Excel (CSV)")}</Button>
-            <Button variant="outline" disabled={importing} asChild>
-              <label className="cursor-pointer">
+            <input ref={csvRef} type="file" accept=".csv,text/csv" className="hidden" disabled={importing} onChange={pickCsv} />
+            <div className="hidden gap-2 lg:contents">
+              <Button variant="outline" onClick={download}><Download className="size-4" /> {t("Excel (CSV)")}</Button>
+              <Button variant="outline" disabled={importing} onClick={() => csvRef.current?.click()}>
                 <Upload className="size-4" /> {importing ? t("Mengimpor…") : t("Impor CSV")}
-                <input type="file" accept=".csv,text/csv" className="hidden" disabled={importing} onChange={pickCsv} />
-              </label>
-            </Button>
-            <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> PDF</Button>
-            <Button variant="outline" onClick={cashWithdraw}><Banknote className="size-4" /> {t("Tarik tunai")}</Button>
+              </Button>
+              <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> PDF</Button>
+              <Button variant="outline" onClick={cashWithdraw}><Banknote className="size-4" /> {t("Tarik tunai")}</Button>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="lg:hidden"><MoreHorizontal className="size-4" /> {t("Aksi lainnya")}</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                <DropdownMenuItem onSelect={cashWithdraw}><Banknote className="size-4" /> {t("Tarik tunai")}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void download()}><Download className="size-4" /> {t("Excel (CSV)")}</DropdownMenuItem>
+                <DropdownMenuItem disabled={importing} onSelect={() => csvRef.current?.click()}><Upload className="size-4" /> {importing ? t("Mengimpor…") : t("Impor CSV")}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => window.print()}><Printer className="size-4" /> PDF</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={() => setDlg({ open: true, draft: newTxDraft(), id: null })}><Plus className="size-4" /> {t("Catat")}</Button>
           </>
         }
       />
       <Card className="no-print mb-4 grid grid-cols-1 items-center gap-3 p-3 sm:flex sm:flex-wrap">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between gap-1 sm:justify-start">
           <Button size="icon" variant="ghost" onClick={() => { setMonth(shiftMonth(month, -1)); setOffset(0); }} aria-label={t("Sebelumnya")}><ChevronLeft className="size-4" /></Button>
           <span className="min-w-36 text-center text-sm font-semibold capitalize">{monthLabel(month, locale)}</span>
           <Button size="icon" variant="ghost" onClick={() => { setMonth(shiftMonth(month, 1)); setOffset(0); }} aria-label={t("Berikutnya")}><ChevronRight className="size-4" /></Button>
         </div>
-        <Tabs value={kind} onValueChange={(v) => { setKind(v as typeof kind); setOffset(0); }}>
-          <TabsList>
+        <Tabs className="min-w-0 max-w-full" value={kind} onValueChange={(v) => { setKind(v as typeof kind); setOffset(0); }}>
+          <TabsList className="no-scrollbar w-full max-w-full justify-start overflow-x-auto sm:w-auto">
             <TabsTrigger value="all">{t("Semua")}</TabsTrigger>
             <TabsTrigger value="income">{t("Masuk")}</TabsTrigger>
             <TabsTrigger value="expense">{t("Keluar")}</TabsTrigger>
@@ -172,9 +185,9 @@ function TransactionsPage() {
         {isFetching ? <span className="text-xs text-muted-foreground">{t("Memuat…")}</span> : null}
       </Card>
       <div className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pemasukan")}</p><p className="num text-lg font-semibold text-income">{money(totals.inc)}</p></Card>
-        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pengeluaran")}</p><p className="num text-lg font-semibold text-expense">{money(totals.exp)}</p></Card>
-        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Selisih")}</p><p className="num text-lg font-semibold">{money(totals.inc - totals.exp)}</p></Card>
+        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pemasukan")}</p><p className="num break-words text-lg font-semibold text-income">{money(totals.inc)}</p></Card>
+        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pengeluaran")}</p><p className="num break-words text-lg font-semibold text-expense">{money(totals.exp)}</p></Card>
+        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Selisih")}</p><p className="num break-words text-lg font-semibold">{money(totals.inc - totals.exp)}</p></Card>
       </div>
       <div className="no-print mb-2 flex max-w-full flex-wrap items-center gap-1" aria-label={t("Urutkan")}>
         <SortButton label={t("Tanggal transaksi")} active={sort === "occurred_at"} direction={direction} onClick={() => sortBy("occurred_at")} />
