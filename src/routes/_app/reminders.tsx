@@ -14,6 +14,7 @@ import { errMsg, remindersQuery } from "@/lib/queries";
 import { payDebt, paySubscription } from "@/lib/finance.functions";
 import { dateLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
 export const Route = createFileRoute("/_app/reminders")({
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_app/reminders")({
 });
 
 function RemindersPage() {
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
   const [days, setDays] = useState(30);
   const { data: list } = useSuspenseQuery(remindersQuery(days));
   const pd = useServerFn(payDebt);
@@ -36,19 +39,19 @@ function RemindersPage() {
       if (r.type === "debt") await pd({ data: { debt_id: r.id } });
       else await ps({ data: { id: r.id } });
       await qc.invalidateQueries();
-      toast.success("Pembayaran tercatat");
+      toast.success(t("Pembayaran tercatat"));
     } catch (e) { toast.error(errMsg(e)); }
   }
 
   return (
     <>
-      <PageHeader title="Pengingat" subtitle={`Total tagihan: ${money(total)}`} actions={
+      <PageHeader title={t("Pengingat")} subtitle={`${t("Total tagihan:")} ${money(total)}`} actions={
         <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-          <TabsList><TabsTrigger value="7">7 hari</TabsTrigger><TabsTrigger value="30">30 hari</TabsTrigger><TabsTrigger value="90">90 hari</TabsTrigger></TabsList>
+          <TabsList><TabsTrigger value="7">7 {t("hari")}</TabsTrigger><TabsTrigger value="30">30 {t("hari")}</TabsTrigger><TabsTrigger value="90">90 {t("hari")}</TabsTrigger></TabsList>
         </Tabs>
       } />
-      <p className="mb-4 text-sm text-muted-foreground">Pengingat juga bisa dikirim otomatis ke Telegram/WhatsApp/email lewat n8n — lihat <Link to="/settings" className="text-primary underline">Pengaturan</Link>.</p>
-      {list.length === 0 ? <Empty text="Aman! Tidak ada tagihan dalam periode ini." /> : (
+      <p className="mb-4 text-sm text-muted-foreground">{t("Pengingat juga bisa dikirim otomatis ke Telegram/WhatsApp/email lewat n8n — lihat ")}<Link to="/settings" className="text-primary underline">{t("Pengaturan")}</Link>.</p>
+      {list.length === 0 ? <Empty text={t("Aman! Tidak ada tagihan dalam periode ini.")} /> : (
         <Card className="divide-y">
           {list.map((r) => (
             <div key={r.type + r.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -57,10 +60,10 @@ function RemindersPage() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{r.title}</p>
-                <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? "Peringatan budget bulan ini" : `${dateLabel(r.due_date)} · ${r.overdue ? `terlambat ${-r.days_left} hari` : r.days_left === 0 ? "hari ini" : `${r.days_left} hari lagi`}`}</p>
+                <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? t("Peringatan budget bulan ini") : `${dateLabel(r.due_date, locale)} · ${r.overdue ? `${t("terlambat")} ${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("hari ini") : `${r.days_left} ${t("hari lagi")}`}`}</p>
               </div>
               <p className="num font-semibold">{money(r.amount, r.currency)}</p>
-              {r.type !== "budget" ? <Button size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> Bayar</Button> : null}
+              {r.type !== "budget" ? <Button size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> {t("Bayar")}</Button> : null}
             </div>
           ))}
         </Card>
