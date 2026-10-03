@@ -344,6 +344,8 @@ const DICT: Record<string, string> = {
   "Target Tabungan": "Savings goals",
   "Tercatat. Tagihan berikutnya": "Recorded. Next due",
   "Total": "Total",
+  "Detail": "Details",
+  "Aksi": "Actions",
   "Total tagihan:": "Total due:",
   "Tren pengeluaran per kategori": "Spending trend by category",
   "Username atau password salah": "Incorrect username or password",
