@@ -37,14 +37,14 @@ function BudgetsPage() {
           {budgets.map((b) => {
             const tone = b.percent >= 100 ? "text-expense" : b.percent >= b.alert_percent ? "text-warning" : "text-income";
             return (
-              <Card key={b.id} className="p-5">
+              <Card key={b.id} className="min-w-0 p-5">
                  <div className="flex items-start justify-between gap-2">
                    <p className="flex min-w-0 flex-1 items-center gap-2 font-display text-lg font-semibold"><span className="size-3 shrink-0 rounded-full" style={{ background: b.color ?? "var(--primary)" }} /><span className="truncate">{b.category}</span></p>
                   <RowActions onEdit={() => crud.openEdit({ id: b.id, category_id: b.category_id, amount: b.amount, alert_percent: b.alert_percent })} onDelete={() => crud.remove(b.id, `${t("budget")} ${b.category}`)} />
                 </div>
-                <p className="mt-3 text-sm"><span className={`num text-xl font-semibold ${tone}`}>{money(b.spent)}</span> <span className="text-muted-foreground">/ {money(b.amount)}</span></p>
+                <p className="mt-3 break-words text-sm"><span className={`num text-xl font-semibold ${tone}`}>{money(b.spent)}</span> <span className="text-muted-foreground">/ {money(b.amount)}</span></p>
                 <Progress className="mt-3" value={Math.min(100, b.percent)} />
-                <p className="mt-2 text-xs text-muted-foreground">{b.percent >= 100 ? `${t("Lewat")} ${money(b.spent - b.amount)}` : `${t("Sisa")} ${money(b.amount - b.spent)}`} · {t("peringatan di")} {b.alert_percent}%</p>
+                <p className="mt-2 break-words text-xs text-muted-foreground">{b.percent >= 100 ? `${t("Lewat")} ${money(b.spent - b.amount)}` : `${t("Sisa")} ${money(b.amount - b.spent)}`} · {t("peringatan di")} {b.alert_percent}%</p>
               </Card>
             );
           })}

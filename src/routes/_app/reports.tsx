@@ -70,14 +70,14 @@ function CategoryTrend() {
             {cats.map((c, i) => {
               const on = sel.includes(c.id);
               return (
-                <Button key={c.id} size="sm" variant={on ? "secondary" : "outline"} aria-pressed={on} onClick={() => toggle(c.id)} className="h-7 rounded-full px-3 text-xs">
-                  <span className="size-2.5 rounded-full" style={{ background: c.color ?? FALLBACK[i % FALLBACK.length] }} />
-                  {c.name} <span className="num opacity-70">{compact(c.total)}</span>
+                <Button key={c.id} size="sm" variant={on ? "secondary" : "outline"} aria-pressed={on} onClick={() => toggle(c.id)} className="h-8 max-w-full rounded-full px-3 text-xs">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: c.color ?? FALLBACK[i % FALLBACK.length] }} />
+                  <span className="truncate">{c.name}</span> <span className="num opacity-70">{compact(c.total)}</span>
                 </Button>
               );
             })}
           </div>
-          <div className="h-80">
+          <div className="h-64 sm:h-80 short:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chart}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -123,7 +123,7 @@ function YearlyRecap() {
     <Card className="mt-4 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{t("Rekap tahunan")}</h2>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <Button size="icon" variant="ghost" onClick={() => setYear(year - 1)} aria-label={t("Tahun sebelumnya")}><ChevronLeft className="size-4" /></Button>
           <span className="num min-w-16 text-center font-semibold">{year}</span>
           <Button size="icon" variant="ghost" onClick={() => setYear(year + 1)} aria-label={t("Tahun berikutnya")}><ChevronRight className="size-4" /></Button>
@@ -133,26 +133,26 @@ function YearlyRecap() {
       </div>
       {y ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label={t("Total pemasukan")} value={y.income} className="text-income" />
             <Stat label={t("Total pengeluaran")} value={y.expense} className="text-expense" />
             <Stat label={t("Selisih")} value={y.net} className={y.net >= 0 ? "text-income" : "text-expense"} />
-            <div className="rounded-xl border p-4">
+            <div className="min-w-0 rounded-xl border p-4">
               <p className="text-xs text-muted-foreground">{t("Rata-rata bulanan")}</p>
-              <p className="num mt-1 text-sm font-semibold text-income">+{money(y.avgIncome)}</p>
-              <p className="num text-sm font-semibold text-expense">−{money(y.avgExpense)}</p>
+              <p className="num mt-1 break-words text-sm font-semibold text-income">+{money(y.avgIncome)}</p>
+              <p className="num break-words text-sm font-semibold text-expense">−{money(y.avgExpense)}</p>
             </div>
           </div>
 
           <div className="mt-4 overflow-x-auto rounded-lg border">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[480px] text-sm">
               <thead className="bg-muted text-left text-xs text-muted-foreground">
                  <tr><th className="px-3 py-1"><SortButton label={t("Bulan")} active={sort === "month"} direction={direction} onClick={() => sortBy("month")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Pemasukan")} active={sort === "income"} direction={direction} onClick={() => sortBy("income")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Pengeluaran")} active={sort === "expense"} direction={direction} onClick={() => sortBy("expense")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Selisih")} active={sort === "net"} direction={direction} onClick={() => sortBy("net")} /></th></tr>
               </thead>
               <tbody className="divide-y">
                  {sortedMonths.map((m) => (
                   <tr key={m.month}>
-                    <td className="px-3 py-2 capitalize">{monthLabel(m.month, locale)}</td>
+                    <td className="whitespace-nowrap px-3 py-2 capitalize">{monthLabel(m.month, locale)}</td>
                     <td className="num px-3 py-2 text-right text-income">{money(m.income)}</td>
                     <td className="num px-3 py-2 text-right text-expense">{money(m.expense)}</td>
                     <td className={`num px-3 py-2 text-right font-semibold ${m.net >= 0 ? "" : "text-expense"}`}>{money(m.net)}</td>
@@ -176,9 +176,9 @@ function YearlyRecap() {
 
 function Stat({ label, value, className }: { label: string; value: number; className?: string }) {
   return (
-    <div className="rounded-xl border p-4">
+    <div className="min-w-0 rounded-xl border p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`num mt-1 text-xl font-semibold ${className ?? ""}`}>{money(value)}</p>
+      <p className={`num mt-1 break-words text-xl font-semibold ${className ?? ""}`}>{money(value)}</p>
     </div>
   );
 }

@@ -41,7 +41,7 @@ function AccountsPage() {
       {balances.length === 0 ? <Empty text={t("Belum ada akun. Tambahkan BCA, GoPay, tunai, dll.")} /> : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(balances as any[]).map((b) => ({ ...(rows.find((r) => r.id === b.id) ?? {}), ...b })).map((a: any) => (
-            <Card key={a.id} className={`relative overflow-hidden p-5 ${a.archived ? "opacity-60" : ""}`}>
+            <Card key={a.id} className={`relative min-w-0 overflow-hidden p-5 ${a.archived ? "opacity-60" : ""}`}>
               <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: a.color ?? "var(--primary)" }} />
                <div className="flex items-start justify-between gap-2">
                  <div className="min-w-0 flex-1">
@@ -50,8 +50,8 @@ function AccountsPage() {
                 </div>
                 <RowActions onEdit={() => crud.openEdit({ id: a.id, name: a.name, type: a.type, currency: a.currency, initial_balance: a.initial_balance, color: a.color, archived: a.archived, transfer_fees: formatPresets(a.transfer_fees), topup_fees: formatPresets(a.topup_fees), monthly_fee: a.monthly_fee, monthly_fee_day: a.monthly_fee_day })} onDelete={() => crud.remove(a.id, `${t("akun")} ${a.name}`)} />
               </div>
-              {Number(a.monthly_fee) > 0 ? <p className="num mt-2 text-xs text-muted-foreground">{t("Biaya bulanan")} {money(a.monthly_fee, a.currency)} · {t("tgl")} {a.monthly_fee_day ?? 1}</p> : null}
-              <p className={`num mt-4 text-2xl font-semibold ${Number(a.balance) < 0 ? "text-expense" : ""}`}>{money(a.balance, a.currency)}</p>
+              {Number(a.monthly_fee) > 0 ? <p className="num mt-2 break-words text-xs text-muted-foreground">{t("Biaya bulanan")} {money(a.monthly_fee, a.currency)} · {t("tgl")} {a.monthly_fee_day ?? 1}</p> : null}
+              <p className={`num mt-4 break-words text-2xl font-semibold ${Number(a.balance) < 0 ? "text-expense" : ""}`}>{money(a.balance, a.currency)}</p>
             </Card>
           ))}
         </div>

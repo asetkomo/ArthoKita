@@ -50,24 +50,24 @@ function Dashboard() {
         }
       />
 
-      <div className="mb-5 flex items-center gap-2">
+      <div className="mb-5 flex items-center justify-between gap-2 sm:justify-start">
         <Button size="icon" variant="ghost" onClick={() => setMonth(shiftMonth(month, -1))} aria-label={t("Sebelumnya")}><ChevronLeft className="size-4" /></Button>
-        <p className="min-w-40 text-center font-display text-lg font-semibold capitalize">{monthLabel(month, locale)}</p>
+        <p className="min-w-0 flex-1 text-center font-display sm:min-w-40 sm:flex-none text-lg font-semibold capitalize">{monthLabel(month, locale)}</p>
         <Button size="icon" variant="ghost" onClick={() => setMonth(shiftMonth(month, 1))} aria-label={t("Berikutnya")}><ChevronRight className="size-4" /></Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-ink p-5 text-ink-foreground">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="min-w-0 bg-ink p-5 text-ink-foreground">
           <p className="text-xs uppercase tracking-wider text-ink-muted">{t("Total saldo")}</p>
-          <p className="num mt-2 text-2xl font-semibold">{money(d.totalBalanceIdr)}</p>
+          <p className="num mt-2 break-words text-2xl font-semibold">{money(d.totalBalanceIdr)}</p>
           <p className="mt-1 text-xs text-ink-muted">{d.balances.length} {t("akun aktif")}</p>
         </Card>
         <Stat label={t("Pemasukan")} value={d.income} tone="income" icon={<ArrowDownRight className="size-4" />} />
         <Stat label={t("Pengeluaran")} value={d.expense} tone="expense" icon={<ArrowUpRight className="size-4" />} />
-        <Card className="p-5">
+        <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Selisih bulan ini")}</p>
-          <p className={`num mt-2 text-2xl font-semibold ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("Hutang")} {money(d.debtOutstandingIdr)} · {t("Langganan")} {money(d.subsMonthlyIdr)}/{t("bln")}</p>
+          <p className={`num mt-2 break-words text-2xl font-semibold ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
+          <p className="mt-1 break-words text-xs text-muted-foreground">{t("Hutang")} {money(d.debtOutstandingIdr)} · {t("Langganan")} {money(d.subsMonthlyIdr)}/{t("bln")}</p>
           {d.feesIdr > 0 ? <p className="num text-xs text-muted-foreground">{t("Biaya admin bulan ini")} {money(d.feesIdr)}</p> : null}
         </Card>
       </div>
@@ -75,9 +75,9 @@ function Dashboard() {
       <AssetsOverview />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
+        <Card className="min-w-0 p-5 lg:col-span-2">
           <h2 className="mb-4 text-lg font-semibold">{t("Arus kas 6 bulan")}</h2>
-          <div className="h-64">
+          <div className="h-64 short:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={d.trend.map((t: any) => ({ ...t, label: shortMonth(t.month, locale) }))}>
                 <defs>
@@ -111,8 +111,8 @@ function Dashboard() {
               <ul className="mt-2 space-y-1.5 text-sm">
                 {d.byCategory.slice(0, 5).map((c: any, i: number) => (
                   <li key={i} className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 truncate"><span className="size-2.5 rounded-full" style={{ background: c.color ?? PIE[i % PIE.length] }} />{c.name}</span>
-                    <span className="num text-muted-foreground">{money(c.value)}</span>
+                    <span className="flex min-w-0 items-center gap-2 truncate"><span className="size-2.5 shrink-0 rounded-full" style={{ background: c.color ?? PIE[i % PIE.length] }} />{c.name}</span>
+                    <span className="num shrink-0 text-muted-foreground">{money(c.value)}</span>
                   </li>
                 ))}
               </ul>
@@ -124,7 +124,7 @@ function Dashboard() {
       {d.categoryTrend?.categories?.length ? (
         <Card className="mt-4 p-5">
           <h2 className="mb-4 text-lg font-semibold">{t("Tren pengeluaran per kategori (6 bulan)")}</h2>
-          <div className="h-64">
+          <div className="h-64 short:h-48">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={d.categoryTrend.rows.map((r: any) => ({ ...r, label: shortMonth(r.month, locale) }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -145,12 +145,12 @@ function Dashboard() {
         <Card className="mt-4 p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">{t("Kekayaan bersih (12 bulan)")}</h2>
-            <div className="text-right">
-              <p className="num text-lg font-semibold">{money(nw[nw.length - 1]!.netWorth)}</p>
+            <div className="min-w-0 text-right">
+              <p className="num break-words text-lg font-semibold">{money(nw[nw.length - 1]!.netWorth)}</p>
               {nw[nw.length - 1]!.gold > 0 ? <p className="num text-xs text-muted-foreground">{t("termasuk emas")} {money(nw[nw.length - 1]!.gold)}</p> : null}
             </div>
           </div>
-          <div className="h-56">
+          <div className="h-56 short:h-44">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={nw.map((r) => ({ ...r, label: shortMonth(r.month, locale) }))}>
                 <defs>
@@ -175,7 +175,7 @@ function Dashboard() {
               {d.reminders.map((r: any) => (
                 <li key={r.type + r.id} className="flex items-start justify-between gap-3 text-sm">
                   <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 font-medium">{r.overdue ? <AlertTriangle className="size-3.5 text-expense" /> : null}<span className="truncate">{r.title}</span></p>
+                    <p className="flex min-w-0 items-center gap-1.5 font-medium">{r.overdue ? <AlertTriangle className="size-3.5 text-expense" /> : null}<span className="truncate">{r.title}</span></p>
                     <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? t("Peringatan budget") : r.overdue ? `${t("terlambat ")}${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("Hari ini") : `${r.days_left} ${t("hari lagi")} · ${dateLabel(r.due_date, locale)}`}</p>
                   </div>
                   <span className="num shrink-0">{money(r.amount, r.currency)}</span>
@@ -202,7 +202,7 @@ function Dashboard() {
           {d.balances.length ? (
             <ul className="space-y-2 text-sm">
               {d.balances.map((a: any) => (
-                <li key={a.id} className="flex justify-between gap-2"><span className="truncate">{a.name}</span><span className="num">{money(a.balance, a.currency)}</span></li>
+                <li key={a.id} className="flex justify-between gap-2"><span className="min-w-0 truncate">{a.name}</span><span className="num shrink-0">{money(a.balance, a.currency)}</span></li>
               ))}
             </ul>
           ) : <Empty text={t("Tambahkan akun bank / e-wallet.")} />}
@@ -251,9 +251,9 @@ function Dashboard() {
 
 function Stat({ label, value, tone, icon }: { label: string; value: number; tone: "income" | "expense"; icon: React.ReactNode }) {
   return (
-    <Card className="p-5">
+    <Card className="min-w-0 p-5">
       <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground"><span className={tone === "income" ? "text-income" : "text-expense"}>{icon}</span>{label}</p>
-      <p className={`num mt-2 text-2xl font-semibold ${tone === "income" ? "text-income" : "text-expense"}`}>{money(value)}</p>
+      <p className={`num mt-2 break-words text-2xl font-semibold ${tone === "income" ? "text-income" : "text-expense"}`}>{money(value)}</p>
     </Card>
   );
 }

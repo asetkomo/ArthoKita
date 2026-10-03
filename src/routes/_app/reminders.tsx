@@ -46,8 +46,8 @@ function RemindersPage() {
   return (
     <>
       <PageHeader title={t("Pengingat")} subtitle={`${t("Total tagihan:")} ${money(total)}`} actions={
-        <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-          <TabsList><TabsTrigger value="7">7 {t("hari")}</TabsTrigger><TabsTrigger value="30">30 {t("hari")}</TabsTrigger><TabsTrigger value="90">90 {t("hari")}</TabsTrigger></TabsList>
+        <Tabs className="w-full sm:w-auto" value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+          <TabsList className="w-full sm:w-auto"><TabsTrigger value="7">7 {t("hari")}</TabsTrigger><TabsTrigger value="30">30 {t("hari")}</TabsTrigger><TabsTrigger value="90">90 {t("hari")}</TabsTrigger></TabsList>
         </Tabs>
       } />
       <p className="mb-4 text-sm text-muted-foreground">{t("Pengingat juga bisa dikirim otomatis ke Telegram/WhatsApp/email lewat n8n — lihat ")}<Link to="/settings" className="text-primary underline">{t("Pengaturan")}</Link>.</p>

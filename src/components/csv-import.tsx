@@ -91,13 +91,13 @@ export function CsvImport() {
   }), [rows, sort, direction]);
   const sortBy = (column: typeof sort) => { setDirection((d) => sort === column ? (d === "asc" ? "desc" : "asc") : "asc"); setSort(column); };
   return (
-    <Card className="mt-4 p-5">
+    <Card className="mt-4 min-w-0 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1 basis-64">
           <h2 className="text-lg font-semibold">{t("Impor CSV transaksi")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("Kolom: tanggal, jenis (masuk/keluar), jumlah, kategori, akun, catatan, mata uang. Pemisah koma atau titik koma.")}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="ghost" size="sm" onClick={downloadTemplate}>{t("Unduh template")}</Button>
           <input ref={ref} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
           <Button variant="outline" size="sm" onClick={() => ref.current?.click()}><FileUp className="size-4" /> {t("Pilih file")}</Button>
@@ -106,9 +106,9 @@ export function CsvImport() {
 
       {rows ? (
         <div className="mt-4 space-y-3">
-          <p className="text-sm"><span className="font-medium">{fileName}</span> — <span className="text-income">{totalValid} {t("valid")}</span>{invalid ? <>, <span className="text-expense">{invalid} {t(" bermasalah (dilewati)")}</span></> : null}{dupCount ? <>, <span className="text-warning">{dupCount} {t("Duplikat")}</span></> : null}</p>
+          <p className="break-words text-sm"><span className="font-medium">{fileName}</span> — <span className="text-income">{totalValid} {t("valid")}</span>{invalid ? <>, <span className="text-expense">{invalid} {t(" bermasalah (dilewati)")}</span></> : null}{dupCount ? <>, <span className="text-warning">{dupCount} {t("Duplikat")}</span></> : null}</p>
           <div className="max-h-80 overflow-auto rounded-lg border">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="sticky top-0 bg-muted text-left text-xs text-muted-foreground">
                 <tr><th className="px-3 py-1"><SortButton label={t("Baris")} active={sort === "line"} direction={direction} onClick={() => sortBy("line")} /></th><th className="px-3 py-1"><SortButton label={t("Tanggal")} active={sort === "date"} direction={direction} onClick={() => sortBy("date")} /></th><th className="px-3 py-1"><SortButton label={t("Jenis")} active={sort === "kind"} direction={direction} onClick={() => sortBy("kind")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Jumlah")} active={sort === "amount"} direction={direction} onClick={() => sortBy("amount")} /></th><th className="px-3 py-1"><SortButton label={t("Kategori")} active={sort === "category"} direction={direction} onClick={() => sortBy("category")} /></th><th className="px-3 py-1"><SortButton label={t("Akun")} active={sort === "account"} direction={direction} onClick={() => sortBy("account")} /></th><th className="px-3 py-2">{t("Catatan / Status")}</th></tr>
               </thead>
@@ -118,9 +118,9 @@ export function CsvImport() {
                     <td className="num px-3 py-1.5 text-xs text-muted-foreground">{r.line}</td>
                     {r.value ? (
                       <>
-                        <td className="px-3 py-1.5">{dateLabel(r.value.date, locale)}</td>
+                        <td className="whitespace-nowrap px-3 py-1.5">{dateLabel(r.value.date, locale)}</td>
                         <td className="px-3 py-1.5">{r.value.kind === "income" ? t("Masuk") : t("Keluar")}</td>
-                        <td className={`num px-3 py-1.5 text-right ${r.value.kind === "income" ? "text-income" : "text-expense"}`}>{money(r.value.amount, r.value.currency)}</td>
+                        <td className={`num whitespace-nowrap px-3 py-1.5 text-right ${r.value.kind === "income" ? "text-income" : "text-expense"}`}>{money(r.value.amount, r.value.currency)}</td>
                         <td className="px-3 py-1.5">{r.value.category ?? "—"}</td>
                         <td className="px-3 py-1.5">{r.value.account ?? "—"}</td>
                         <td className="px-3 py-1.5 text-muted-foreground">
@@ -144,13 +144,13 @@ export function CsvImport() {
                 {missing.cats.map((c) => <Badge key={c} variant="secondary">{t("Kategori: ")}{c}</Badge>)}
                 {missing.accs.map((a) => <Badge key={a} variant="outline">{t("Akun: ")}{a}</Badge>)}
               </div>
-              <label className="mt-3 flex items-center gap-2">
-                <Checkbox checked={createMissing} onCheckedChange={(c) => setCreateMissing(c === true)} />
+              <label className="mt-3 flex items-start gap-2">
+                <Checkbox className="mt-0.5 shrink-0" checked={createMissing} onCheckedChange={(c) => setCreateMissing(c === true)} />
                 {t("Buat kategori & akun baru ini (jika tidak dicentang, transaksi disimpan tanpa kategori/akun tersebut)")}
               </label>
             </div>
           ) : null}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button variant="ghost" onClick={() => setRows(null)}>{t("Batal")}</Button>
             <Button disabled={busy || totalValid === 0} onClick={save}>{busy ? t("Menyimpan…") : `${t("Simpan ")}${totalValid} ${t("transaksi")}`}</Button>
           </div>

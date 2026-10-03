@@ -65,9 +65,9 @@ function SettingsPage() {
       <PageHeader title={t("Pengaturan")} />
       <div className="grid gap-4 lg:grid-cols-2">
         {(["expense", "income"] as const).map((kind) => (
-          <Card key={kind} className="p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{kind === "expense" ? t("Kategori pengeluaran") : t("Kategori pemasukan")}</h2>
+          <Card key={kind} className="min-w-0 p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="min-w-0 text-lg font-semibold">{kind === "expense" ? t("Kategori pengeluaran") : t("Kategori pemasukan")}</h2>
               <Button size="sm" variant="outline" onClick={() => crud.openNew({ kind })}><Plus className="size-4" /> {t("Tambah")}</Button>
             </div>
             <ul className="divide-y">
