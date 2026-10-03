@@ -17,6 +17,7 @@ import { debtsQuery, errMsg, rowsQuery } from "@/lib/queries";
 import { deleteRow, payDebt } from "@/lib/finance.functions";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account } from "@/lib/schemas";
 
@@ -28,15 +29,8 @@ export const Route = createFileRoute("/_app/debts")({
   component: DebtsPage,
 });
 
-const KINDS = [
-  { value: "paylater", label: "Paylater" },
-  { value: "loan", label: "Pinjaman" },
-  { value: "credit_card", label: "Cicilan kartu kredit" },
-  { value: "personal", label: "Hutang pribadi" },
-  { value: "other", label: "Lainnya" },
-];
-
 function DebtsPage() {
+  const { t, lang } = useI18n();
   const { data: debts } = useSuspenseQuery(debtsQuery());
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
   const pay = useServerFn(payDebt);
@@ -44,22 +38,29 @@ function DebtsPage() {
   const qc = useQueryClient();
   const crud = useCrudDialog("debts", { kind: "paylater", currency: "IDR", start_date: todayStr(), due_day: 5, total_installments: 3, status: "active" });
   const ask = useConfirm();
+  const KINDS = [
+    { value: "paylater", label: t("Paylater") },
+    { value: "loan", label: t("Pinjaman") },
+    { value: "credit_card", label: t("Cicilan kartu kredit") },
+    { value: "personal", label: t("Hutang pribadi") },
+    { value: "other", label: t("Lainnya") },
+  ];
   const active = (debts as any[]).filter((d) => d.status === "active");
   const totalRemaining = active.reduce((a, d) => a + (d.currency === "IDR" ? d.remaining_amount : 0), 0);
 
   async function doPay(d: any) {
-    if (!(await ask.confirm(`Catat pembayaran cicilan ke-${d.paid_count + 1}?`, { description: `${d.name} · ${money(d.installment_amount, d.currency)} — otomatis tercatat sebagai pengeluaran.`, confirmLabel: "Ya, catat" }))) return;
-    try { await pay({ data: { debt_id: d.id } }); await qc.invalidateQueries(); toast.success("Cicilan tercatat & masuk ke pengeluaran"); } catch (e) { toast.error(errMsg(e)); }
+    if (!(await ask.confirm(`${t("Catat pembayaran cicilan ke-")}${d.paid_count + 1}${t("?")}`, { description: `${d.name} · ${money(d.installment_amount, d.currency)} — ${t("otomatis tercatat sebagai pengeluaran.")}`, confirmLabel: t("Ya, catat") }))) return;
+    try { await pay({ data: { debt_id: d.id } }); await qc.invalidateQueries(); toast.success(t("Cicilan tercatat & masuk ke pengeluaran")); } catch (e) { toast.error(errMsg(e)); }
   }
   async function undo(id: string) {
-    if (!(await ask.confirm("Batalkan pembayaran ini?", { description: "Transaksi pengeluaran terkait juga akan dihapus.", confirmLabel: "Ya, batalkan", destructive: true }))) return;
+    if (!(await ask.confirm(t("Batalkan pembayaran ini?"), { description: t("Transaksi pengeluaran terkait juga akan dihapus."), confirmLabel: t("Ya, batalkan"), destructive: true }))) return;
     try { await del({ data: { table: "debt_payments", id } }); await qc.invalidateQueries(); } catch (e) { toast.error(errMsg(e)); }
   }
 
   return (
     <>
-      <PageHeader title="Hutang & Cicilan" subtitle={`Sisa kewajiban (IDR): ${money(totalRemaining)}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> Tambah</Button>} />
-      {debts.length === 0 ? <Empty text="Belum ada hutang/cicilan. Tambahkan paylater, KTA, atau pinjaman teman." /> : (
+      <PageHeader title={t("Hutang & Cicilan")} subtitle={`${t("Sisa kewajiban (IDR):")} ${money(totalRemaining)}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Tambah")}</Button>} />
+      {debts.length === 0 ? <Empty text={t("Belum ada hutang/cicilan. Tambahkan paylater, KTA, atau pinjaman teman.")} /> : (
         <div className="grid gap-4 lg:grid-cols-2">
           {(debts as any[]).map((d) => {
             const pct = (d.paid_count / d.total_installments) * 100;
@@ -71,31 +72,31 @@ function DebtsPage() {
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       <Badge variant="secondary">{KINDS.find((k) => k.value === d.kind)?.label}</Badge>
                       {d.provider ? <Badge variant="outline">{d.provider}</Badge> : null}
-                      {d.status === "paid_off" ? <Badge className="bg-income text-primary-foreground">Lunas</Badge> : null}
+                      {d.status === "paid_off" ? <Badge className="bg-income text-primary-foreground">{t("Lunas")}</Badge> : null}
                     </div>
                   </div>
                   <RowActions onEdit={() => crud.openEdit({ id: d.id, name: d.name, provider: d.provider, kind: d.kind, currency: d.currency, total_amount: d.total_amount, installment_amount: d.installment_amount, total_installments: d.total_installments, start_date: d.start_date, due_day: d.due_day, interest_rate: d.interest_rate, account_id: d.account_id, notes: d.notes, status: d.status })} onDelete={() => crud.remove(d.id, d.name)} />
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-                  <div><p className="text-xs text-muted-foreground">Per cicilan</p><p className="num font-semibold">{money(d.installment_amount, d.currency)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Sisa</p><p className="num font-semibold text-expense">{money(d.remaining_amount, d.currency)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Jatuh tempo</p><p className="font-semibold">{d.next_due ? dateLabel(d.next_due) : "-"}</p></div>
+                  <div><p className="text-xs text-muted-foreground">{t("Per cicilan")}</p><p className="num font-semibold">{money(d.installment_amount, d.currency)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">{t("Sisa")}</p><p className="num font-semibold text-expense">{money(d.remaining_amount, d.currency)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">{t("Jatuh tempo")}</p><p className="font-semibold">{d.next_due ? dateLabel(d.next_due, lang === "en" ? "en-US" : "id-ID") : "-"}</p></div>
                 </div>
                 <div className="mt-4">
-                  <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>{d.paid_count}/{d.total_installments} cicilan</span><span>{Math.round(pct)}%</span></div>
+                  <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>{d.paid_count}/{d.total_installments} {t("cicilan")}</span><span>{Math.round(pct)}%</span></div>
                   <Progress value={pct} />
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {d.status === "active" ? <Button size="sm" onClick={() => doPay(d)}><CheckCircle2 className="size-4" /> Bayar cicilan ke-{d.paid_count + 1}</Button> : null}
+                  {d.status === "active" ? <Button size="sm" onClick={() => doPay(d)}><CheckCircle2 className="size-4" /> {t("Bayar cicilan ke-")}{d.paid_count + 1}</Button> : null}
                   {d.payments.length ? (
                     <Collapsible className="w-full">
-                      <CollapsibleTrigger className="text-xs text-primary">Riwayat pembayaran ({d.payments.length})</CollapsibleTrigger>
+                      <CollapsibleTrigger className="text-xs text-primary">{t("Riwayat pembayaran")} ({d.payments.length})</CollapsibleTrigger>
                       <CollapsibleContent>
                         <ul className="mt-2 divide-y rounded-lg border text-sm">
                           {d.payments.map((p: any) => (
                             <li key={p.id} className="flex items-center justify-between px-3 py-1.5">
-                              <span>#{p.installment_no} · {dateLabel(p.paid_at)}</span>
-                              <span className="flex items-center gap-2"><span className="num">{money(p.amount, d.currency)}</span><Button size="icon" variant="ghost" className="size-7" aria-label="Batalkan" onClick={() => undo(p.id)}><Undo2 className="size-3.5" /></Button></span>
+                              <span>#{p.installment_no} · {dateLabel(p.paid_at, lang === "en" ? "en-US" : "id-ID")}</span>
+                              <span className="flex items-center gap-2"><span className="num">{money(p.amount, d.currency)}</span><Button size="icon" variant="ghost" className="size-7" aria-label={t("Batalkan")} onClick={() => undo(p.id)}><Undo2 className="size-3.5" /></Button></span>
                             </li>
                           ))}
                         </ul>
@@ -108,20 +109,20 @@ function DebtsPage() {
           })}
         </div>
       )}
-      {crud.dialog("hutang / cicilan", [
-        { name: "name", label: "Nama", type: "text", placeholder: "HP baru via Shopee PayLater" },
-        { name: "kind", label: "Jenis", type: "select", half: true, options: KINDS },
-        { name: "provider", label: "Penyedia", type: "text", half: true, placeholder: "Kredivo, Akulaku, Bank…" },
-        { name: "total_amount", label: "Total pinjaman", type: "number", half: true },
-        { name: "currency", label: "Mata uang", type: "select", half: true, options: CURRENCY_OPTIONS },
-        { name: "installment_amount", label: "Cicilan per bulan", type: "number", half: true },
-        { name: "total_installments", label: "Jumlah cicilan (bulan)", type: "number", half: true },
-        { name: "start_date", label: "Bulan cicilan pertama", type: "date", half: true },
-        { name: "due_day", label: "Tanggal jatuh tempo (1-31)", type: "number", half: true },
-        { name: "interest_rate", label: "Bunga % (opsional)", type: "number", half: true },
-        { name: "account_id", label: "Dibayar dari akun", type: "select", half: true, options: [{ value: "", label: "—" }, ...accounts.map((a) => ({ value: a.id, label: a.name }))] },
-        { name: "status", label: "Status", type: "select", half: true, options: [{ value: "active", label: "Aktif" }, { value: "paid_off", label: "Lunas" }] },
-        { name: "notes", label: "Catatan", type: "textarea" },
+      {crud.dialog(t("hutang / cicilan"), [
+        { name: "name", label: t("Nama"), type: "text", placeholder: "HP baru via Shopee PayLater" },
+        { name: "kind", label: t("Jenis"), type: "select", half: true, options: KINDS },
+        { name: "provider", label: t("Penyedia"), type: "text", half: true, placeholder: "Kredivo, Akulaku, Bank…" },
+        { name: "total_amount", label: t("Total pinjaman"), type: "number", half: true },
+        { name: "currency", label: t("Mata uang"), type: "select", half: true, options: CURRENCY_OPTIONS },
+        { name: "installment_amount", label: t("Cicilan per bulan"), type: "number", half: true },
+        { name: "total_installments", label: t("Jumlah cicilan (bulan)"), type: "number", half: true },
+        { name: "start_date", label: t("Bulan cicilan pertama"), type: "date", half: true },
+        { name: "due_day", label: t("Tanggal jatuh tempo (1-31)"), type: "number", half: true },
+        { name: "interest_rate", label: t("Bunga % (opsional)"), type: "number", half: true },
+        { name: "account_id", label: t("Dibayar dari akun"), type: "select", half: true, options: [{ value: "", label: "—" }, ...accounts.map((a) => ({ value: a.id, label: a.name }))] },
+        { name: "status", label: t("Status"), type: "select", half: true, options: [{ value: "active", label: t("Aktif") }, { value: "paid_off", label: t("Lunas") }] },
+        { name: "notes", label: t("Catatan"), type: "textarea" },
       ])}
       {ask.element}
     </>

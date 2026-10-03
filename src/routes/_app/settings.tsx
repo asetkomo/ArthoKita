@@ -119,7 +119,7 @@ function SettingsPage() {
 
       <Card className="mt-4 p-5">
         <h2 className="text-lg font-semibold">{t("Integrasi n8n (Telegram / WhatsApp / Email)")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("Kirim header ")}<code className="rounded bg-muted px-1">x-api-key: <N8N_API_KEY></code>{t(" di setiap request. Semua respons berisi field ")}<code className="rounded bg-muted px-1">message</code>{t(" yang bisa langsung dibalas ke chat.")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("Kirim header ")}<code className="rounded bg-muted px-1">x-api-key: &lt;N8N_API_KEY&gt;</code>{t(" di setiap request. Semua respons berisi field ")}<code className="rounded bg-muted px-1">message</code>{t(" yang bisa langsung dibalas ke chat.")}</p>
         <ul className="mt-4 space-y-3">
           {ENDPOINTS.map((e) => (
             <li key={e.path} className="rounded-xl border p-3">

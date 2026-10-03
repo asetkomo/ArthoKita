@@ -11,7 +11,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trendQuery, yearlySummaryQuery } from "@/lib/queries";
 import { currentMonth, monthLabel, shortMonth } from "@/lib/dates";
 import { compact, money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
+
 
 export const Route = createFileRoute("/_app/reports")({
   head: () => pageHead("Laporan", "Tren pengeluaran per kategori dan rekap tahunan."),
@@ -27,9 +29,10 @@ const FALLBACK = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--c
 const tooltipStyle = { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" };
 
 function ReportsPage() {
+  const { t } = useI18n();
   return (
     <>
-      <PageHeader title="Laporan" subtitle="Lihat ke mana uang Anda pergi dari bulan ke bulan dan sepanjang tahun." actions={<Button variant="outline" onClick={() => window.print()}>Cetak PDF</Button>} />
+      <PageHeader title={t("Laporan")} subtitle={t("Lihat ke mana uang Anda pergi dari bulan ke bulan dan sepanjang tahun.")} actions={<Button variant="outline" onClick={() => window.print()}>{t("Cetak PDF")}</Button>} />
       <CategoryTrend />
       <YearlyRecap />
     </>
@@ -37,25 +40,29 @@ function ReportsPage() {
 }
 
 function CategoryTrend() {
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
   const [months, setMonths] = useState(6);
   const { data } = useQuery({ ...trendQuery(months, currentMonth()), placeholderData: (p) => p });
   const [selected, setSelected] = useState<string[] | null>(null);
   const cats = data?.categories ?? [];
   useEffect(() => { if (selected === null && cats.length) setSelected(cats.slice(0, 5).map((c) => c.id)); }, [cats, selected]);
   const sel = selected ?? [];
-  const chart = useMemo(() => (data?.series ?? []).map((r) => ({ ...r, label: shortMonth(String(r["month"])) })), [data]);
+  const chart = useMemo(() => (data?.series ?? []).map((r) => ({ ...r, label: shortMonth(String(r["month"]), locale) })), [data, locale]);
+
   const toggle = (id: string) => setSelected((s) => ((s ?? []).includes(id) ? (s ?? []).filter((x) => x !== id) : [...(s ?? []), id]));
 
   return (
     <Card className="p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Tren pengeluaran per kategori</h2>
+        <h2 className="text-lg font-semibold">{t("Tren pengeluaran per kategori")}</h2>
         <Tabs value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
-          <TabsList><TabsTrigger value="6">6 bulan</TabsTrigger><TabsTrigger value="12">12 bulan</TabsTrigger></TabsList>
+          <TabsList><TabsTrigger value="6">6 {t("bulan")}</TabsTrigger><TabsTrigger value="12">12 {t("bulan")}</TabsTrigger></TabsList>
         </Tabs>
       </div>
       {cats.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">Belum ada pengeluaran pada periode ini.</p>
+        <p className="py-10 text-center text-sm text-muted-foreground">{t("Belum ada pengeluaran pada periode ini.")}</p>
+
       ) : (
         <>
           <div className="mb-4 flex flex-wrap gap-1.5">
@@ -90,12 +97,14 @@ function CategoryTrend() {
 }
 
 function YearlyRecap() {
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
   const [year, setYear] = useState(Number(currentMonth().slice(0, 4)));
   const { data: y, isFetching } = useQuery({ ...yearlySummaryQuery(year), placeholderData: (p) => p });
 
   function exportCsv() {
     if (!y) return;
-    const lines = [["Bulan", "Pemasukan", "Pengeluaran", "Selisih"], ...y.months.map((m) => [m.month, m.income, m.expense, m.net]), ["Total", y.income, y.expense, y.net]];
+    const lines = [[t("Bulan"), t("Pemasukan"), t("Pengeluaran"), t("Selisih")], ...y.months.map((m) => [m.month, m.income, m.expense, m.net]), [t("Total"), y.income, y.expense, y.net]];
     const url = URL.createObjectURL(new Blob(["\ufeff" + lines.map((l) => l.join(",")).join("\n")], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url; a.download = `rekap-${year}.csv`; a.click();
@@ -105,43 +114,45 @@ function YearlyRecap() {
   return (
     <Card className="mt-4 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Rekap tahunan</h2>
+        <h2 className="text-lg font-semibold">{t("Rekap tahunan")}</h2>
         <div className="flex items-center gap-1">
-          <Button size="icon" variant="ghost" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya"><ChevronLeft className="size-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setYear(year - 1)} aria-label={t("Tahun sebelumnya")}><ChevronLeft className="size-4" /></Button>
           <span className="num min-w-16 text-center font-semibold">{year}</span>
-          <Button size="icon" variant="ghost" onClick={() => setYear(year + 1)} aria-label="Tahun berikutnya"><ChevronRight className="size-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setYear(year + 1)} aria-label={t("Tahun berikutnya")}><ChevronRight className="size-4" /></Button>
           <Button size="sm" variant="outline" className="no-print ml-2" onClick={exportCsv}><Download className="size-4" /> CSV</Button>
-          {isFetching ? <span className="ml-2 text-xs text-muted-foreground">Memuat…</span> : null}
+          {isFetching ? <span className="ml-2 text-xs text-muted-foreground">{t("Memuat…")}</span> : null}
         </div>
       </div>
       {y ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Total pemasukan" value={y.income} className="text-income" />
-            <Stat label="Total pengeluaran" value={y.expense} className="text-expense" />
-            <Stat label="Selisih" value={y.net} className={y.net >= 0 ? "text-income" : "text-expense"} />
+            <Stat label={t("Total pemasukan")} value={y.income} className="text-income" />
+            <Stat label={t("Total pengeluaran")} value={y.expense} className="text-expense" />
+            <Stat label={t("Selisih")} value={y.net} className={y.net >= 0 ? "text-income" : "text-expense"} />
             <div className="rounded-xl border p-4">
-              <p className="text-xs text-muted-foreground">Rata-rata bulanan</p>
+              <p className="text-xs text-muted-foreground">{t("Rata-rata bulanan")}</p>
               <p className="num mt-1 text-sm font-semibold text-income">+{money(y.avgIncome)}</p>
               <p className="num text-sm font-semibold text-expense">−{money(y.avgExpense)}</p>
             </div>
           </div>
+
           <div className="mt-4 overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted text-left text-xs text-muted-foreground">
-                <tr><th className="px-3 py-2">Bulan</th><th className="px-3 py-2 text-right">Pemasukan</th><th className="px-3 py-2 text-right">Pengeluaran</th><th className="px-3 py-2 text-right">Selisih</th></tr>
+                <tr><th className="px-3 py-2">{t("Bulan")}</th><th className="px-3 py-2 text-right">{t("Pemasukan")}</th><th className="px-3 py-2 text-right">{t("Pengeluaran")}</th><th className="px-3 py-2 text-right">{t("Selisih")}</th></tr>
               </thead>
               <tbody className="divide-y">
                 {y.months.map((m) => (
                   <tr key={m.month}>
-                    <td className="px-3 py-2 capitalize">{monthLabel(m.month)}</td>
+                    <td className="px-3 py-2 capitalize">{monthLabel(m.month, locale)}</td>
                     <td className="num px-3 py-2 text-right text-income">{money(m.income)}</td>
                     <td className="num px-3 py-2 text-right text-expense">{money(m.expense)}</td>
                     <td className={`num px-3 py-2 text-right font-semibold ${m.net >= 0 ? "" : "text-expense"}`}>{money(m.net)}</td>
                   </tr>
                 ))}
                 <tr className="bg-muted/60 font-semibold">
-                  <td className="px-3 py-2">Total</td>
+                  <td className="px-3 py-2">{t("Total")}</td>
+
                   <td className="num px-3 py-2 text-right text-income">{money(y.income)}</td>
                   <td className="num px-3 py-2 text-right text-expense">{money(y.expense)}</td>
                   <td className="num px-3 py-2 text-right">{money(y.net)}</td>
