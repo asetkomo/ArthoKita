@@ -10,6 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as ApiPublicN8nMessageRouteImport } from './routes/api/public/n8n/message'
 import { Route as ApiPublicN8nOcrRouteImport } from './routes/api/public/n8n/ocr'
 import { Route as ApiPublicN8nRemindersRouteImport } from './routes/api/public/n8n/reminders'
@@ -20,6 +24,25 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTransactionsRoute = AppTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicN8nMessageRoute = ApiPublicN8nMessageRouteImport.update({
   id: '/api/public/n8n/message',
@@ -50,6 +73,9 @@ const ApiPublicN8nTransactionsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/transactions': typeof AppTransactionsRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
@@ -58,6 +84,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/transactions': typeof AppTransactionsRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
@@ -67,6 +96,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/transactions': typeof AppTransactionsRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
@@ -77,6 +110,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/dashboard'
+    | '/transactions'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
@@ -85,6 +121,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
+    | '/dashboard'
+    | '/transactions'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
@@ -93,6 +132,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/dashboard'
+    | '/_app/transactions'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
@@ -102,6 +145,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ApiPublicN8nMessageRoute: typeof ApiPublicN8nMessageRoute
   ApiPublicN8nOcrRoute: typeof ApiPublicN8nOcrRoute
   ApiPublicN8nRemindersRoute: typeof ApiPublicN8nRemindersRoute
@@ -117,6 +162,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/transactions': {
+      id: '/_app/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof AppTransactionsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/public/n8n/message': {
       id: '/api/public/n8n/message'
@@ -156,8 +229,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppRouteChildren {
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppTransactionsRoute: typeof AppTransactionsRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppDashboardRoute: AppDashboardRoute,
+  AppTransactionsRoute: AppTransactionsRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
   ApiPublicN8nMessageRoute: ApiPublicN8nMessageRoute,
   ApiPublicN8nOcrRoute: ApiPublicN8nOcrRoute,
   ApiPublicN8nRemindersRoute: ApiPublicN8nRemindersRoute,
