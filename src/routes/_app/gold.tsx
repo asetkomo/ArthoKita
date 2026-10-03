@@ -10,7 +10,7 @@ import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { goldQuery } from "@/lib/queries";
+import { goldQuery, rowsQuery } from "@/lib/queries";
 import { goldValue, type GoldPrice } from "@/lib/assets";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
@@ -33,6 +33,8 @@ function GoldPage() {
   const [direction, setDirection] = useState<SortDirection>("desc");
   const pageSize = 25;
   const { data, isFetching } = useQuery({ ...goldQuery({ offset, limit: pageSize, sort, direction }), placeholderData: (p) => p });
+  const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as { id: string; name: string; archived?: boolean }[];
+  const accName = (id: string | null | undefined) => accounts.find((a) => a.id === id)?.name;
   const crud = useCrudDialog("gold_purchases", { kind: "buy", occurred_at: todayStr(), place: "Antam" });
 
   function sortBy(column: typeof sort) {
@@ -101,10 +103,10 @@ function GoldPage() {
                 <Badge variant={r.kind === "buy" ? "secondary" : "outline"} className="shrink-0">{r.kind === "buy" ? t("Beli") : t("Jual")}</Badge>
                 <div className="min-w-0 flex-1">
                    <p className="truncate text-sm font-medium">{r.grams} g{r.gold_type ? ` · ${r.gold_type}` : ""}{r.place ? ` · ${r.place}` : ""}</p>
-                   <p className="truncate text-xs text-muted-foreground">{dateLabel(r.occurred_at, locale)} · {money(r.price_per_gram)}/g{r.product_number ? ` · ${r.product_number}` : ""}</p>
+                   <p className="truncate text-xs text-muted-foreground">{dateLabel(r.occurred_at, locale)} · {money(r.price_per_gram)}/g{r.product_number ? ` · ${r.product_number}` : ""}{accName(r.account_id) ? ` · ${accName(r.account_id)}` : ""}</p>
                 </div>
                  <p className="num shrink-0 text-sm font-semibold">{money(r.total)}</p>
-                 <div className="col-start-2 col-end-4 justify-self-end sm:col-auto"><RowActions onEdit={() => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, gold_type: r.gold_type, product_number: r.product_number, notes: r.notes })} onDelete={() => crud.remove(r.id, `${r.grams} g`)} /></div>
+                 <div className="col-start-2 col-end-4 justify-self-end sm:col-auto"><RowActions onEdit={() => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, gold_type: r.gold_type, product_number: r.product_number, account_id: r.account_id ?? "", notes: r.notes })} onDelete={() => crud.remove(r.id, `${r.grams} g`)} /></div>
               </li>
             ))}
           </ul>
@@ -120,6 +122,7 @@ function GoldPage() {
         { name: "place", label: t("Tempat"), type: "text", half: true, placeholder: "Antam, Pegadaian, Tokopedia…" },
          { name: "gold_type", label: t("Tipe emas (opsional)"), type: "text", half: true, placeholder: "Antam CertiCard, UBS…" },
          { name: "product_number", label: t("Nomor produk / nomor emas (opsional)"), type: "text", half: true },
+        { name: "account_id", label: t("Akun pembayaran (opsional)"), type: "select", options: [{ value: "", label: t("— Tanpa transaksi —") }, ...accounts.filter((a) => !a.archived).map((a) => ({ value: a.id, label: a.name }))] },
         { name: "notes", label: t("Catatan"), type: "textarea" },
       ])}
     </>

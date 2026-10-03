@@ -1,7 +1,7 @@
 import { db } from "./db.server";
-import { getUsdIdr, insertTransaction, ensureCategory, isMissingTable, logActivity, today } from "./finance.server";
-import { goldHoldings, receivableStatus, TROY_OUNCE_GRAMS, type GoldPrice } from "./assets";
-import type { ReceivableInput } from "./schemas";
+import { getUsdIdr, insertTransaction, updateTransaction, ensureCategory, isMissingTable, logActivity, today } from "./finance.server";
+import { goldHoldings, goldLinkAction, goldLinkedTx, GOLD_CATEGORY, GOLD_LINK_COLUMNS, receivableStatus, TROY_OUNCE_GRAMS, type GoldPrice } from "./assets";
+import type { GoldInput, ReceivableInput } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const ANTAM_PREMIUM = 1.12; // fallback estimate when no Antam price is reachable
@@ -83,10 +83,11 @@ type GoldListOptions = { offset?: number; limit?: number; sort?: "occurred_at" |
 export async function goldSummary(options: GoldListOptions = {}) {
   const offset = options.offset ?? 0;
   const limit = options.limit ?? 25;
-  const select = "id, kind, occurred_at, grams, price_per_gram, total, place, gold_type, product_number, notes";
+  const base = "id, kind, occurred_at, grams, price_per_gram, total, place, notes";
   const run = (columns: string) => db().from("gold_purchases").select(columns, { count: "exact" }).order(options.sort ?? "occurred_at", { ascending: (options.direction ?? "desc") === "asc" }).range(offset, offset + limit - 1);
-  let res = await run(select);
-  if (res.error && /gold_type|product_number/i.test(res.error.message)) res = await run("id, kind, occurred_at, grams, price_per_gram, total, place, notes");
+  let res = await run(`${base}, gold_type, product_number, account_id, transaction_id`);
+  if (res.error && /account_id|transaction_id/i.test(res.error.message)) res = await run(`${base}, gold_type, product_number`);
+  if (res.error && /gold_type|product_number/i.test(res.error.message)) res = await run(base);
   if (res.error) {
     if (isMissingTable(res.error)) return { ready: false as const };
     throw new Error(res.error.message);
@@ -97,6 +98,46 @@ export async function goldSummary(options: GoldListOptions = {}) {
   const holdingsRows = (all.data ?? []).map((r: any) => ({ ...r, grams: Number(r.grams), price_per_gram: Number(r.price_per_gram), total: Number(r.total) }));
   const prices = await getGoldPrices();
   return { ready: true as const, rows, total: res.count ?? rows.length, holdings: goldHoldings(holdingsRows), prices };
+}
+
+/** Save a gold record and keep its linked "Emas" transaction in sync (create/update/delete). */
+export async function saveGold(id: string | null, v: GoldInput) {
+  let prevTx: string | null = null;
+  let linkReady = true;
+  if (id) {
+    const prev = await db().from("gold_purchases").select("transaction_id").eq("id", id).maybeSingle();
+    if (prev.error && /transaction_id/i.test(prev.error.message)) linkReady = false;
+    else prevTx = (prev.data as any)?.transaction_id ?? null;
+  }
+  const link = linkReady ? goldLinkedTx(v) : null;
+  const action = linkReady ? goldLinkAction(prevTx, v.account_id) : "none";
+  let transaction_id = prevTx;
+  let created: string | null = null;
+  if (link && (action === "create" || action === "update")) {
+    const cat = await ensureCategory(GOLD_CATEGORY, link.kind);
+    const input = { ...link, currency: "IDR" as const, to_account_id: null, category_id: cat, merchant: null, source: "web", items: null, receipt_path: null };
+    if (action === "update" && prevTx) await updateTransaction(prevTx, input as any);
+    else { created = (await insertTransaction(input as any)).id; transaction_id = created; }
+  }
+  if (action === "delete") transaction_id = null;
+  const optional = ["gold_type", "product_number", ...GOLD_LINK_COLUMNS];
+  const run = (row: any) => (id ? db().from("gold_purchases").update(row).eq("id", id) : db().from("gold_purchases").insert(row)).select().single();
+  let res = await run({ ...v, transaction_id });
+  if (res.error && optional.some((c) => res.error!.message.includes(c))) {
+    // Older database without v5/v6 columns: undo the new link and save the plain record.
+    if (created) await db().from("transactions").delete().eq("id", created);
+    created = null;
+    const row: any = { ...v };
+    for (const c of optional) delete row[c];
+    res = await run(row);
+    if (!res.error) return res.data;
+  }
+  if (res.error) {
+    if (created) await db().from("transactions").delete().eq("id", created);
+    throw new Error(res.error.message);
+  }
+  if (action === "delete" && prevTx) await db().from("transactions").delete().eq("id", prevTx);
+  return res.data;
 }
 
 /** Grams held at end of each month key (YYYY-MM) — used by net worth. */

@@ -109,8 +109,10 @@ export const goldSchema = z.object({
   place: optText(100),
   gold_type: optText(100),
   product_number: optText(120),
+  account_id: optId.default(null),
   notes: optText(1000),
 }).transform((v) => ({ ...v, total: v.total ?? Math.round(v.grams * v.price_per_gram) }));
+export type GoldInput = z.infer<typeof goldSchema>;
 
 export const receivableSchema = z.object({
   name: z.string().trim().min(1).max(100),
