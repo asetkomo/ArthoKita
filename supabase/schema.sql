@@ -290,3 +290,7 @@ create index if not exists bot_drafts_tx_idx on public.bot_drafts (transaction_i
 revoke all on public.bot_drafts from anon, authenticated;
 grant all on public.bot_drafts to service_role;
 alter table public.bot_drafts enable row level security;
+
+-- ============ v8: target tabungan tertaut ke akun tabungan (aman dijalankan ulang) ============
+-- Setor/tarik dana target dicatat sebagai transfer antar akun (bukan pengeluaran).
+alter table public.goals add column if not exists account_id uuid references public.accounts(id) on delete set null;

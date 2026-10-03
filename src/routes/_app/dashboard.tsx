@@ -56,7 +56,7 @@ function Dashboard() {
         <Button size="icon" variant="ghost" onClick={() => setMonth(shiftMonth(month, 1))} aria-label={t("Berikutnya")}><ChevronRight className="size-4" /></Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="min-w-0 bg-ink p-5 text-ink-foreground">
           <p className="text-xs uppercase tracking-wider text-ink-muted">{t("Total saldo")}</p>
           <p className="num mt-2 break-words text-2xl font-semibold">{money(d.totalBalanceIdr)}</p>
@@ -74,7 +74,7 @@ function Dashboard() {
 
       <AssetsOverview />
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="min-w-0 p-5 lg:col-span-2">
           <h2 className="mb-4 text-lg font-semibold">{t("Arus kas 6 bulan")}</h2>
           <div className="h-64 short:h-48">
@@ -94,7 +94,7 @@ function Dashboard() {
             </ResponsiveContainer>
           </div>
         </Card>
-        <Card className="p-5">
+        <Card className="min-w-0 p-5">
           <h2 className="mb-2 text-lg font-semibold">{t("Pengeluaran per kategori")}</h2>
           {d.byCategory.length ? (
             <>
@@ -110,7 +110,7 @@ function Dashboard() {
               </div>
               <ul className="mt-2 space-y-1.5 text-sm">
                 {d.byCategory.slice(0, 5).map((c: any, i: number) => (
-                  <li key={i} className="flex items-center justify-between gap-2">
+                  <li key={i} className="flex min-w-0 items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-2 truncate"><span className="size-2.5 shrink-0 rounded-full" style={{ background: c.color ?? PIE[i % PIE.length] }} />{c.name}</span>
                     <span className="num shrink-0 text-muted-foreground">{money(c.value)}</span>
                   </li>
@@ -122,7 +122,7 @@ function Dashboard() {
       </div>
 
       {d.categoryTrend?.categories?.length ? (
-        <Card className="mt-4 p-5">
+        <Card className="mt-4 min-w-0 p-5">
           <h2 className="mb-4 text-lg font-semibold">{t("Tren pengeluaran per kategori (6 bulan)")}</h2>
           <div className="h-64 short:h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -142,7 +142,7 @@ function Dashboard() {
       ) : null}
 
       {nw?.length ? (
-        <Card className="mt-4 p-5">
+        <Card className="mt-4 min-w-0 p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">{t("Kekayaan bersih (12 bulan)")}</h2>
             <div className="min-w-0 text-right">
@@ -167,15 +167,15 @@ function Dashboard() {
         </Card>
       ) : null}
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card className="p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-semibold">{t("Pengingat")}</h2><Link to="/reminders" className="text-xs text-primary">{t("Semua")}</Link></div>
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="min-w-0 p-5">
+          <div className="mb-3 flex min-w-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-lg font-semibold">{t("Pengingat")}</h2><Link to="/reminders" className="shrink-0 text-xs text-primary">{t("Semua")}</Link></div>
           {d.reminders.length ? (
             <ul className="space-y-3">
               {d.reminders.map((r: any) => (
-                <li key={r.type + r.id} className="flex items-start justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="flex min-w-0 items-center gap-1.5 font-medium">{r.overdue ? <AlertTriangle className="size-3.5 text-expense" /> : null}<span className="truncate">{r.title}</span></p>
+                <li key={r.type + r.id} className="flex min-w-0 items-start justify-between gap-3 text-sm">
+                  <div className="min-w-0 flex-1">
+                    <p className="flex min-w-0 items-center gap-1.5 font-medium">{r.overdue ? <AlertTriangle className="size-3.5 shrink-0 text-expense" /> : null}<span className="truncate">{r.title}</span></p>
                     <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? t("Peringatan budget") : r.overdue ? `${t("terlambat ")}${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("Hari ini") : `${r.days_left} ${t("hari lagi")} · ${dateLabel(r.due_date, locale)}`}</p>
                   </div>
                   <span className="num shrink-0">{money(r.amount, r.currency)}</span>
@@ -184,12 +184,12 @@ function Dashboard() {
             </ul>
           ) : <Empty text={t("Tidak ada tagihan 14 hari ke depan.")} />}
         </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-semibold">{t("Budget")}</h2><Link to="/budgets" className="text-xs text-primary">{t("Atur")}</Link></div>
+        <Card className="min-w-0 p-5">
+          <div className="mb-3 flex min-w-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-lg font-semibold">{t("Budget")}</h2><Link to="/budgets" className="shrink-0 text-xs text-primary">{t("Atur")}</Link></div>
           {d.budgets.length ? (
             <ul className="space-y-3">
               {d.budgets.map((b: any) => (
-                <li key={b.id} className="text-sm">
+                <li key={b.id} className="min-w-0 text-sm">
                    <div className="mb-1 flex min-w-0 justify-between gap-2"><span className="min-w-0 truncate">{b.category}</span><span className={`num shrink-0 ${b.percent >= 100 ? "text-expense" : "text-muted-foreground"}`}>{Math.round(b.percent)}%</span></div>
                   <Progress value={Math.min(100, b.percent)} />
                 </li>
@@ -197,26 +197,26 @@ function Dashboard() {
             </ul>
           ) : <Empty text={t("Belum ada budget.")} />}
         </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-semibold">{t("Saldo akun")}</h2><Link to="/accounts" className="text-xs text-primary">{t("Kelola")}</Link></div>
+        <Card className="min-w-0 p-5">
+          <div className="mb-3 flex min-w-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-lg font-semibold">{t("Saldo akun")}</h2><Link to="/accounts" className="shrink-0 text-xs text-primary">{t("Kelola")}</Link></div>
           {d.balances.length ? (
             <ul className="space-y-2 text-sm">
               {d.balances.map((a: any) => (
-                <li key={a.id} className="flex justify-between gap-2"><span className="min-w-0 truncate">{a.name}</span><span className="num shrink-0">{money(a.balance, a.currency)}</span></li>
+                <li key={a.id} className="flex min-w-0 justify-between gap-2"><span className="min-w-0 truncate">{a.name}</span><span className="num shrink-0">{money(a.balance, a.currency)}</span></li>
               ))}
             </ul>
           ) : <Empty text={t("Tambahkan akun bank / e-wallet.")} />}
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-semibold">{t("Transaksi terbaru")}</h2><Link to="/transactions" className="text-xs text-primary">{t("Semua")}</Link></div>
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="min-w-0 p-5 lg:col-span-2">
+          <div className="mb-3 flex min-w-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-lg font-semibold">{t("Transaksi terbaru")}</h2><Link to="/transactions" className="shrink-0 text-xs text-primary">{t("Semua")}</Link></div>
           {d.recent.length ? (
             <ul className="divide-y">
               {d.recent.map((t2: any) => (
-                <li key={t2.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <div className="min-w-0">
+                <li key={t2.id} className="flex min-w-0 items-center justify-between gap-3 py-2.5 text-sm">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{t2.description || t2.merchant || t2.category?.name || "Transaksi"}</p>
                      <p className="truncate text-xs text-muted-foreground">{dateLabel(t2.occurred_at, locale)} · {t2.category?.name ?? (t2.kind === "transfer" ? t("Transfer") : "-")}{t2.account?.name ? ` · ${t2.account.name}` : ""}</p>
                   </div>
@@ -226,14 +226,14 @@ function Dashboard() {
             </ul>
           ) : <Empty text={t("Belum ada transaksi. Mulai catat sekarang!")} />}
         </Card>
-        <Card className="p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-semibold">{t("Target tabungan")}</h2><Link to="/goals" className="text-xs text-primary">{t("Kelola")}</Link></div>
+        <Card className="min-w-0 p-5">
+          <div className="mb-3 flex min-w-0 items-center justify-between gap-2"><h2 className="min-w-0 truncate text-lg font-semibold">{t("Target tabungan")}</h2><Link to="/goals" className="shrink-0 text-xs text-primary">{t("Kelola")}</Link></div>
           {d.goals.length ? (
             <ul className="space-y-3 text-sm">
               {d.goals.map((g: any) => {
                 const p = g.target_amount ? (g.saved_amount / g.target_amount) * 100 : 0;
                 return (
-                  <li key={g.id}>
+                  <li key={g.id} className="min-w-0">
                      <div className="mb-1 flex min-w-0 justify-between gap-2"><span className="min-w-0 truncate">{g.name}</span><span className="num shrink-0 text-muted-foreground">{Math.round(p)}%</span></div>
                     <Progress value={Math.min(100, p)} />
                   </li>

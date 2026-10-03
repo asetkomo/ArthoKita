@@ -51,6 +51,7 @@ export function activityDetail(detail: unknown, fmt: (n: number, c: string) => s
   if (typeof name === "string" && name) parts.push(name);
   const amt = Number(d["amount"]);
   if (Number.isFinite(amt) && amt > 0 && d["amount"] != null) parts.push(fmt(amt, typeof d["currency"] === "string" ? (d["currency"] as string) : "IDR"));
+  if (typeof d["from"] === "string" && typeof d["to"] === "string") parts.push(`${d["from"]} → ${d["to"]}`);
   if (typeof d["imported"] === "number") parts.push(`${d["imported"]} baris`);
   return parts.join(" · ");
 }

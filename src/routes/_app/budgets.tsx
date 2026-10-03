@@ -33,7 +33,7 @@ function BudgetsPage() {
     <>
       <PageHeader title={t("Budget")} subtitle={`${t("Bulan")} ${monthLabel(month, lang === "en" ? "en-US" : "id-ID")} · ${t("terpakai")} ${money(spent)} ${t("dari")} ${money(total)}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Budget")}</Button>} />
       {budgets.length === 0 ? <Empty text={t("Belum ada budget. Contoh: Makanan Rp2.000.000 per bulan.")} /> : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {budgets.map((b) => {
             const tone = b.percent >= 100 ? "text-expense" : b.percent >= b.alert_percent ? "text-warning" : "text-income";
             return (

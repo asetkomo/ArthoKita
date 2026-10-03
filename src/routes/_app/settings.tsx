@@ -63,7 +63,7 @@ function SettingsPage() {
   return (
     <>
       <PageHeader title={t("Pengaturan")} />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {(["expense", "income"] as const).map((kind) => (
           <Card key={kind} className="min-w-0 p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -84,12 +84,12 @@ function SettingsPage() {
 
       <CsvImport />
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card className="p-5">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="min-w-0 p-5">
           <h2 className="text-lg font-semibold">{t("Kurs")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("Diperbarui otomatis sekali sehari. Saat ini ")}<span className="num font-semibold text-foreground">1 USD = {money(usdIdr)}</span>.</p>
         </Card>
-        <Card className="p-5">
+        <Card className="min-w-0 p-5">
            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
              <div className="min-w-0">
               <h2 className="text-lg font-semibold">{t("Cadangan data")}</h2>
@@ -100,7 +100,7 @@ function SettingsPage() {
         </Card>
       </div>
 
-      <Card className="mt-4 p-5">
+      <Card className="mt-4 min-w-0 p-5">
         <h2 className="flex items-center gap-2 text-lg font-semibold"><History className="size-4" /> {t("Catatan aktivitas")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("Riwayat perubahan data terbaru.")}</p>
         {activity.length ? (
@@ -118,7 +118,7 @@ function SettingsPage() {
         ) : <p className="mt-3 text-sm text-muted-foreground">{t("Belum ada aktivitas.")}</p>}
       </Card>
 
-      <Card className="mt-4 p-5">
+      <Card className="mt-4 min-w-0 p-5">
         <h2 className="text-lg font-semibold">{t("Integrasi n8n (Telegram / WhatsApp / Email)")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("Kirim header ")}<code className="rounded bg-muted px-1">x-api-key: &lt;N8N_API_KEY&gt;</code>{t(" di setiap request. Semua respons berisi field ")}<code className="rounded bg-muted px-1">message</code>{t(" yang bisa langsung dibalas ke chat.")}</p>
         <ul className="mt-4 space-y-3">

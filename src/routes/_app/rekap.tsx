@@ -41,7 +41,7 @@ function RekapPage() {
         <Button size="icon" variant="ghost" onClick={() => setYear(String(Number(year) + 1))} aria-label={t("Berikutnya")}><ChevronRight className="size-4" /></Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
          <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Total pemasukan")}</p>
            <p className="num mt-2 break-words text-xl font-semibold text-income sm:text-2xl">{money(d.income)}</p>
@@ -81,8 +81,8 @@ function RekapPage() {
         </div>
       </Card>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card className="p-5">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="min-w-0 p-5">
           <h2 className="mb-2 text-lg font-semibold">{t("Pengeluaran per kategori (setahun)")}</h2>
           {d.byCategory.length ? (
             <div className="h-64 short:h-52">
@@ -97,12 +97,12 @@ function RekapPage() {
             </div>
           ) : <Empty text={t("Belum ada pengeluaran tahun ini.")} />}
         </Card>
-        <Card className="p-5">
+        <Card className="min-w-0 p-5">
           <h2 className="mb-3 text-lg font-semibold">{t("Kategori terbesar")}</h2>
           {d.byCategory.length ? (
             <ul className="space-y-2 text-sm">
               {d.byCategory.slice(0, 10).map((c: any, i: number) => (
-                <li key={i} className="flex items-center justify-between gap-2">
+                <li key={i} className="flex min-w-0 items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="num w-5 shrink-0 text-muted-foreground">{i + 1}.</span>
                     <span className="size-2.5 shrink-0 rounded-full" style={{ background: c.color ?? PIE[i % PIE.length] }} />

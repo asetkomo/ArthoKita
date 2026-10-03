@@ -89,6 +89,12 @@ Jalankan bagian **v4** di `supabase/schema.sql` (aman dijalankan ulang). Sebelum
 - **Biaya bulanan otomatis**: isi nominal + tanggal potong di akun. Dicatat sekali per bulan saat dashboard/pengingat dibuka (termasuk panggilan n8n `/api/public/n8n/reminders`), dan muncul di daftar pengingat.
 - **Pajak langganan**: kolom pajak % opsional; total tagihan & pembayaran = harga + pajak.
 
+## v8 — Target tabungan tertaut akun
+Jalankan bagian **v8** di `supabase/schema.sql` (kolom `goals.account_id`). Sebelum itu aplikasi tetap berjalan; pilihan akun tabungan diabaikan.
+- Di formulir target, pilih **Akun tabungan** (opsional).
+- **Tambah nominal** dengan "Dari akun" berbeda dari akun tabungan → tercatat sebagai transfer `Setor target <nama>` ke akun tabungan. **Tarik dana** → transfer `Tarik target <nama>` dari akun tabungan ke akun pilihan (maksimal sebesar dana terkumpul).
+- Tanpa akun, hanya angka "Sudah terkumpul" yang berubah (perilaku lama). Tidak pernah dicatat sebagai pengeluaran, jadi total kekayaan tidak berubah.
+
 ## v7 — Bot Telegram dengan pratinjau & tombol
 1. Jalankan bagian **v7** di `supabase/schema.sql` (kolom `transactions.external_id` + tabel `bot_drafts`).
 2. Set env `BOT_ALLOWED_CHAT_IDS` (wajib; kosong = semua chat ditolak), `BOT_DEFAULT_ACCOUNT`, dan (opsional) `AI_MODEL_TEXT`. Belum tahu chat_id? Kirim pesan ke bot: balasannya "Bot belum dikonfigurasi: tambahkan chat_id … ke BOT_ALLOWED_CHAT_IDS".

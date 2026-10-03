@@ -63,6 +63,7 @@ const DICT: Record<string, string> = {
   "Bulanan": "Monthly",
   "Tahunan": "Yearly",
   "Aktif": "Active",
+  "Nonaktif": "Inactive",
   "Lunas": "Paid off",
   /* Dashboard */
   "Kurs hari ini: 1 USD = ": "Today's rate: 1 USD = ",
@@ -343,6 +344,8 @@ const DICT: Record<string, string> = {
   "Target Tabungan": "Savings goals",
   "Tercatat. Tagihan berikutnya": "Recorded. Next due",
   "Total": "Total",
+  "Detail": "Details",
+  "Aksi": "Actions",
   "Total tagihan:": "Total due:",
   "Tren pengeluaran per kategori": "Spending trend by category",
   "Username atau password salah": "Incorrect username or password",
@@ -455,6 +458,19 @@ const DICT: Record<string, string> = {
   "pajak": "tax",
   "Harga (sebelum pajak, atau sudah termasuk)": "Price (before tax, or tax-inclusive)",
   "Pajak % (opsional, kosongkan jika sudah termasuk)": "Tax % (optional, leave empty if included)",
+  /* Goals: deposits & withdrawals */
+  "Tambah nominal": "Add funds",
+  "Tarik dana": "Withdraw",
+  "Masuk ke akun": "To account",
+  "Akun tabungan": "Savings account",
+  "Akun tabungan (opsional)": "Savings account (optional)",
+  "Dicatat sebagai transfer dari akun pilihan ke": "Recorded as a transfer from the chosen account to",
+  "Dicatat sebagai transfer dari": "Recorded as a transfer from",
+  "ke akun pilihan": "to the chosen account",
+  "Tanpa akun, hanya angka target yang berubah.": "Without an account, only the goal amount changes.",
+  "Target ini belum punya akun tabungan, jadi hanya angka target yang berubah. Pilih akun tabungan di Ubah target agar tercatat sebagai transfer.": "This goal has no savings account yet, so only the goal amount changes. Pick a savings account under Edit goal to record it as a transfer.",
+  "Dana target masih kosong": "This goal has no funds yet",
+  "Nominal harus diisi": "Enter an amount",
 };
 
 

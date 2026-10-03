@@ -39,7 +39,7 @@ function AccountsPage() {
     <>
       <PageHeader title={t("Akun & Dompet")} subtitle={t("Saldo dihitung otomatis dari saldo awal + semua transaksi.")} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Akun baru")}</Button>} />
       {balances.length === 0 ? <Empty text={t("Belum ada akun. Tambahkan BCA, GoPay, tunai, dll.")} /> : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(balances as any[]).map((b) => ({ ...(rows.find((r) => r.id === b.id) ?? {}), ...b })).map((a: any) => (
             <Card key={a.id} className={`relative min-w-0 overflow-hidden p-5 ${a.archived ? "opacity-60" : ""}`}>
               <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: a.color ?? "var(--primary)" }} />

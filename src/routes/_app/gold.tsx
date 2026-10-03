@@ -37,6 +37,8 @@ function GoldPage() {
   const accName = (id: string | null | undefined) => accounts.find((a) => a.id === id)?.name;
   const crud = useCrudDialog("gold_purchases", { kind: "buy", occurred_at: todayStr(), place: "Antam" });
 
+  const edit = (r: any) => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, gold_type: r.gold_type, product_number: r.product_number, account_id: r.account_id ?? "", notes: r.notes });
+
   function sortBy(column: typeof sort) {
     setDirection((current) => sort === column ? (current === "asc" ? "desc" : "asc") : column === "occurred_at" ? "desc" : "asc");
     setSort(column);
@@ -95,21 +97,60 @@ function GoldPage() {
          <SortButton label={t("Total")} active={sort === "total"} direction={direction} onClick={() => sortBy("total")} />
          {isFetching ? <span className="ml-auto text-xs text-muted-foreground">{t("Memuat…")}</span> : null}
        </div>
-       <Card className="mt-2 overflow-hidden">
+       <Card className="mt-2 min-w-0 overflow-hidden">
         {rows.length === 0 ? <p className="p-10 text-center text-sm text-muted-foreground">{t("Belum ada catatan emas.")}</p> : (
-          <ul className="divide-y">
-            {rows.map((r) => (
-               <li key={r.id} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
-                <Badge variant={r.kind === "buy" ? "secondary" : "outline"} className="shrink-0">{r.kind === "buy" ? t("Beli") : t("Jual")}</Badge>
-                <div className="min-w-0 flex-1">
-                   <p className="truncate text-sm font-medium">{r.grams} g{r.gold_type ? ` · ${r.gold_type}` : ""}{r.place ? ` · ${r.place}` : ""}</p>
-                   <p className="truncate text-xs text-muted-foreground">{dateLabel(r.occurred_at, locale)} · {money(r.price_per_gram)}/g{r.product_number ? ` · ${r.product_number}` : ""}{accName(r.account_id) ? ` · ${accName(r.account_id)}` : ""}</p>
-                </div>
-                 <p className="num shrink-0 text-sm font-semibold">{money(r.total)}</p>
-                 <div className="col-start-2 col-end-4 justify-self-end sm:col-auto"><RowActions onEdit={() => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, gold_type: r.gold_type, product_number: r.product_number, account_id: r.account_id ?? "", notes: r.notes })} onDelete={() => crud.remove(r.id, `${r.grams} g`)} /></div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="divide-y md:hidden">
+              {rows.map((r) => (
+                <li key={r.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Badge variant={r.kind === "buy" ? "secondary" : "outline"} className="shrink-0">{r.kind === "buy" ? t("Beli") : t("Jual")}</Badge>
+                    <p className="num min-w-0 truncate text-sm font-medium">{r.grams} g</p>
+                  </div>
+                  <p className="num min-w-0 break-words text-right text-sm font-semibold">{money(r.total)}</p>
+                  <div className="col-span-2 min-w-0 text-xs text-muted-foreground">
+                    {r.gold_type || r.place ? <p className="truncate">{[r.gold_type, r.place].filter(Boolean).join(" · ")}</p> : null}
+                    <p className="truncate"><span className="num">{money(r.price_per_gram)}/g</span>{r.product_number ? ` · ${r.product_number}` : ""}</p>
+                  </div>
+                  <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 border-t pt-1">
+                    <p className="min-w-0 truncate text-xs text-muted-foreground">{dateLabel(r.occurred_at, locale)}{accName(r.account_id) ? ` · ${accName(r.account_id)}` : ""}</p>
+                    <RowActions onEdit={() => edit(r)} onDelete={() => crud.remove(r.id, `${r.grams} g`)} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">{t("Tanggal transaksi")}</th>
+                    <th className="px-4 py-2 font-medium">{t("Jenis")}</th>
+                    <th className="px-4 py-2 font-medium">{t("Detail")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("Gram")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("Harga per gram")}</th>
+                    <th className="px-4 py-2 text-right font-medium">{t("Total")}</th>
+                    <th className="px-2 py-2"><span className="sr-only">{t("Aksi")}</span></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {rows.map((r) => (
+                    <tr key={r.id} className="align-middle">
+                      <td className="whitespace-nowrap px-4 py-2.5">{dateLabel(r.occurred_at, locale)}</td>
+                      <td className="px-4 py-2.5"><Badge variant={r.kind === "buy" ? "secondary" : "outline"}>{r.kind === "buy" ? t("Beli") : t("Jual")}</Badge></td>
+                      <td className="max-w-[16rem] px-4 py-2.5">
+                        <p className="truncate">{[r.gold_type, r.place].filter(Boolean).join(" · ") || "—"}</p>
+                        {r.product_number || accName(r.account_id) ? <p className="truncate text-xs text-muted-foreground">{[r.product_number, accName(r.account_id)].filter(Boolean).join(" · ")}</p> : null}
+                      </td>
+                      <td className="num whitespace-nowrap px-4 py-2.5 text-right">{r.grams} g</td>
+                      <td className="num whitespace-nowrap px-4 py-2.5 text-right">{money(r.price_per_gram)}</td>
+                      <td className="num whitespace-nowrap px-4 py-2.5 text-right font-semibold">{money(r.total)}</td>
+                      <td className="px-2 py-1.5"><div className="flex justify-end"><RowActions onEdit={() => edit(r)} onDelete={() => crud.remove(r.id, `${r.grams} g`)} /></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
        <Pagination offset={offset} pageSize={pageSize} total={total} visible={rows.length} onChange={setOffset} />
