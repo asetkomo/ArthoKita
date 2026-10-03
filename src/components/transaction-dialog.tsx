@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Paperclip } from "lucide-react";
 import { CURRENCY_OPTIONS, EntityDialog, type FieldDef } from "./entity-dialog";
+import { Button } from "@/components/ui/button";
 import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
