@@ -273,7 +273,7 @@ export async function computeDashboard(month: string) {
   const trendStart = monthRange(shiftMonth(month, -5)).start;
   const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes] = await Promise.all([
     db().from("transactions").select("kind, amount_idr, category_id, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end),
-    db().from("transactions").select("kind, amount_idr, occurred_at").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
+    db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
     db().from("account_balances").select("*").eq("archived", false),
     db().from("goals").select("*").order("created_at"),
     db().from("subscriptions").select("amount, currency, cycle").eq("active", true),
@@ -300,12 +300,31 @@ export async function computeDashboard(month: string) {
     const m = shiftMonth(month, -i);
     trendMap.set(m, { month: m, income: 0, expense: 0 });
   }
+  const catTotals = new Map<string, number>();
+  const catByMonth = new Map<string, Map<string, number>>();
   for (const t of must<any[]>(trendRes)) {
-    const row = trendMap.get(String(t.occurred_at).slice(0, 7));
+    const m = String(t.occurred_at).slice(0, 7);
+    const row = trendMap.get(m);
     if (!row) continue;
-    if (t.kind === "income") row.income += Number(t.amount_idr);
-    else row.expense += Number(t.amount_idr);
+    const v = Number(t.amount_idr);
+    if (t.kind === "income") {
+      row.income += v;
+    } else {
+      row.expense += v;
+      const name = (t.category?.name ?? "Tanpa kategori") as string;
+      catTotals.set(name, (catTotals.get(name) ?? 0) + v);
+      const mm = catByMonth.get(m) ?? new Map<string, number>();
+      mm.set(name, (mm.get(name) ?? 0) + v);
+      catByMonth.set(m, mm);
+    }
   }
+  const topCats = [...catTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name]) => name);
+  const categoryTrend = [...trendMap.keys()].map((m) => {
+    const row: Record<string, number | string> = { month: m };
+    const mm = catByMonth.get(m);
+    for (const c of topCats) row[c] = mm?.get(c) ?? 0;
+    return row;
+  });
   const balances = must<any[]>(balRes).map((b) => ({ ...b, balance: Number(b.balance), balance_idr: b.currency === "USD" ? Number(b.balance) * rate : Number(b.balance) }));
   const debts = await computeDebts();
   const debtOutstandingIdr = debts.filter((d) => d.status === "active").reduce((a, d) => a + (d.currency === "USD" ? d.remaining_amount * rate : d.remaining_amount), 0);
@@ -321,6 +340,7 @@ export async function computeDashboard(month: string) {
     net: income - expense,
     byCategory: [...byCat.values()].sort((a, b) => b.value - a.value),
     trend: [...trendMap.values()],
+    categoryTrend: { categories: topCats, rows: categoryTrend },
     balances,
     totalBalanceIdr: balances.reduce((a, b) => a + b.balance_idr, 0),
     debtOutstandingIdr,
