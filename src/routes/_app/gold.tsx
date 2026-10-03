@@ -1,0 +1,112 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { PageHeader } from "@/components/app-shell";
+import { RouteError } from "@/components/route-error";
+import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { goldQuery } from "@/lib/queries";
+import { goldValue, type GoldPrice } from "@/lib/assets";
+import { dateLabel, todayStr } from "@/lib/dates";
+import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
+import { pageHead } from "@/lib/head";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const Route = createFileRoute("/_app/gold")({
+  head: () => pageHead("Tabungan Emas", "Catat pembelian dan penjualan emas, pantau nilai dengan harga dunia dan Antam."),
+  loader: ({ context }) => context.queryClient.ensureQueryData(goldQuery()),
+  errorComponent: RouteError,
+  component: GoldPage,
+});
+
+function GoldPage() {
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
+  const data = useSuspenseQuery(goldQuery()).data as any;
+  const crud = useCrudDialog("gold_purchases", { kind: "buy", occurred_at: todayStr(), place: "Antam" });
+
+  if (!data.ready) {
+    return (
+      <>
+        <PageHeader title={t("Tabungan Emas")} />
+        <Empty text={t("Tabel emas belum ada. Jalankan bagian v3 di supabase/schema.sql lewat SQL Editor Supabase.")} />
+      </>
+    );
+  }
+  const { rows, holdings, prices } = data as { rows: any[]; holdings: { grams: number; cost: number; avgPrice: number; realized: number }; prices: { world: GoldPrice | null; antam: GoldPrice | null } };
+
+  return (
+    <>
+      <PageHeader title={t("Tabungan Emas")} subtitle={t("Nilai dihitung dari harga buyback per gram.")} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Catat")}</Button>} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label={t("Total emas")} value={`${holdings.grams.toLocaleString(locale)} g`} />
+        <Stat label={t("Modal")} value={money(holdings.cost)} />
+        <Stat label={t("Rata-rata harga beli")} value={`${money(holdings.avgPrice)}/g`} />
+        <Stat label={t("Untung terealisasi")} value={money(holdings.realized)} tone={holdings.realized >= 0 ? "text-income" : "text-expense"} />
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {([prices.world, prices.antam] as const).map((p, i) => {
+          const title = i === 0 ? t("Harga dunia (XAU)") : t("Antam / Pegadaian");
+          const v = goldValue(holdings.grams, p, holdings.cost);
+          return (
+            <Card key={i} className="min-w-0 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold">{title}</h2>
+                {p ? <Badge variant={p.estimated ? "outline" : "secondary"}>{p.estimated ? t("perkiraan") : dateLabel(p.date, locale)}</Badge> : null}
+              </div>
+              {p && v ? (
+                <>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div><p className="text-xs text-muted-foreground">{t("Harga jual")}</p><p className="num font-semibold">{money(p.buy)}/g</p></div>
+                    <div><p className="text-xs text-muted-foreground">{t("Buyback")}</p><p className="num font-semibold">{money(p.buyback)}/g</p></div>
+                  </div>
+                  <p className="mt-4 text-xs text-muted-foreground">{t("Nilai sekarang")}</p>
+                  <p className="num font-display text-2xl font-bold">{money(v.value)}</p>
+                  <p className={`num text-sm font-semibold ${v.pnl >= 0 ? "text-income" : "text-expense"}`}>{v.pnl >= 0 ? "+" : "−"}{money(Math.abs(v.pnl))} ({v.pnlPct.toFixed(1)}%)</p>
+                </>
+              ) : <p className="mt-3 text-sm text-muted-foreground">{t("Harga belum tersedia, coba lagi nanti.")}</p>}
+            </Card>
+          );
+        })}
+      </div>
+      <Card className="mt-4 overflow-hidden">
+        {rows.length === 0 ? <p className="p-10 text-center text-sm text-muted-foreground">{t("Belum ada catatan emas.")}</p> : (
+          <ul className="divide-y">
+            {rows.map((r) => (
+              <li key={r.id} className="flex min-w-0 items-center gap-3 px-4 py-3">
+                <Badge variant={r.kind === "buy" ? "secondary" : "outline"} className="shrink-0">{r.kind === "buy" ? t("Beli") : t("Jual")}</Badge>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{r.grams} g{r.place ? ` · ${r.place}` : ""}</p>
+                  <p className="truncate text-xs text-muted-foreground">{dateLabel(r.occurred_at, locale)} · {money(r.price_per_gram)}/g</p>
+                </div>
+                <p className="num shrink-0 text-sm font-semibold">{money(r.total)}</p>
+                <RowActions onEdit={() => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, notes: r.notes })} onDelete={() => crud.remove(r.id, `${r.grams} g`)} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+      {crud.dialog(t("emas"), [
+        { name: "kind", label: t("Jenis"), type: "select", half: true, options: [{ value: "buy", label: t("Beli") }, { value: "sell", label: t("Jual") }] },
+        { name: "occurred_at", label: t("Tanggal"), type: "date", half: true },
+        { name: "grams", label: t("Gram"), type: "number", half: true, step: "0.0001" },
+        { name: "price_per_gram", label: t("Harga per gram"), type: "number", half: true },
+        { name: "total", label: t("Total (kosongkan = otomatis)"), type: "number", half: true },
+        { name: "place", label: t("Tempat"), type: "text", half: true, placeholder: "Antam, Pegadaian, Tokopedia…" },
+        { name: "notes", label: t("Catatan"), type: "textarea" },
+      ])}
+    </>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <Card className="min-w-0 p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`num truncate text-lg font-semibold ${tone ?? ""}`}>{value}</p>
+    </Card>
+  );
+}
