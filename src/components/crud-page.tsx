@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntityDialog, type FieldDef } from "./entity-dialog";
+import { useConfirm } from "./confirm-dialog";
 import { errMsg, useCrud } from "@/lib/queries";
 import type { CrudTable } from "@/lib/schemas";
 
@@ -11,23 +12,27 @@ type Values = Record<string, unknown>;
 /** Shared add/edit/delete state for simple CRUD pages. */
 export function useCrudDialog(table: CrudTable, defaults: Values) {
   const crud = useCrud(table);
+  const ask = useConfirm();
   const [state, setState] = useState<{ open: boolean; id: string | null; initial: Values }>({ open: false, id: null, initial: defaults });
   return {
     openNew: (extra?: Values) => setState({ open: true, id: null, initial: { ...defaults, ...extra } }),
     openEdit: (row: Values & { id: string }) => setState({ open: true, id: row.id, initial: row }),
     remove: async (id: string, label = "data ini") => {
-      if (!confirm(`Hapus ${label}?`)) return;
+      if (!(await ask.confirm(`Hapus ${label}?`, { confirmLabel: "Ya, hapus", destructive: true }))) return;
       try { await crud.remove(id); toast.success("Dihapus"); } catch (e) { toast.error(errMsg(e)); }
     },
     dialog: (title: string, fields: FieldDef[] | ((v: Values) => FieldDef[])) => (
-      <EntityDialog
-        open={state.open}
-        onOpenChange={(o) => setState((s) => ({ ...s, open: o }))}
-        title={state.id ? `Ubah ${title}` : `Tambah ${title}`}
-        fields={fields}
-        initial={state.initial}
-        onSubmit={(v) => crud.save(v, state.id)}
-      />
+      <>
+        <EntityDialog
+          open={state.open}
+          onOpenChange={(o) => setState((s) => ({ ...s, open: o }))}
+          title={state.id ? `Ubah ${title}` : `Tambah ${title}`}
+          fields={fields}
+          initial={state.initial}
+          onSubmit={(v) => crud.save(v, state.id)}
+        />
+        {ask.element}
+      </>
     ),
   };
 }

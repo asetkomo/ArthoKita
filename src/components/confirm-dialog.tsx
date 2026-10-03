@@ -48,7 +48,7 @@ export function useConfirm() {
         <AlertDialogFooter>
           <AlertDialogCancel>Batal</AlertDialogCancel>
           <AlertDialogAction
-            variant={pending?.destructive ? "destructive" : "default"}
+            className={pending?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
             onClick={() => settle(true)}
           >
             {pending?.confirmLabel}
