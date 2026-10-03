@@ -97,12 +97,14 @@ function CategoryTrend() {
 }
 
 function YearlyRecap() {
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
   const [year, setYear] = useState(Number(currentMonth().slice(0, 4)));
   const { data: y, isFetching } = useQuery({ ...yearlySummaryQuery(year), placeholderData: (p) => p });
 
   function exportCsv() {
     if (!y) return;
-    const lines = [["Bulan", "Pemasukan", "Pengeluaran", "Selisih"], ...y.months.map((m) => [m.month, m.income, m.expense, m.net]), ["Total", y.income, y.expense, y.net]];
+    const lines = [[t("Bulan"), t("Pemasukan"), t("Pengeluaran"), t("Selisih")], ...y.months.map((m) => [m.month, m.income, m.expense, m.net]), [t("Total"), y.income, y.expense, y.net]];
     const url = URL.createObjectURL(new Blob(["\ufeff" + lines.map((l) => l.join(",")).join("\n")], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url; a.download = `rekap-${year}.csv`; a.click();
@@ -112,43 +114,45 @@ function YearlyRecap() {
   return (
     <Card className="mt-4 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Rekap tahunan</h2>
+        <h2 className="text-lg font-semibold">{t("Rekap tahunan")}</h2>
         <div className="flex items-center gap-1">
-          <Button size="icon" variant="ghost" onClick={() => setYear(year - 1)} aria-label="Tahun sebelumnya"><ChevronLeft className="size-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setYear(year - 1)} aria-label={t("Tahun sebelumnya")}><ChevronLeft className="size-4" /></Button>
           <span className="num min-w-16 text-center font-semibold">{year}</span>
-          <Button size="icon" variant="ghost" onClick={() => setYear(year + 1)} aria-label="Tahun berikutnya"><ChevronRight className="size-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setYear(year + 1)} aria-label={t("Tahun berikutnya")}><ChevronRight className="size-4" /></Button>
           <Button size="sm" variant="outline" className="no-print ml-2" onClick={exportCsv}><Download className="size-4" /> CSV</Button>
-          {isFetching ? <span className="ml-2 text-xs text-muted-foreground">Memuat…</span> : null}
+          {isFetching ? <span className="ml-2 text-xs text-muted-foreground">{t("Memuat…")}</span> : null}
         </div>
       </div>
       {y ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Total pemasukan" value={y.income} className="text-income" />
-            <Stat label="Total pengeluaran" value={y.expense} className="text-expense" />
-            <Stat label="Selisih" value={y.net} className={y.net >= 0 ? "text-income" : "text-expense"} />
+            <Stat label={t("Total pemasukan")} value={y.income} className="text-income" />
+            <Stat label={t("Total pengeluaran")} value={y.expense} className="text-expense" />
+            <Stat label={t("Selisih")} value={y.net} className={y.net >= 0 ? "text-income" : "text-expense"} />
             <div className="rounded-xl border p-4">
-              <p className="text-xs text-muted-foreground">Rata-rata bulanan</p>
+              <p className="text-xs text-muted-foreground">{t("Rata-rata bulanan")}</p>
               <p className="num mt-1 text-sm font-semibold text-income">+{money(y.avgIncome)}</p>
               <p className="num text-sm font-semibold text-expense">−{money(y.avgExpense)}</p>
             </div>
           </div>
+
           <div className="mt-4 overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted text-left text-xs text-muted-foreground">
-                <tr><th className="px-3 py-2">Bulan</th><th className="px-3 py-2 text-right">Pemasukan</th><th className="px-3 py-2 text-right">Pengeluaran</th><th className="px-3 py-2 text-right">Selisih</th></tr>
+                <tr><th className="px-3 py-2">{t("Bulan")}</th><th className="px-3 py-2 text-right">{t("Pemasukan")}</th><th className="px-3 py-2 text-right">{t("Pengeluaran")}</th><th className="px-3 py-2 text-right">{t("Selisih")}</th></tr>
               </thead>
               <tbody className="divide-y">
                 {y.months.map((m) => (
                   <tr key={m.month}>
-                    <td className="px-3 py-2 capitalize">{monthLabel(m.month)}</td>
+                    <td className="px-3 py-2 capitalize">{monthLabel(m.month, locale)}</td>
                     <td className="num px-3 py-2 text-right text-income">{money(m.income)}</td>
                     <td className="num px-3 py-2 text-right text-expense">{money(m.expense)}</td>
                     <td className={`num px-3 py-2 text-right font-semibold ${m.net >= 0 ? "" : "text-expense"}`}>{money(m.net)}</td>
                   </tr>
                 ))}
                 <tr className="bg-muted/60 font-semibold">
-                  <td className="px-3 py-2">Total</td>
+                  <td className="px-3 py-2">{t("Total")}</td>
+
                   <td className="num px-3 py-2 text-right text-income">{money(y.income)}</td>
                   <td className="num px-3 py-2 text-right text-expense">{money(y.expense)}</td>
                   <td className="num px-3 py-2 text-right">{money(y.net)}</td>
