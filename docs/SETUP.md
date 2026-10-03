@@ -13,6 +13,7 @@
 | `APP_USERNAME` | username login |
 | `APP_PASSWORD` | password login (panjang & unik) |
 | `SESSION_SECRET` | string acak ≥ 32 karakter (`openssl rand -hex 32`) |
+| `APP_TOTP_SECRET` | opsional, kunci base32 untuk login 2 langkah (TOTP, kode 6 digit). Kosong = login seperti biasa. Lihat bagian *Login 2 langkah* |
 | `N8N_API_KEY` | string acak ≥ 24 karakter, dipakai n8n di header `x-api-key` |
 | `AI_API_KEY` | API key untuk OCR / parsing chat (OpenAI-compatible) |
 | `AI_API_URL` | opsional, default Lovable AI gateway. Contoh OpenAI: `https://api.openai.com/v1/chat/completions` |
@@ -123,3 +124,11 @@ tarik - Tarik tunai, mis. /tarik 500rb dari BCA
 undo - Hapus transaksi terakhir dari bot
 help - Bantuan
 ```
+
+## Login 2 langkah (TOTP)
+1. Login, buka **Pengaturan → Verifikasi dua langkah (2FA)** → **Buat kunci rahasia**.
+2. Tambahkan kunci itu di Google Authenticator / Aegis (tambah akun → masukkan kunci manual, berbasis waktu) atau impor URI `otpauth://`.
+3. Simpan kunci yang sama sebagai `APP_TOTP_SECRET` di Vercel → redeploy. Setelah itu login meminta kode 6 digit setelah password.
+4. Menonaktifkan / ganti HP: hapus atau ganti `APP_TOTP_SECRET` lalu redeploy. Simpan cadangan kunci; kalau hilang, akses Vercel adalah jalan pemulihannya.
+
+Catatan: toleransi jam ±30 detik; kode yang sudah dipakai ditolak (per instance server); salah kode ikut dihitung batas percobaan login (8 gagal / 15 menit).
