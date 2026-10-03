@@ -380,3 +380,20 @@ revoke all on public.recurring_transactions from anon, authenticated;
 grant all on public.recurring_transactions to service_role;
 alter table public.recurring_transactions enable row level security;
 notify pgrst, 'reload schema';
+
+-- ============ v11: budget rollover & peringatan instan 80%/100% (aman dijalankan ulang) ============
+-- rollover: sisa (atau kelebihan) budget bulan lalu dibawa ke bulan ini (maks. 12 bulan ke belakang).
+alter table public.budgets add column if not exists rollover boolean not null default false;
+-- Catatan ambang yang sudah diperingatkan agar tiap level hanya sekali per bulan.
+create table if not exists public.budget_alerts (
+  id uuid primary key default gen_random_uuid(),
+  budget_id uuid not null references public.budgets(id) on delete cascade,
+  month text not null,
+  level int not null check (level in (80, 100)),
+  created_at timestamptz not null default now(),
+  unique (budget_id, month, level)
+);
+revoke all on public.budget_alerts from anon, authenticated;
+grant all on public.budget_alerts to service_role;
+alter table public.budget_alerts enable row level security;
+notify pgrst, 'reload schema';
