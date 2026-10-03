@@ -3,7 +3,7 @@ import { z } from "zod";
 export const CURRENCIES = ["IDR", "USD"] as const;
 export const CRUD_TABLES = ["accounts", "categories", "debts", "subscriptions", "budgets", "goals", "gold_purchases"] as const;
 export type CrudTable = (typeof CRUD_TABLES)[number];
-export const DELETABLE_TABLES = [...CRUD_TABLES, "transactions", "debt_payments", "receivables", "receivable_payments"] as const;
+export const DELETABLE_TABLES = [...CRUD_TABLES, "transactions", "debt_payments"] as const;
 
 const emptyToNull = (v: unknown) => (v === "" || v === undefined ? null : v);
 const optId = z.preprocess(emptyToNull, z.string().uuid().nullable());
