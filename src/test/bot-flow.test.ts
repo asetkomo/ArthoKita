@@ -17,6 +17,7 @@ function q(table: string) {
   let payload: any = null;
   let single: "one" | "maybe" | null = null;
   let lim = Infinity;
+  let skip = 0;
   const api: any = {
     select: () => api, order: () => api,
     insert: (v: any) => ((op = "insert"), (payload = v), api),
@@ -32,6 +33,7 @@ function q(table: string) {
     lt: (k: string, v: any) => (filters.push((r) => r[k] < v), api),
     lte: (k: string, v: any) => (filters.push((r) => r[k] <= v), api),
     limit: (n: number) => ((lim = n), api),
+    range: (a: number, b: number) => ((skip = a), (lim = b - a + 1), api),
     single: () => ((single = "one"), api),
     maybeSingle: () => ((single = "maybe"), api),
     then: (res: (v: any) => void) => res(run()),
@@ -47,7 +49,7 @@ function q(table: string) {
     const hit = t.filter((r) => filters.every((f) => f(r)));
     if (op === "update") hit.forEach((r) => Object.assign(r, payload));
     if (op === "delete") tables[table] = t.filter((r) => !hit.includes(r));
-    const rows = hit.slice(0, lim).map((r) => ({ ...r, category: tables["categories"]?.find((c) => c.id === r.category_id) ?? null }));
+    const rows = hit.slice(skip, skip + lim).map((r) => ({ ...r, category: tables["categories"]?.find((c) => c.id === r.category_id) ?? null }));
     if (single) return { data: rows[0] ?? null, error: single === "one" && !rows[0] ? { message: "not found" } : null };
     return { data: rows, error: null };
   }
@@ -55,7 +57,7 @@ function q(table: string) {
 }
 vi.mock("../lib/db.server", () => ({ db: () => ({ from: q, storage: { from: () => ({ remove: async () => ({}) }) } }) }));
 
-import { draftKey, handleBotUpdate, isBotTransaction } from "../lib/bot.server";
+import { draftKey, handleBotUpdate, isBotTransaction, listText, reportText, TX_HARD_CAP } from "../lib/bot.server";
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
@@ -205,5 +207,35 @@ describe("undo hanya untuk transaksi bot", () => {
   });
   it("format kunci draft", () => {
     expect(draftKey("-100123", 7)).toBe("tg:-100123:7");
+  });
+});
+
+describe("laporan tidak terpotong diam-diam", () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const mk = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({ id: `t${i}`, kind: "expense", amount_idr: "1000", occurred_at: today, description: `x${i}`, category_id: "c1" }));
+
+  it("menjumlahkan lebih dari 5000 transaksi lewat paging", async () => {
+    tables["transactions"] = mk(7_500);
+    const list = await listText("expense", "bulan");
+    expect(list).toContain("7500 transaksi");
+    expect(list).toMatch(/Rp\s?7\.500\.000/);
+    expect(list).not.toContain("data terpotong");
+    const rep = await reportText("bulan");
+    expect(rep).toMatch(/Pengeluaran: Rp\s?7\.500\.000/);
+    expect(rep).not.toContain("data terpotong");
+  });
+
+  it("tepat di batas keras tidak dianggap terpotong", async () => {
+    tables["transactions"] = mk(TX_HARD_CAP);
+    expect(await listText("expense", "bulan")).not.toContain("data terpotong");
+  });
+
+  it("melewati batas keras memberi catatan (data terpotong)", async () => {
+    tables["transactions"] = mk(TX_HARD_CAP + 1);
+    const list = await listText("expense", "bulan");
+    expect(list).toContain(`${TX_HARD_CAP} transaksi`);
+    expect(list).toContain("(data terpotong)");
+    expect(await reportText("bulan")).toContain("(data terpotong)");
   });
 });

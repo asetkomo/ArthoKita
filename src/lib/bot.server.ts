@@ -477,17 +477,40 @@ type TxLite = {
   category: { name: string } | null;
 };
 
-async function txIn(start: string, end: string, kind?: string): Promise<TxLite[]> {
-  let q = db()
-    .from("transactions")
-    .select("kind, amount_idr, occurred_at, description, merchant, category:categories(name)")
-    .gte("occurred_at", start)
-    .lt("occurred_at", end)
-    .neq("kind", "transfer");
-  if (kind) q = q.eq("kind", kind);
-  const r = await q.order("occurred_at", { ascending: false }).limit(5000);
-  if (r.error) throw new Error(r.error.message);
-  return ((r.data ?? []) as any[]).map((t) => ({ ...t, amount_idr: Number(t.amount_idr) }));
+/** PostgREST caps a response at 1000 rows by default; page through it, up to a hard cap. */
+export const TX_PAGE_SIZE = 1000;
+export const TX_HARD_CAP = 50_000;
+export const TRUNCATED_NOTE = "⚠️ (data terpotong) Terlalu banyak transaksi; total di atas tidak lengkap, lihat di web.";
+
+/** Transactions in [start, end) newest first, with `truncated` when the hard cap was hit. */
+async function txIn(
+  start: string,
+  end: string,
+  kind?: string,
+): Promise<{ rows: TxLite[]; truncated: boolean }> {
+  const page = (from: number, to: number) => {
+    let q = db()
+      .from("transactions")
+      .select("kind, amount_idr, occurred_at, description, merchant, category:categories(name)")
+      .gte("occurred_at", start)
+      .lt("occurred_at", end)
+      .neq("kind", "transfer");
+    if (kind) q = q.eq("kind", kind);
+    // Tie-break on id so pages are stable when many rows share a date.
+    return q.order("occurred_at", { ascending: false }).order("id").range(from, to);
+  };
+  const rows: TxLite[] = [];
+  for (let from = 0; from < TX_HARD_CAP; from += TX_PAGE_SIZE) {
+    const r = await page(from, Math.min(from + TX_PAGE_SIZE, TX_HARD_CAP) - 1);
+    if (r.error) throw new Error(r.error.message);
+    const batch = (r.data ?? []) as any[];
+    for (const t of batch) rows.push({ ...t, amount_idr: Number(t.amount_idr) });
+    if (batch.length < TX_PAGE_SIZE) return { rows, truncated: false };
+  }
+  // Exactly at the cap: probe one more row to tell "complete" from "cut off".
+  const more = await page(TX_HARD_CAP, TX_HARD_CAP);
+  if (more.error) throw new Error(more.error.message);
+  return { rows, truncated: (more.data ?? []).length > 0 };
 }
 
 const idr = (n: number) => money(n, "IDR");
@@ -503,10 +526,12 @@ export async function reportData(spec: string) {
   if (!p) return null;
   await f.applyMonthlyFees();
   const prev = previousRange(p);
-  const [rows, prevRows] = await Promise.all([
+  const [cur, prevRes] = await Promise.all([
     txIn(p.start, p.end),
     txIn(prev.start, prev.end, "expense"),
   ]);
+  const rows = cur.rows;
+  const prevRows = prevRes.rows;
   const income = rows.filter((t) => t.kind === "income").reduce((a, t) => a + t.amount_idr, 0);
   const expenses = rows.filter((t) => t.kind === "expense");
   const expense = expenses.reduce((a, t) => a + t.amount_idr, 0);
@@ -525,6 +550,7 @@ export async function reportData(spec: string) {
     expense,
     net: income - expense,
     count: rows.length,
+    truncated: cur.truncated || prevRes.truncated,
     prev_expense: prevExpense,
     change_pct: prevExpense > 0 ? ((expense - prevExpense) / prevExpense) * 100 : null,
     avg_per_day: expense / days,
@@ -562,6 +588,7 @@ export async function reportText(spec: string): Promise<string> {
         `• ${shortDay(t.occurred_at)} — ${t.description ?? t.merchant ?? t.category?.name ?? "-"}: ${idr(t.amount_idr)}`,
       );
   }
+  if (d.truncated) lines.push("", TRUNCATED_NOTE);
   if (!d.count) lines.push("", "Belum ada transaksi di periode ini.");
   if (
     d.period.key === "month" ||
@@ -579,7 +606,7 @@ export async function listText(kind: "income" | "expense", spec: string): Promis
   const p = resolvePeriod(spec, f.today());
   if (!p)
     return "❓ Periode tidak dikenali. Pakai: hariini, kemarin, minggu, bulan, bulanlalu, atau YYYY-MM.";
-  const rows = await txIn(p.start, p.end, kind);
+  const { rows, truncated } = await txIn(p.start, p.end, kind);
   const total = rows.reduce((a, t) => a + t.amount_idr, 0);
   const title = kind === "income" ? "💰 Pemasukan" : "💸 Pengeluaran";
   if (!rows.length) return `${title} ${p.label}\nBelum ada data.`;
@@ -589,6 +616,7 @@ export async function listText(kind: "income" | "expense", spec: string): Promis
       `• ${shortDay(t.occurred_at)} ${t.description ?? t.merchant ?? "-"} — ${idr(t.amount_idr)}${t.category ? ` [${t.category.name}]` : ""}`,
     );
   if (rows.length > 20) lines.push(`… dan ${rows.length - 20} lainnya (lihat di web)`);
+  if (truncated) lines.push("", TRUNCATED_NOTE);
   return lines.join("\n");
 }
 
