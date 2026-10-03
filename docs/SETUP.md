@@ -39,19 +39,31 @@ Semua endpoint wajib header `x-api-key: <N8N_API_KEY>`. Setiap respons punya fie
 | GET | `/api/public/n8n/reminders-email?days=7` | pengingat siap-email: `subject`, `text`, `html`, `count` |
 | POST | `/api/public/n8n/reminders-send-email` | `{ "days": 7, "to": "opsional@email.com" }` → kirim langsung via Resend (butuh env Resend) |
 | GET | `/api/public/n8n/summary?month=YYYY-MM` | laporan bulanan |
+| POST | `/api/public/n8n/command` | `{ "text": "saldo" / "summary" / "reminders" / "pay <nama>" / "help" }` → aksi bot langsung, jawaban siap kirim |
 
 ### Contoh alur n8n
 - **Bot Telegram/WhatsApp**: Trigger pesan → jika ada foto: download file → base64 → POST `/ocr`; jika teks: POST `/message` → balas `{{$json.message}}`.
+- **Perintah bot langsung**: Trigger pesan → POST `/command` dengan `{ "text": "<pesan>" }` → balas `{{$json.message}}`. Kata kunci: `saldo` (saldo semua akun), `summary` (ringkasan bulan ini), `reminders` (tagihan yang jatuh tempo), `pay <nama cicilan>` (catat cicilan terbayar), `help`.
 - **Pengingat harian**: Schedule (08:00) → GET `/reminders?days=3` → jika `count > 0` kirim `message` ke Telegram/WhatsApp/Email.
 - **Pengingat via email (node Email n8n)**: Schedule (08:00) → HTTP GET `/reminders-email?days=3` → IF `{{$json.count}} > 0` → node *Send Email* / *Gmail*: Subject `{{$json.subject}}`, HTML `{{$json.html}}`, Text `{{$json.text}}`.
 - **Pengingat via email tanpa node email**: Schedule → HTTP POST `/reminders-send-email` (`{"days":3}`); otomatis dilewati bila tidak ada pengingat.
 - **Laporan bulanan**: Schedule tanggal 1 → GET `/summary?month=<bulan lalu>` → kirim.
 
+
 ## 5. Pembaruan v2 (jalankan sekali)
 Jalankan ulang bagian paling bawah `supabase/schema.sql` ("v2") di SQL Editor: menambah kolom foto nota dan bucket privat `receipts`. Bila insert bucket ditolak, buat manual di **Storage → New bucket** (`receipts`, Public OFF).
+Jika tabel `activity_log` belum ada, jalankan ulang seluruh `supabase/schema.sql` (aman dijalankan berulang).
 
 ## 6. Impor CSV
-Pengaturan → **Impor CSV transaksi**. Kolom: `tanggal` (YYYY-MM-DD atau DD/MM/YYYY), `jenis` (masuk/keluar), `jumlah`, `kategori`, `akun`, `catatan`, `mata uang` (IDR/USD). Ada pratinjau, baris bermasalah dilewati, dan kategori/akun baru hanya dibuat bila dicentang.
+Pengaturan → **Impor CSV transaksi**. Kolom: `tanggal` (YYYY-MM-DD atau DD/MM/YYYY), `jenis` (masuk/keluar), `jumlah`, `kategori`, `akun`, `catatan`, `mata uang` (IDR/USD). Ada pratinjau, baris bermasalah dilewati, dan kategori/akun baru hanya dibuat bila dicentang. Baris yang sama (tanggal, jenis, jumlah, dan catatan identik) dengan data yang sudah ada atau dengan baris lain dalam berkas ditandai duplikat dan dilewati.
+
+## 7. Cadangan data
+Pengaturan → **Cadangan data** → *Unduh cadangan (JSON)*: satu berkas berisi seluruh tabel (akun, kategori, transaksi, hutang, pembayaran cicilan, langganan, budget, target, kurs). Simpan berkas ini sebagai cadangan rutin.
+
+## 8. PWA & bahasa
+- Aplikasi bisa dipasang di layar utama HP (ikon aplikasi, tampilan penuh layar) — buka di browser HP → "Tambahkan ke layar utama". Tidak ada mode luring.
+- Sakelar **ID/EN** di sidebar (atau header di HP) mengganti bahasa tampilan; pilihan disimpan di browser.
+
 
 ## Keamanan
 - Database hanya diakses server dengan service role; RLS aktif & tanpa akses publik.
