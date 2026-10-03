@@ -28,7 +28,7 @@ export function EntityDialog(props: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   title: string;
-  description?: string;
+  description?: string | undefined;
   fields: FieldDef[] | ((v: Values) => FieldDef[]);
   initial: Values;
   onSubmit: (v: Values) => Promise<void>;
