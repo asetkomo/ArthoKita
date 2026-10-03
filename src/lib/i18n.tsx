@@ -560,6 +560,18 @@ const DICT: Record<string, string> = {
   Salin: "Copy",
   Disalin: "Copied",
   "Gagal menyalin": "Copy failed",
+  /* Goal projection */
+  sisa: "left",
+  lewat: "overdue by",
+  Setor: "Save",
+  mgg: "wk",
+  "agar tercapai sebelum": "to reach it by",
+  "Dengan laju sekarang tercapai ~": "At the current pace reached ~",
+  Tercapai: "Reached",
+  "Sesuai jalur": "On track",
+  Tertinggal: "Behind",
+  "Lewat tenggat": "Overdue",
+  "Tanpa tenggat": "No deadline",
 };
 
 const LangContext = createContext<{

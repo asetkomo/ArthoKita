@@ -14,7 +14,8 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { addGoalFunds } from "@/lib/finance.functions";
-import { dateLabel, diffDays, todayStr } from "@/lib/dates";
+import { dateLabel, monthLabel, todayStr } from "@/lib/dates";
+import { projectGoal, type GoalStatus } from "@/lib/goals";
 import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
@@ -168,13 +169,19 @@ function GoalCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
   const saved = Number(g.saved_amount);
   const target = Number(g.target_amount);
   const pct = target ? (saved / target) * 100 : 0;
-  const daysLeft = g.deadline ? diffDays(todayStr(), g.deadline) : null;
-  const perMonth =
-    daysLeft && daysLeft > 0 ? Math.max(0, target - saved) / Math.max(1, daysLeft / 30) : null;
+  const p = projectGoal({
+    target,
+    saved,
+    deadline: g.deadline,
+    today: todayStr(),
+    createdAt: (g as Goal & { created_at?: string | null }).created_at,
+  });
+  const badge = STATUS_BADGE[p.status];
   return (
     <Card className="min-w-0 p-5">
       <div className="flex items-start justify-between gap-2">
@@ -187,15 +194,37 @@ function GoalCard({
         </p>
         <RowActions onEdit={onEdit} onDelete={onDelete} />
       </div>
+      <span
+        className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${badge.cls}`}
+      >
+        {t(badge.label)}
+      </span>
       <p className="mt-3 break-words">
         <span className="num text-xl font-semibold">{money(saved)}</span>{" "}
         <span className="text-sm text-muted-foreground">/ {money(target)}</span>
       </p>
       <Progress className="mt-3" value={Math.min(100, pct)} />
       <p className="mt-2 break-words text-xs text-muted-foreground">
-        {Math.round(pct)}%{g.deadline ? ` · ${t("tenggat")} ${dateLabel(g.deadline)}` : ""}
-        {perMonth ? ` · ${t("perlu")} ${money(perMonth)}/${t("bln")}` : ""}
+        {Math.round(pct)}%{g.deadline ? ` · ${t("tenggat")} ${dateLabel(g.deadline, locale)}` : ""}
+        {p.daysLeft !== null && p.status !== "done"
+          ? p.daysLeft >= 0
+            ? ` · ${t("sisa")} ${p.daysLeft} ${t("hari")}`
+            : ` · ${t("lewat")} ${-p.daysLeft} ${t("hari")}`
+          : ""}
       </p>
+      {p.monthlyNeeded && p.weeklyNeeded && g.deadline ? (
+        <p className="mt-2 break-words text-sm">
+          {t("Setor")} <span className="num font-medium">{money(p.monthlyNeeded)}</span>/{t("bln")}{" "}
+          (<span className="num">{money(p.weeklyNeeded)}</span>/{t("mgg")}){" "}
+          {t("agar tercapai sebelum")} {dateLabel(g.deadline, locale)}
+        </p>
+      ) : null}
+      {p.eta ? (
+        <p className="mt-1 break-words text-xs text-muted-foreground">
+          {t("Dengan laju sekarang tercapai ~")}
+          {monthLabel(p.eta, locale)}
+        </p>
+      ) : null}
       {account ? (
         <p className="mt-1 truncate text-xs text-muted-foreground">
           {t("Akun tabungan")}: {account}
@@ -219,3 +248,11 @@ function GoalCard({
     </Card>
   );
 }
+
+const STATUS_BADGE: Record<GoalStatus, { label: string; cls: string }> = {
+  done: { label: "Tercapai", cls: "bg-income/15 text-income" },
+  on_track: { label: "Sesuai jalur", cls: "bg-income/15 text-income" },
+  behind: { label: "Tertinggal", cls: "bg-expense/15 text-expense" },
+  overdue: { label: "Lewat tenggat", cls: "bg-expense/15 text-expense" },
+  no_deadline: { label: "Tanpa tenggat", cls: "bg-muted text-muted-foreground" },
+};

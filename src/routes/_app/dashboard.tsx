@@ -26,7 +26,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { dashboardQuery, netWorthQuery } from "@/lib/queries";
-import { currentMonth, dateLabel, monthLabel, shiftMonth, shortMonth } from "@/lib/dates";
+import { currentMonth, dateLabel, monthLabel, shiftMonth, shortMonth, todayStr } from "@/lib/dates";
+import { projectGoal } from "@/lib/goals";
 import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
@@ -378,6 +379,20 @@ function Dashboard() {
                       <span className="num shrink-0 text-muted-foreground">{Math.round(p)}%</span>
                     </div>
                     <Progress value={Math.min(100, p)} />
+                    {(() => {
+                      const need = projectGoal({
+                        target: g.target_amount,
+                        saved: g.saved_amount,
+                        deadline: g.deadline,
+                        today: todayStr(),
+                        createdAt: g.created_at,
+                      }).monthlyNeeded;
+                      return need ? (
+                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                          {t("Setor")} <span className="num">{money(need)}</span>/{t("bln")}
+                        </p>
+                      ) : null;
+                    })()}
                   </li>
                 );
               })}
