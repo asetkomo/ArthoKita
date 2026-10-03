@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parsePresets } from "./fees";
+import { firstDue } from "./recurring";
 
 export const CURRENCIES = ["IDR", "USD"] as const;
 export const CRUD_TABLES = [
@@ -10,6 +11,7 @@ export const CRUD_TABLES = [
   "budgets",
   "goals",
   "gold_purchases",
+  "recurring_transactions",
 ] as const;
 export type CrudTable = (typeof CRUD_TABLES)[number];
 export const DELETABLE_TABLES = [...CRUD_TABLES, "transactions", "debt_payments"] as const;
@@ -156,6 +158,52 @@ export const receivableSchema = z.object({
 });
 export type ReceivableInput = z.output<typeof receivableSchema>;
 
+/** v10: recurring income/expense/transfer (salary, rent, routine transfers). */
+export const recurringSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    kind: z.enum(["income", "expense", "transfer"]),
+    amount: money,
+    currency: z.enum(CURRENCIES).default("IDR"),
+    account_id: optId.default(null),
+    to_account_id: optId.default(null),
+    category_id: optId.default(null),
+    description: optText(500).default(null),
+    merchant: optText(200).default(null),
+    cycle: z.enum(["weekly", "monthly", "yearly"]).default("monthly"),
+    interval: z
+      .preprocess(emptyToNull, z.coerce.number().int().min(1).max(36).nullable())
+      .default(1),
+    day_of_month: z
+      .preprocess(emptyToNull, z.coerce.number().int().min(1).max(31).nullable())
+      .default(null),
+    start_date: dateStr,
+    next_due: optDate.default(null),
+    end_date: optDate.default(null),
+    auto_post: z.boolean().default(true),
+    active: z.boolean().default(true),
+  })
+  .superRefine((v, ctx) => {
+    if (v.kind === "transfer" && (!v.account_id || !v.to_account_id))
+      ctx.addIssue({
+        code: "custom",
+        path: ["to_account_id"],
+        message: "Pilih akun asal & tujuan",
+      });
+    if (v.kind === "transfer" && v.account_id && v.account_id === v.to_account_id)
+      ctx.addIssue({ code: "custom", path: ["to_account_id"], message: "Akun tujuan harus beda" });
+    if (v.end_date && v.end_date < v.start_date)
+      ctx.addIssue({ code: "custom", path: ["end_date"], message: "Tanggal akhir sebelum mulai" });
+  })
+  .transform((v) => ({
+    ...v,
+    interval: v.interval ?? 1,
+    category_id: v.kind === "transfer" ? null : v.category_id,
+    to_account_id: v.kind === "transfer" ? v.to_account_id : null,
+    next_due: v.next_due ?? firstDue(v),
+  }));
+export type RecurringInput = z.output<typeof recurringSchema>;
+
 export const tableSchemas: Record<CrudTable, z.ZodTypeAny> = {
   accounts: accountSchema,
   categories: categorySchema,
@@ -164,6 +212,7 @@ export const tableSchemas: Record<CrudTable, z.ZodTypeAny> = {
   budgets: budgetSchema,
   goals: goalSchema,
   gold_purchases: goldSchema,
+  recurring_transactions: recurringSchema,
 };
 
 /** Payload from n8n / bots. Category & account are matched by name. */
@@ -208,6 +257,7 @@ export type Subscription = z.output<typeof subscriptionSchema> & { id: string };
 export type Budget = z.output<typeof budgetSchema> & { id: string };
 export type GoldRow = z.output<typeof goldSchema> & { id: string };
 export type Goal = z.output<typeof goalSchema> & { id: string };
+export type Recurring = RecurringInput & { id: string; created_at: string };
 
 export const importRowSchema = z.object({
   date: dateStr,
