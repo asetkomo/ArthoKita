@@ -69,3 +69,49 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
     />
   );
 }
+
+function ReceiptField({ path, onChange }: { path: string | null; onChange: (p: string | null) => void }) {
+  const upload = useServerFn(uploadReceiptImage);
+  const [busy, setBusy] = useState(false);
+
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 5_000_000) { toast.error("Gambar maksimal 5 MB"); return; }
+    setBusy(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(new Error("Gagal membaca file"));
+        r.readAsDataURL(file);
+      });
+      const { path } = await upload({ data: { image: dataUrl } });
+      onChange(path);
+      toast.success("Foto nota terlampir");
+    } catch (err) {
+      toast.error("Gagal mengunggah nota", { description: errMsg(err) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border bg-muted/50 p-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 font-medium"><Paperclip className="size-3.5" /> Foto nota</p>
+        <div className="flex items-center gap-2">
+          {path ? (
+            <button type="button" className="text-xs text-expense hover:underline" onClick={() => onChange(null)}>Hapus</button>
+          ) : null}
+          <label className="cursor-pointer text-xs text-primary hover:underline">
+            {busy ? "Mengunggah…" : path ? "Ganti" : "Unggah"}
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={pick} />
+          </label>
+        </div>
+      </div>
+      {path ? <p className="mt-1.5 truncate text-xs text-muted-foreground">Terlampir — akan tersimpan bersama transaksi.</p> : <p className="mt-1.5 text-xs text-muted-foreground">Opsional. JPEG/PNG/WebP, maks 5 MB.</p>}
+    </div>
+  );
+}
