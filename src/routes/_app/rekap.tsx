@@ -41,32 +41,32 @@ function RekapPage() {
         <Button size="icon" variant="ghost" onClick={() => setYear(String(Number(year) + 1))} aria-label={t("Berikutnya")}><ChevronRight className="size-4" /></Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
          <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Total pemasukan")}</p>
-           <p className="num mt-2 truncate text-xl font-semibold text-income sm:text-2xl">{money(d.income)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("Rata-rata ")}{money(d.avgIncome)}/{t("bln")}</p>
+           <p className="num mt-2 break-words text-xl font-semibold text-income sm:text-2xl">{money(d.income)}</p>
+          <p className="mt-1 break-words text-xs text-muted-foreground">{t("Rata-rata ")}{money(d.avgIncome)}/{t("bln")}</p>
         </Card>
          <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Total pengeluaran")}</p>
-           <p className="num mt-2 truncate text-xl font-semibold text-expense sm:text-2xl">{money(d.expense)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("Rata-rata ")}{money(d.avgExpense)}/{t("bln")}</p>
+           <p className="num mt-2 break-words text-xl font-semibold text-expense sm:text-2xl">{money(d.expense)}</p>
+          <p className="mt-1 break-words text-xs text-muted-foreground">{t("Rata-rata ")}{money(d.avgExpense)}/{t("bln")}</p>
         </Card>
          <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Selisih setahun")}</p>
-           <p className={`num mt-2 truncate text-xl font-semibold sm:text-2xl ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
+           <p className={`num mt-2 break-words text-xl font-semibold sm:text-2xl ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{d.net >= 0 ? t("Surplus") : t("Defisit")} {money(Math.abs(d.net / 12))}/{t("bln")}</p>
         </Card>
-        <Card className="bg-ink p-5 text-ink-foreground">
+        <Card className="min-w-0 bg-ink p-5 text-ink-foreground">
           <p className="text-xs uppercase tracking-wider text-ink-muted">{t("Rasio menabung")}</p>
           <p className="num mt-2 text-2xl font-semibold">{d.income > 0 ? `${Math.round((d.net / d.income) * 100)}%` : "—"}</p>
           <p className="mt-1 text-xs text-ink-muted">{t("dari total pemasukan")}</p>
         </Card>
       </div>
 
-      <Card className="mt-4 p-5">
+      <Card className="mt-4 min-w-0 p-5">
         <h2 className="mb-4 text-lg font-semibold">{t("Arus kas per bulan")}</h2>
-        <div className="h-72">
+        <div className="h-72 short:h-52">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={d.months.map((m: any) => ({ ...m, label: shortMonth(m.month, locale) }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -85,7 +85,7 @@ function RekapPage() {
         <Card className="p-5">
           <h2 className="mb-2 text-lg font-semibold">{t("Pengeluaran per kategori (setahun)")}</h2>
           {d.byCategory.length ? (
-            <div className="h-64">
+            <div className="h-64 short:h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={d.byCategory.slice(0, 8)} dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={2}>
@@ -103,12 +103,12 @@ function RekapPage() {
             <ul className="space-y-2 text-sm">
               {d.byCategory.slice(0, 10).map((c: any, i: number) => (
                 <li key={i} className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2 truncate">
-                    <span className="num w-5 text-muted-foreground">{i + 1}.</span>
-                    <span className="size-2.5 rounded-full" style={{ background: c.color ?? PIE[i % PIE.length] }} />
-                    {c.name}
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="num w-5 shrink-0 text-muted-foreground">{i + 1}.</span>
+                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: c.color ?? PIE[i % PIE.length] }} />
+                    <span className="truncate">{c.name}</span>
                   </span>
-                  <span className="num text-muted-foreground">{money(c.value)}</span>
+                  <span className="num shrink-0 text-muted-foreground">{money(c.value)}</span>
                 </li>
               ))}
             </ul>

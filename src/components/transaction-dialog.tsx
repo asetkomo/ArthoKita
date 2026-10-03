@@ -61,7 +61,7 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
               <div className="flex flex-wrap gap-1.5">
                 <span className="w-full text-xs text-muted-foreground">{t("Preset biaya:")}</span>
                 {opts.map((o, i) => (
-                  <Button key={i} type="button" size="sm" variant={Number(v["fee"]) === o.amount ? "secondary" : "outline"} onClick={() => set("fee", o.amount)} className="h-7 rounded-full px-2.5 text-xs">
+                  <Button key={i} type="button" size="sm" variant={Number(v["fee"]) === o.amount ? "secondary" : "outline"} onClick={() => set("fee", o.amount)} className="h-8 max-w-full rounded-full px-2.5 text-xs">
                     {o.label} · {money(o.amount, String(v["currency"] ?? "IDR"))}
                   </Button>
                 ))}
@@ -75,8 +75,8 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
               <ul className="space-y-1">
                 {(v["items"] as { name: string; qty?: number | null; price?: number | null }[]).map((it, i) => (
                   <li key={i} className="flex justify-between gap-2">
-                    <span className="truncate">{it.qty ? `${it.qty}× ` : ""}{it.name}</span>
-                    <span className="num text-muted-foreground">{it.price != null ? money(it.price, String(v["currency"] ?? "IDR")) : ""}</span>
+                    <span className="min-w-0 truncate">{it.qty ? `${it.qty}× ` : ""}{it.name}</span>
+                    <span className="num shrink-0 text-muted-foreground">{it.price != null ? money(it.price, String(v["currency"] ?? "IDR")) : ""}</span>
                   </li>
                 ))}
               </ul>
@@ -125,7 +125,7 @@ function ReceiptField({ path, onChange }: { path: string | null; onChange: (p: s
           {path ? (
             <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs text-expense" onClick={() => onChange(null)}>{t("Hapus")}</Button>
           ) : null}
-          <label className="cursor-pointer text-xs text-primary hover:underline">
+          <label className="cursor-pointer py-1.5 text-xs text-primary hover:underline">
             {busy ? t("Mengunggah…") : path ? t("Ganti") : t("Unggah")}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={pick} />
           </label>

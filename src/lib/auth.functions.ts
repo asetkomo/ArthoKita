@@ -9,15 +9,24 @@ export const getSession = createServerFn({ method: "GET" }).handler(async () => 
 
 export const login = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ username: z.string().min(1).max(100), password: z.string().min(1).max(200) }).parse(d),
+    z
+      .object({ username: z.string().min(1).max(100), password: z.string().min(1).max(200) })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { checkCredentials, createSession } = await import("./session.server");
     const { logActivity } = await import("./finance.server");
+    const { recentLoginFailures, noteLoginFailure } = await import("./login-throttle.server");
+    const { isLoginLocked } = await import("./login-throttle");
+    if (isLoginLocked(await recentLoginFailures())) {
+      await new Promise((r) => setTimeout(r, 600));
+      return { ok: false as const, locked: true as const };
+    }
     if (!checkCredentials(data.username, data.password)) {
+      noteLoginFailure();
       await logActivity("auth.login_failed", "auth", { name: data.username.slice(0, 60) });
       await new Promise((r) => setTimeout(r, 600));
-      return { ok: false as const };
+      return { ok: false as const, locked: false as const };
     }
     createSession(data.username);
     await logActivity("auth.login", "auth", { name: data.username.slice(0, 60) });

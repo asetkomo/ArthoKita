@@ -49,8 +49,8 @@ function SubsPage() {
     <>
       <PageHeader title={t("Langganan")} subtitle={`1 USD = ${money(usdIdr)} (${t("kurs otomatis harian")})`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Langganan")}</Button>} />
        <div className="mb-4 grid gap-3 sm:grid-cols-2">
-         <Card className="min-w-0 bg-ink p-5 text-ink-foreground"><p className="text-xs uppercase tracking-wider text-ink-muted">{t("Per bulan (setara)")}</p><p className="num mt-1 truncate text-xl font-semibold sm:text-2xl">{money(monthly)}</p></Card>
-         <Card className="min-w-0 p-5"><p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Per tahun (setara)")}</p><p className="num mt-1 truncate text-xl font-semibold sm:text-2xl">{money(monthly * 12)}</p></Card>
+         <Card className="min-w-0 bg-ink p-5 text-ink-foreground"><p className="text-xs uppercase tracking-wider text-ink-muted">{t("Per bulan (setara)")}</p><p className="num mt-1 break-words text-xl font-semibold sm:text-2xl">{money(monthly)}</p></Card>
+         <Card className="min-w-0 p-5"><p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Per tahun (setara)")}</p><p className="num mt-1 break-words text-xl font-semibold sm:text-2xl">{money(monthly * 12)}</p></Card>
       </div>
       {subs.length === 0 ? <Empty text={t("Belum ada langganan. Tambahkan Netflix, Spotify, iCloud, ChatGPT…")} /> : (
         <Card className="divide-y">

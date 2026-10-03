@@ -22,19 +22,19 @@ export function AssetsOverview() {
   const goalPct = a.goalsTarget > 0 ? (a.goalsSaved / a.goalsTarget) * 100 : 0;
 
   return (
-    <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-3">
-      <Card className="min-w-0 p-5 lg:col-span-2">
+    <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-3">
+      <Card className="min-w-0 p-5 xl:col-span-2">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t("Aset & Investasi")}</h2>
-          <p className="num text-lg font-semibold">{money(a.totalAssets)}</p>
+          <p className="num min-w-0 break-words text-lg font-semibold">{money(a.totalAssets)}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Link to="/gold" className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+          <Link to="/gold" className="min-w-0 rounded-xl border p-3 transition-colors hover:bg-muted/50">
             <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground"><Coins className="size-3.5" />{t("Emas")}</p>
             {g.ready ? (
               <>
-                <p className="num mt-1 text-xl font-semibold">{money(ref?.value ?? 0)}</p>
-                <p className="num text-xs text-muted-foreground">{g.grams} g · {t("modal")} {money(g.cost)}</p>
+                <p className="num mt-1 break-words text-xl font-semibold">{money(ref?.value ?? 0)}</p>
+                <p className="num break-words text-xs text-muted-foreground">{g.grams} g · {t("modal")} {money(g.cost)}</p>
                 {ref ? (
                   <p className={`num mt-1 flex items-center gap-1 text-xs font-medium ${ref.pnl >= 0 ? "text-income" : "text-expense"}`}>
                     {ref.pnl >= 0 ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
@@ -44,14 +44,14 @@ export function AssetsOverview() {
               </>
             ) : <p className="mt-1 text-xs text-muted-foreground">{t("Jalankan bagian schema v3 untuk mengaktifkan.")}</p>}
           </Link>
-          <Link to="/receivables" className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+          <Link to="/receivables" className="min-w-0 rounded-xl border p-3 transition-colors hover:bg-muted/50">
             <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground"><HandCoins className="size-3.5" />{t("Piutang")}</p>
-            <p className="num mt-1 text-xl font-semibold">{money(a.receivablesOutstanding)}</p>
+            <p className="num mt-1 break-words text-xl font-semibold">{money(a.receivablesOutstanding)}</p>
             <p className="text-xs text-muted-foreground">{t("belum dibayar")}</p>
           </Link>
-          <Link to="/goals" className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+          <Link to="/goals" className="min-w-0 rounded-xl border p-3 transition-colors hover:bg-muted/50">
             <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground"><PiggyBank className="size-3.5" />{t("Target tabungan")}</p>
-            <p className="num mt-1 text-xl font-semibold">{money(a.goalsSaved)}</p>
+            <p className="num mt-1 break-words text-xl font-semibold">{money(a.goalsSaved)}</p>
             <p className="num text-xs text-muted-foreground">{t("dari")} {money(a.goalsTarget)}</p>
             <Progress className="mt-2" value={Math.min(100, goalPct)} />
           </Link>
@@ -65,7 +65,7 @@ export function AssetsOverview() {
                 return p ? (
                   <div key={k} className="flex min-w-0 flex-wrap items-center justify-between gap-x-2">
                     <span className="flex items-center gap-1.5 font-medium">{label}{p.estimated ? <Badge variant="outline">{t("perkiraan")}</Badge> : null}</span>
-                    <span className="num text-muted-foreground">{t("jual")} {money(p.buy)} · {t("buyback")} {money(p.buyback)}</span>
+                    <span className="num min-w-0 break-words text-muted-foreground">{t("jual")} {money(p.buy)} · {t("buyback")} {money(p.buyback)}</span>
                   </div>
                 ) : null;
               })}

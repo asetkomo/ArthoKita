@@ -14,6 +14,9 @@ export const Route = createFileRoute("/login")({
   head: () => pageHead("Masuk", "Masuk ke Dompetku — pelacak keuangan pribadi."),
   beforeLoad: async () => {
     const { getSession } = await import("@/lib/auth.functions");
+    const { clearSessionCache } = await import("@/lib/session-cache");
+    // Reaching /login (logout, expired session) always drops the cached check.
+    clearSessionCache();
     const s = await getSession();
     if (s.authenticated) throw redirect({ to: "/dashboard" });
   },
@@ -30,7 +33,21 @@ function LoginPage() {
     const fd = new FormData(e.currentTarget);
     setBusy(true);
     try {
-      await run({ data: { username: String(fd.get("username") ?? ""), password: String(fd.get("password") ?? "") } });
+      const res = await run({
+        data: {
+          username: String(fd.get("username") ?? ""),
+          password: String(fd.get("password") ?? ""),
+        },
+      });
+      if (!res.ok) {
+        toast.error(
+          res.locked
+            ? t("Terlalu banyak percobaan masuk yang gagal. Coba lagi dalam 15 menit.")
+            : t("Username atau password salah"),
+        );
+        setBusy(false);
+        return;
+      }
       window.location.href = "/dashboard";
     } catch {
       toast.error(t("Username atau password salah"));
@@ -41,7 +58,9 @@ function LoginPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-sidebar px-4">
       <Card className="w-full max-w-sm p-8">
-        <p className="font-display text-3xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
+        <p className="font-display text-3xl font-bold">
+          Dompetku<span className="text-sidebar-primary">.</span>
+        </p>
         <p className="mt-1 text-sm text-ink-muted">{t("buku kas pribadi")}</p>
         <form className="mt-6 space-y-4" onSubmit={submit}>
           <div className="space-y-1.5">
@@ -50,9 +69,17 @@ function LoginPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">{t("Password")}</Label>
-            <Input id="password" name="password" type="password" autoComplete="current-password" required />
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
           </div>
-          <Button type="submit" className="w-full" disabled={busy}>{busy ? t("Memeriksa…") : t("Masuk")}</Button>
+          <Button type="submit" className="w-full" disabled={busy}>
+            {busy ? t("Memeriksa…") : t("Masuk")}
+          </Button>
         </form>
       </Card>
     </div>

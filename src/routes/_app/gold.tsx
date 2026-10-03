@@ -75,13 +75,13 @@ function GoldPage() {
               </div>
               {p && v ? (
                 <>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                    <div><p className="text-xs text-muted-foreground">{t("Harga jual")}</p><p className="num font-semibold">{money(p.buy)}/g</p></div>
-                    <div><p className="text-xs text-muted-foreground">{t("Buyback")}</p><p className="num font-semibold">{money(p.buyback)}/g</p></div>
+                  <div className="mt-3 grid grid-cols-1 gap-2 text-sm min-[400px]:grid-cols-2">
+                    <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("Harga jual")}</p><p className="num break-words font-semibold">{money(p.buy)}/g</p></div>
+                    <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("Buyback")}</p><p className="num break-words font-semibold">{money(p.buyback)}/g</p></div>
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">{t("Nilai sekarang")}</p>
-                  <p className="num font-display text-2xl font-bold">{money(v.value)}</p>
-                  <p className={`num text-sm font-semibold ${v.pnl >= 0 ? "text-income" : "text-expense"}`}>{v.pnl >= 0 ? "+" : "−"}{money(Math.abs(v.pnl))} ({v.pnlPct.toFixed(1)}%)</p>
+                  <p className="num break-words font-display text-2xl font-bold">{money(v.value)}</p>
+                  <p className={`num break-words text-sm font-semibold ${v.pnl >= 0 ? "text-income" : "text-expense"}`}>{v.pnl >= 0 ? "+" : "−"}{money(Math.abs(v.pnl))} ({v.pnlPct.toFixed(1)}%)</p>
                 </>
               ) : <p className="mt-3 text-sm text-muted-foreground">{t("Harga belum tersedia, coba lagi nanti.")}</p>}
             </Card>
@@ -133,7 +133,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
   return (
     <Card className="min-w-0 p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`num truncate text-lg font-semibold ${tone ?? ""}`}>{value}</p>
+      <p className={`num break-words text-base font-semibold sm:text-lg ${tone ?? ""}`}>{value}</p>
     </Card>
   );
 }
