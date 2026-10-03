@@ -30,7 +30,7 @@ export function EntityDialog(props: {
   fields: FieldDef[] | ((v: Values) => FieldDef[]);
   initial: Values;
   onSubmit: (v: Values) => Promise<void>;
-  extra?: (v: Values) => ReactNode;
+  extra?: (v: Values, set: (k: string, v: unknown) => void) => ReactNode;
 }) {
   const [values, setValues] = useState<Values>(props.initial);
   const [busy, setBusy] = useState(false);
@@ -107,7 +107,7 @@ export function EntityDialog(props: {
               </div>
             );
           })}
-          {props.extra ? <div className="col-span-2">{props.extra(values)}</div> : null}
+          {props.extra ? <div className="col-span-2">{props.extra(values, set)}</div> : null}
           <DialogFooter className="col-span-2">
             <Button type="button" variant="ghost" onClick={() => props.onOpenChange(false)}>
               Batal

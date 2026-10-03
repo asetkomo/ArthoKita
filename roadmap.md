@@ -7,3 +7,9 @@
 - [x] Budget, multi akun, target tabungan, ekspor laporan
 - [x] OCR nota (web + endpoint n8n), endpoint n8n untuk bot Telegram/WhatsApp & pengingat
 - [x] Siap hosting Vercel + dokumentasi env
+- [x] Grafik tren pengeluaran per kategori (6 bulan) di dashboard
+- [x] Rekap tahunan (total, selisih, rata-rata bulanan) di /rekap
+- [x] Notifikasi email pengingat via n8n (?format=email di endpoint reminders)
+- [x] Impor CSV transaksi (format hasil ekspor) di halaman Transaksi
+- [x] Lampiran foto nota per transaksi (Supabase Storage bucket "receipts")
+- [x] Mode gelap/terang (tombol di sidebar & header mobile)

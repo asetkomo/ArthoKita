@@ -40,8 +40,11 @@ create table if not exists public.transactions (
   items jsonb,
   notes text,
   raw jsonb,
+  receipt_path text,
   created_at timestamptz not null default now()
 );
+-- Jika tabel transactions sudah dibuat sebelumnya, jalankan:
+-- alter table public.transactions add column if not exists receipt_path text;
 create index if not exists transactions_occurred_idx on public.transactions (occurred_at desc);
 create index if not exists transactions_category_idx on public.transactions (category_id);
 create index if not exists transactions_account_idx on public.transactions (account_id);

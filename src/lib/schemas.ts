@@ -46,6 +46,7 @@ export const transactionSchema = z.object({
   source: z.enum(["web", "telegram", "whatsapp", "ocr", "n8n"]).default("web"),
   items: z.array(itemSchema).max(200).nullable().default(null),
   notes: optText(1000),
+  receipt_path: optText(500),
 });
 export type TransactionInput = z.output<typeof transactionSchema>;
 

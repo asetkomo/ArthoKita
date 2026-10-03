@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
@@ -112,6 +112,26 @@ function Dashboard() {
           ) : <Empty text="Belum ada pengeluaran bulan ini." />}
         </Card>
       </div>
+
+      {d.categoryTrend?.categories?.length ? (
+        <Card className="mt-4 p-5">
+          <h2 className="mb-4 text-lg font-semibold">Tren pengeluaran per kategori (6 bulan)</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={d.categoryTrend.rows.map((r: any) => ({ ...r, label: shortMonth(r.month) }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+                <YAxis tickFormatter={(v) => compact(v)} tickLine={false} axisLine={false} fontSize={12} width={48} />
+                <Tooltip formatter={(v: number) => money(v)} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12 }} />
+                <Legend />
+                {d.categoryTrend.categories.map((c: string, i: number) => (
+                  <Area key={c} type="monotone" dataKey={c} stackId="1" stroke={PIE[i % PIE.length]} fill={PIE[i % PIE.length]} fillOpacity={0.5} strokeWidth={1.5} />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      ) : null}
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="p-5">

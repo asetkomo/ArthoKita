@@ -85,6 +85,7 @@ export async function createFromExternal(t: ExternalTx) {
     source: t.source,
     items: t.items ?? null,
     notes: t.notes ?? null,
+    receipt_path: null,
   };
   const tx = await insertTransaction(input, t.raw);
   const label = t.kind === "income" ? "Pemasukan" : t.kind === "expense" ? "Pengeluaran" : "Transfer";
@@ -187,6 +188,7 @@ export async function payDebt(debtId: string, accountId: string | null, date: st
     source: "web",
     items: null,
     notes: null,
+    receipt_path: null,
   });
   must(await db().from("debt_payments").insert({ debt_id: debtId, installment_no: paid + 1, amount: d.installment_amount, paid_at: date ?? today(), transaction_id: tx.id }));
   if (paid + 1 >= d.total_installments) await db().from("debts").update({ status: "paid_off" }).eq("id", debtId);
@@ -217,6 +219,7 @@ export async function paySubscription(id: string, accountId: string | null, date
     source: "web",
     items: null,
     notes: null,
+    receipt_path: null,
   });
   const next = addMonthsKeepDay(s.next_due, s.cycle === "yearly" ? 12 : 1);
   must(await db().from("subscriptions").update({ next_due: next }).eq("id", id));
@@ -273,7 +276,7 @@ export async function computeDashboard(month: string) {
   const trendStart = monthRange(shiftMonth(month, -5)).start;
   const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes] = await Promise.all([
     db().from("transactions").select("kind, amount_idr, category_id, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end),
-    db().from("transactions").select("kind, amount_idr, occurred_at").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
+    db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
     db().from("account_balances").select("*").eq("archived", false),
     db().from("goals").select("*").order("created_at"),
     db().from("subscriptions").select("amount, currency, cycle").eq("active", true),
@@ -300,12 +303,31 @@ export async function computeDashboard(month: string) {
     const m = shiftMonth(month, -i);
     trendMap.set(m, { month: m, income: 0, expense: 0 });
   }
+  const catTotals = new Map<string, number>();
+  const catByMonth = new Map<string, Map<string, number>>();
   for (const t of must<any[]>(trendRes)) {
-    const row = trendMap.get(String(t.occurred_at).slice(0, 7));
+    const m = String(t.occurred_at).slice(0, 7);
+    const row = trendMap.get(m);
     if (!row) continue;
-    if (t.kind === "income") row.income += Number(t.amount_idr);
-    else row.expense += Number(t.amount_idr);
+    const v = Number(t.amount_idr);
+    if (t.kind === "income") {
+      row.income += v;
+    } else {
+      row.expense += v;
+      const name = (t.category?.name ?? "Tanpa kategori") as string;
+      catTotals.set(name, (catTotals.get(name) ?? 0) + v);
+      const mm = catByMonth.get(m) ?? new Map<string, number>();
+      mm.set(name, (mm.get(name) ?? 0) + v);
+      catByMonth.set(m, mm);
+    }
   }
+  const topCats = [...catTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name]) => name);
+  const categoryTrend = [...trendMap.keys()].map((m) => {
+    const row: Record<string, number | string> = { month: m };
+    const mm = catByMonth.get(m);
+    for (const c of topCats) row[c] = mm?.get(c) ?? 0;
+    return row;
+  });
   const balances = must<any[]>(balRes).map((b) => ({ ...b, balance: Number(b.balance), balance_idr: b.currency === "USD" ? Number(b.balance) * rate : Number(b.balance) }));
   const debts = await computeDebts();
   const debtOutstandingIdr = debts.filter((d) => d.status === "active").reduce((a, d) => a + (d.currency === "USD" ? d.remaining_amount * rate : d.remaining_amount), 0);
@@ -321,6 +343,7 @@ export async function computeDashboard(month: string) {
     net: income - expense,
     byCategory: [...byCat.values()].sort((a, b) => b.value - a.value),
     trend: [...trendMap.values()],
+    categoryTrend: { categories: topCats, rows: categoryTrend },
     balances,
     totalBalanceIdr: balances.reduce((a, b) => a + b.balance_idr, 0),
     debtOutstandingIdr,
@@ -342,4 +365,138 @@ export async function summaryText(month: string): Promise<string> {
 export async function categoryNames(): Promise<string[]> {
   const rows = must<any[]>(await db().from("categories").select("name, kind"));
   return rows.map((r) => `${r.name} (${r.kind})`);
+}
+
+/* ---------------- Yearly recap ---------------- */
+export async function computeYearly(year: string) {
+  const start = `${year}-01-01`;
+  const end = `${Number(year) + 1}-01-01`;
+  const rows = must<any[]>(
+    await db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end).neq("kind", "transfer"),
+  );
+  const months = new Map<string, { month: string; income: number; expense: number }>();
+  for (let i = 1; i <= 12; i++) months.set(`${year}-${String(i).padStart(2, "0")}`, { month: `${year}-${String(i).padStart(2, "0")}`, income: 0, expense: 0 });
+  const byCat = new Map<string, { name: string; color: string | null; value: number }>();
+  let income = 0;
+  let expense = 0;
+  for (const t of rows) {
+    const v = Number(t.amount_idr);
+    const row = months.get(String(t.occurred_at).slice(0, 7));
+    if (t.kind === "income") {
+      income += v;
+      if (row) row.income += v;
+    } else if (t.kind === "expense") {
+      expense += v;
+      if (row) row.expense += v;
+      const name = (t.category?.name ?? "Tanpa kategori") as string;
+      const cur = byCat.get(name) ?? { name, color: (t.category?.color ?? null) as string | null, value: 0 };
+      cur.value += v;
+      byCat.set(name, cur);
+    }
+  }
+  return {
+    year,
+    income,
+    expense,
+    net: income - expense,
+    avgIncome: income / 12,
+    avgExpense: expense / 12,
+    months: [...months.values()],
+    byCategory: [...byCat.values()].sort((a, b) => b.value - a.value),
+  };
+}
+
+/* ---------------- Email reminders (via n8n) ---------------- */
+const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+export function remindersEmail(list: Reminder[]): { subject: string; text: string; html: string } {
+  const t = today();
+  const subject = list.length ? `Pengingat Keuangan: ${list.length} tagihan (${t})` : `Tidak ada tagihan dekat (${t})`;
+  const text = remindersText(list);
+  const fmt = (n: number, c: string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: c, maximumFractionDigits: c === "USD" ? 2 : 0 }).format(n);
+  const items = list
+    .map((r) => {
+      const when = r.type === "budget" ? "Peringatan budget" : r.overdue ? `Terlambat ${-r.days_left} hari` : r.days_left === 0 ? "Hari ini" : `${r.days_left} hari lagi (${r.due_date})`;
+      return `<tr><td style="padding:8px 12px;border-bottom:1px solid #eee">${escHtml(r.title)}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-family:monospace">${escHtml(fmt(r.amount, r.currency))}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;color:${r.overdue ? "#c0392b" : "#666"}">${escHtml(when)}</td></tr>`;
+    })
+    .join("");
+  const html = list.length
+    ? `<div style="font-family:sans-serif;max-width:560px;margin:auto"><h2 style="color:#1d3b2f">Pengingat Keuangan</h2><table style="width:100%;border-collapse:collapse;font-size:14px">${items}</table><p style="color:#999;font-size:12px">Dikirim otomatis oleh Dompetku via n8n.</p></div>`
+    : `<div style="font-family:sans-serif"><p>🎉 Tidak ada tagihan dalam waktu dekat.</p></div>`;
+  return { subject, text, html };
+}
+
+/* ---------------- CSV import ---------------- */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]!;
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false;
+      } else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { cur.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      cur.push(field); field = "";
+      rows.push(cur); cur = [];
+    } else field += c;
+  }
+  if (field || cur.length) { cur.push(field); rows.push(cur); }
+  return rows;
+}
+
+function parseAmount(s: string): number {
+  const cleaned = s.replace(/[^\d.,-]/g, "");
+  // "1.234.567,89" (id) or "1234567.89" (raw export)
+  const n = cleaned.includes(",") ? Number(cleaned.replace(/\./g, "").replace(",", ".")) : Number(cleaned);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`jumlah "${s}" tidak valid`);
+  return n;
+}
+
+/** Import CSV dengan format hasil ekspor (Tanggal, Jenis, Kategori, Akun, ...). */
+export async function importCsv(text: string) {
+  const rows = parseCsv(text.replace(/^﻿/, ""));
+  const head = (rows[0] ?? []).map((h) => h.trim().toLowerCase());
+  const idx = (name: string) => head.indexOf(name);
+  if (idx("tanggal") < 0 || idx("jenis") < 0 || idx("jumlah") < 0) {
+    throw new Error("Format CSV tidak dikenali. Gunakan file hasil ekspor dengan kolom: Tanggal, Jenis, Kategori, Akun, Jumlah, Mata Uang, …");
+  }
+  let imported = 0;
+  const errors: string[] = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i]!;
+    if (r.every((c) => !c.trim())) continue;
+    try {
+      const kind = r[idx("jenis")]?.trim() ?? "";
+      if (kind !== "income" && kind !== "expense" && kind !== "transfer") throw new Error(`jenis "${kind}" tidak valid`);
+      const date = r[idx("tanggal")]?.trim() ?? "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`tanggal "${date}" tidak valid`);
+      const currency = (r[idx("mata uang")]?.trim().toUpperCase() || "IDR") as "IDR" | "USD";
+      if (currency !== "IDR" && currency !== "USD") throw new Error(`mata uang "${currency}" tidak valid`);
+      await createFromExternal({
+        kind,
+        amount: parseAmount(r[idx("jumlah")] ?? ""),
+        currency,
+        category: r[idx("kategori")]?.trim() || null,
+        account: r[idx("akun")]?.trim() || null,
+        to_account: kind === "transfer" ? r[idx("ke akun")]?.trim() || null : null,
+        description: r[idx("deskripsi")]?.trim() || null,
+        merchant: r[idx("merchant")]?.trim() || null,
+        date,
+        source: "web",
+        notes: r[idx("catatan")]?.trim() || null,
+        raw: null,
+      });
+      imported++;
+    } catch (e) {
+      errors.push(`Baris ${i + 1}: ${e instanceof Error ? e.message : "gagal"}`);
+    }
+  }
+  const message = `${imported} transaksi berhasil diimpor${errors.length ? `, ${errors.length} gagal` : ""}.`;
+  return { imported, failed: errors.length, errors: errors.slice(0, 10), message };
 }
