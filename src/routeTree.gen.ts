@@ -10,33 +10,103 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicN8nMessageRouteImport } from './routes/api/public/n8n/message'
+import { Route as ApiPublicN8nOcrRouteImport } from './routes/api/public/n8n/ocr'
+import { Route as ApiPublicN8nRemindersRouteImport } from './routes/api/public/n8n/reminders'
+import { Route as ApiPublicN8nSummaryRouteImport } from './routes/api/public/n8n/summary'
+import { Route as ApiPublicN8nTransactionsRouteImport } from './routes/api/public/n8n/transactions'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicN8nMessageRoute = ApiPublicN8nMessageRouteImport.update({
+  id: '/api/public/n8n/message',
+  path: '/api/public/n8n/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nOcrRoute = ApiPublicN8nOcrRouteImport.update({
+  id: '/api/public/n8n/ocr',
+  path: '/api/public/n8n/ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nRemindersRoute = ApiPublicN8nRemindersRouteImport.update({
+  id: '/api/public/n8n/reminders',
+  path: '/api/public/n8n/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nSummaryRoute = ApiPublicN8nSummaryRouteImport.update({
+  id: '/api/public/n8n/summary',
+  path: '/api/public/n8n/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nTransactionsRoute =
+  ApiPublicN8nTransactionsRouteImport.update({
+    id: '/api/public/n8n/transactions',
+    path: '/api/public/n8n/transactions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
+  '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
+  '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
+  '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
+  '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
+  '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
+  '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
+  '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
+  '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
+  '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/api/public/n8n/message'
+    | '/api/public/n8n/ocr'
+    | '/api/public/n8n/reminders'
+    | '/api/public/n8n/summary'
+    | '/api/public/n8n/transactions'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/api/public/n8n/message'
+    | '/api/public/n8n/ocr'
+    | '/api/public/n8n/reminders'
+    | '/api/public/n8n/summary'
+    | '/api/public/n8n/transactions'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/n8n/message'
+    | '/api/public/n8n/ocr'
+    | '/api/public/n8n/reminders'
+    | '/api/public/n8n/summary'
+    | '/api/public/n8n/transactions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicN8nMessageRoute: typeof ApiPublicN8nMessageRoute
+  ApiPublicN8nOcrRoute: typeof ApiPublicN8nOcrRoute
+  ApiPublicN8nRemindersRoute: typeof ApiPublicN8nRemindersRoute
+  ApiPublicN8nSummaryRoute: typeof ApiPublicN8nSummaryRoute
+  ApiPublicN8nTransactionsRoute: typeof ApiPublicN8nTransactionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +118,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/n8n/message': {
+      id: '/api/public/n8n/message'
+      path: '/api/public/n8n/message'
+      fullPath: '/api/public/n8n/message'
+      preLoaderRoute: typeof ApiPublicN8nMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/ocr': {
+      id: '/api/public/n8n/ocr'
+      path: '/api/public/n8n/ocr'
+      fullPath: '/api/public/n8n/ocr'
+      preLoaderRoute: typeof ApiPublicN8nOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/reminders': {
+      id: '/api/public/n8n/reminders'
+      path: '/api/public/n8n/reminders'
+      fullPath: '/api/public/n8n/reminders'
+      preLoaderRoute: typeof ApiPublicN8nRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/summary': {
+      id: '/api/public/n8n/summary'
+      path: '/api/public/n8n/summary'
+      fullPath: '/api/public/n8n/summary'
+      preLoaderRoute: typeof ApiPublicN8nSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/transactions': {
+      id: '/api/public/n8n/transactions'
+      path: '/api/public/n8n/transactions'
+      fullPath: '/api/public/n8n/transactions'
+      preLoaderRoute: typeof ApiPublicN8nTransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicN8nMessageRoute: ApiPublicN8nMessageRoute,
+  ApiPublicN8nOcrRoute: ApiPublicN8nOcrRoute,
+  ApiPublicN8nRemindersRoute: ApiPublicN8nRemindersRoute,
+  ApiPublicN8nSummaryRoute: ApiPublicN8nSummaryRoute,
+  ApiPublicN8nTransactionsRoute: ApiPublicN8nTransactionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
