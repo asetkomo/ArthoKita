@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /* Minimal in-memory PostgREST-like fake, enough for the bot flow. */
-type Row = Record<string, any>;
+// Loosely typed on purpose: rows are dynamic and accessed with dot notation
+// (strict noPropertyAccessFromIndexSignature would reject Record<string, any>).
+type Row = any;
 const tables: Record<string, Row[]> = {};
 function like(v: unknown, pattern: string, ci: boolean) {
   const re = new RegExp("^" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*") + "$", ci ? "i" : "");
