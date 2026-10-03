@@ -1,28 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { CashflowBarChart, DonutChart } from "@/components/charts";
+import { CHART_PALETTE as PIE } from "@/components/charts/shared";
+import { PENDING_MS, RekapSkeleton } from "@/components/skeletons";
 import { Empty } from "./dashboard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { yearlyQuery } from "@/lib/queries";
 import { currentMonth, shortMonth } from "@/lib/dates";
-import { compact, money } from "@/lib/format";
+import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -36,23 +26,17 @@ export const Route = createFileRoute("/_app/rekap")({
   loader: ({ context }) =>
     context.queryClient.ensureQueryData(yearlyQuery(currentMonth().slice(0, 4))),
   errorComponent: RouteError,
+  pendingComponent: RekapSkeleton,
+  pendingMs: PENDING_MS,
   component: RekapPage,
 });
-
-const PIE = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
 
 function RekapPage() {
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [year, setYear] = useState(currentMonth().slice(0, 4));
   const { data: d } = useQuery({ ...yearlyQuery(year), placeholderData: (p) => p });
-  if (!d) return null;
+  if (!d) return <RekapSkeleton />;
 
   return (
     <>
@@ -136,42 +120,11 @@ function RekapPage() {
       <Card className="mt-4 min-w-0 p-5">
         <h2 className="mb-4 text-lg font-semibold">{t("Arus kas per bulan")}</h2>
         <div className="h-72 short:h-52">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={d.months.map((m: any) => ({ ...m, label: shortMonth(m.month, locale) }))}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-              <YAxis
-                tickFormatter={(v) => compact(v)}
-                tickLine={false}
-                axisLine={false}
-                fontSize={12}
-                width={48}
-              />
-              <Tooltip
-                formatter={(v: number) => money(v)}
-                contentStyle={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                }}
-              />
-              <Legend />
-              <Bar
-                dataKey="income"
-                name={t("Pemasukan")}
-                fill="var(--income)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="expense"
-                name={t("Pengeluaran")}
-                fill="var(--expense)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <CashflowBarChart
+            data={d.months.map((m: any) => ({ ...m, label: shortMonth(m.month, locale) }))}
+            incomeLabel={t("Pemasukan")}
+            expenseLabel={t("Pengeluaran")}
+          />
         </div>
       </Card>
 
@@ -180,23 +133,16 @@ function RekapPage() {
           <h2 className="mb-2 text-lg font-semibold">{t("Pengeluaran per kategori (setahun)")}</h2>
           {d.byCategory.length ? (
             <div className="h-64 short:h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={d.byCategory.slice(0, 8)}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={55}
-                    outerRadius={95}
-                    paddingAngle={2}
-                  >
-                    {d.byCategory.slice(0, 8).map((c: any, i: number) => (
-                      <Cell key={i} fill={c.color ?? PIE[i % PIE.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => money(v)} />
-                </PieChart>
-              </ResponsiveContainer>
+              <DonutChart
+                data={d.byCategory.slice(0, 8).map((c: any, i: number) => ({
+                  name: c.name,
+                  value: c.value,
+                  color: c.color ?? PIE[i % PIE.length],
+                }))}
+                innerRadius={55}
+                outerRadius={95}
+                styledTooltip={false}
+              />
             </div>
           ) : (
             <Empty text={t("Belum ada pengeluaran tahun ini.")} />

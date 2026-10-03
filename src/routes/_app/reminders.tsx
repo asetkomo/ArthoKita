@@ -6,6 +6,7 @@ import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank } from "lucide-re
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { Empty } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/_app/reminders")({
     pageHead("Pengingat", "Daftar cicilan, langganan, dan budget yang perlu diperhatikan."),
   loader: ({ context }) => context.queryClient.ensureQueryData(remindersQuery(30)),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: RemindersPage,
 });
 

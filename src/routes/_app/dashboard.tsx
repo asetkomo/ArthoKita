@@ -2,19 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
@@ -26,13 +13,21 @@ import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { TransactionDialog, newTxDraft, type TxDraft } from "@/components/transaction-dialog";
 import { AssetsOverview } from "@/components/assets-overview";
+import {
+  CashflowAreaChart,
+  DonutChart,
+  NetWorthChart,
+  StackedAreaChart,
+} from "@/components/charts";
+import { CHART_PALETTE as PIE } from "@/components/charts/shared";
+import { PENDING_MS, DashboardSkeleton } from "@/components/skeletons";
 import { ReceiptScanner } from "@/components/receipt-scanner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { dashboardQuery, netWorthQuery } from "@/lib/queries";
 import { currentMonth, dateLabel, monthLabel, shiftMonth, shortMonth } from "@/lib/dates";
-import { compact, money } from "@/lib/format";
+import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -45,16 +40,10 @@ export const Route = createFileRoute("/_app/dashboard")({
     ),
   loader: ({ context }) => context.queryClient.ensureQueryData(dashboardQuery(currentMonth())),
   errorComponent: RouteError,
+  pendingComponent: DashboardSkeleton,
+  pendingMs: PENDING_MS,
   component: Dashboard,
 });
-
-const PIE = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
 
 function Dashboard() {
   const { t, lang } = useI18n();
@@ -66,7 +55,7 @@ function Dashboard() {
     open: false,
     draft: newTxDraft(),
   });
-  if (!d) return null;
+  if (!d) return <DashboardSkeleton />;
 
   return (
     <>
@@ -158,55 +147,11 @@ function Dashboard() {
         <Card className="min-w-0 p-5 lg:col-span-2">
           <h2 className="mb-4 text-lg font-semibold">{t("Arus kas 6 bulan")}</h2>
           <div className="h-64 short:h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={d.trend.map((t: any) => ({ ...t, label: shortMonth(t.month, locale) }))}
-              >
-                <defs>
-                  <linearGradient id="gi" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--income)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--income)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="ge" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--expense)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--expense)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis
-                  tickFormatter={(v) => compact(v)}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={12}
-                  width={48}
-                />
-                <Tooltip
-                  formatter={(v: number) => money(v)}
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="income"
-                  name={t("Pemasukan")}
-                  stroke="var(--income)"
-                  fill="url(#gi)"
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="expense"
-                  name={t("Pengeluaran")}
-                  stroke="var(--expense)"
-                  fill="url(#ge)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <CashflowAreaChart
+              data={d.trend.map((t: any) => ({ ...t, label: shortMonth(t.month, locale) }))}
+              incomeLabel={t("Pemasukan")}
+              expenseLabel={t("Pengeluaran")}
+            />
           </div>
         </Card>
         <Card className="min-w-0 p-5">
@@ -214,31 +159,15 @@ function Dashboard() {
           {d.byCategory.length ? (
             <>
               <div className="h-40">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={d.byCategory}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={42}
-                      outerRadius={70}
-                      paddingAngle={2}
-                    >
-                      {d.byCategory.map((c: any, i: number) => (
-                        <Cell key={i} fill={c.color ?? PIE[i % PIE.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v: number) => money(v)}
-                      contentStyle={{
-                        background: "var(--card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: 12,
-                        color: "var(--foreground)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <DonutChart
+                  data={d.byCategory.map((c: any, i: number) => ({
+                    name: c.name,
+                    value: c.value,
+                    color: c.color ?? PIE[i % PIE.length],
+                  }))}
+                  innerRadius={42}
+                  outerRadius={70}
+                />
               </div>
               <ul className="mt-2 space-y-1.5 text-sm">
                 {d.byCategory.slice(0, 5).map((c: any, i: number) => (
@@ -267,45 +196,13 @@ function Dashboard() {
             {t("Tren pengeluaran per kategori (6 bulan)")}
           </h2>
           <div className="h-64 short:h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={d.categoryTrend.rows.map((r: any) => ({
-                  ...r,
-                  label: shortMonth(r.month, locale),
-                }))}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis
-                  tickFormatter={(v) => compact(v)}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={12}
-                  width={48}
-                />
-                <Tooltip
-                  formatter={(v: number) => money(v)}
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
-                />
-                <Legend />
-                {d.categoryTrend.categories.map((c: string, i: number) => (
-                  <Area
-                    key={c}
-                    type="monotone"
-                    dataKey={c}
-                    stackId="1"
-                    stroke={PIE[i % PIE.length]}
-                    fill={PIE[i % PIE.length]}
-                    fillOpacity={0.5}
-                    strokeWidth={1.5}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
+            <StackedAreaChart
+              data={d.categoryTrend.rows.map((r: any) => ({
+                ...r,
+                label: shortMonth(r.month, locale),
+              }))}
+              keys={d.categoryTrend.categories}
+            />
           </div>
         </Card>
       ) : null}
@@ -326,42 +223,10 @@ function Dashboard() {
             </div>
           </div>
           <div className="h-56 short:h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={nw.map((r) => ({ ...r, label: shortMonth(r.month, locale) }))}>
-                <defs>
-                  <linearGradient id="gnw" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis
-                  domain={["auto", "auto"]}
-                  tickFormatter={(v) => compact(v)}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={12}
-                  width={48}
-                />
-                <Tooltip
-                  formatter={(v: number) => money(v)}
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="netWorth"
-                  name={t("Kekayaan bersih (12 bulan)")}
-                  stroke="var(--chart-1)"
-                  fill="url(#gnw)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <NetWorthChart
+              data={nw.map((r) => ({ ...r, label: shortMonth(r.month, locale) }))}
+              label={t("Kekayaan bersih (12 bulan)")}
+            />
           </div>
         </Card>
       ) : null}

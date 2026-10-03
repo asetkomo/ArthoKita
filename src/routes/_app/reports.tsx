@@ -1,20 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { SortButton, type SortDirection } from "@/components/sort-button";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { CategoryLineChart } from "@/components/charts";
+import { CHART_PALETTE as FALLBACK } from "@/components/charts/shared";
+import { PENDING_MS, ReportsSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,22 +25,10 @@ export const Route = createFileRoute("/_app/reports")({
       context.queryClient.ensureQueryData(yearlySummaryQuery(Number(currentMonth().slice(0, 4)))),
     ]),
   errorComponent: RouteError,
+  pendingComponent: ReportsSkeleton,
+  pendingMs: PENDING_MS,
   component: ReportsPage,
 });
-
-const FALLBACK = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-];
-const tooltipStyle = {
-  background: "var(--card)",
-  border: "1px solid var(--border)",
-  borderRadius: 12,
-  color: "var(--foreground)",
-};
 
 function ReportsPage() {
   const { t } = useI18n();
@@ -130,35 +111,14 @@ function CategoryTrend() {
             })}
           </div>
           <div className="h-64 sm:h-80 short:h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chart}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis
-                  tickFormatter={(v) => compact(v)}
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={12}
-                  width={48}
-                />
-                <Tooltip formatter={(v: number) => money(v)} contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                {cats.map((c, i) =>
-                  sel.includes(c.id) ? (
-                    <Line
-                      key={c.id}
-                      type="monotone"
-                      dataKey={c.id}
-                      name={c.name}
-                      stroke={c.color ?? FALLBACK[i % FALLBACK.length]}
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      connectNulls
-                    />
-                  ) : null,
-                )}
-              </LineChart>
-            </ResponsiveContainer>
+            <CategoryLineChart
+              data={chart}
+              series={cats.flatMap((c, i) =>
+                sel.includes(c.id)
+                  ? [{ key: c.id, name: c.name, color: c.color ?? FALLBACK[i % FALLBACK.length]! }]
+                  : [],
+              )}
+            />
           </div>
         </>
       )}

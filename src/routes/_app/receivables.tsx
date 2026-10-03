@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { Pagination } from "@/components/pagination";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { CURRENCY_OPTIONS, EntityDialog } from "@/components/entity-dialog";
 import { Empty, RowActions } from "@/components/crud-page";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -28,6 +29,8 @@ export const Route = createFileRoute("/_app/receivables")({
     pageHead("Piutang", "Catat uang yang dipinjam kerabat, terima cicilan, dan pantau sisanya."),
   loader: ({ context }) => context.queryClient.ensureQueryData(receivablesQuery()),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: ReceivablesPage,
 });
 

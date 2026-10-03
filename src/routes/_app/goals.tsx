@@ -6,6 +6,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { EntityDialog, type FieldDef } from "@/components/entity-dialog";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_app/goals")({
     pageHead("Target Tabungan", "Pantau progres tabungan untuk setiap tujuan keuanganmu."),
   loader: ({ context }) => context.queryClient.ensureQueryData(rowsQuery("goals")),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: GoalsPage,
 });
 

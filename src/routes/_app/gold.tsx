@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/app-shell";
 import { Pagination } from "@/components/pagination";
 import { SortButton, type SortDirection } from "@/components/sort-button";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,8 @@ export const Route = createFileRoute("/_app/gold")({
     ),
   loader: ({ context }) => context.queryClient.ensureQueryData(goldQuery()),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: GoldPage,
 });
 

@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { CURRENCY_OPTIONS } from "@/components/entity-dialog";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/_app/accounts")({
       context.queryClient.ensureQueryData(rowsQuery("accounts")),
     ]),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: AccountsPage,
 });
 

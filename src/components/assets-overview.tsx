@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Coins, HandCoins, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
+import { DonutChart } from "@/components/charts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -138,31 +138,15 @@ export function AssetsOverview() {
         {a.composition.length ? (
           <>
             <div className="h-40">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={a.composition.map((c: any) => ({ ...c, name: LABEL[c.key] }))}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={42}
-                    outerRadius={70}
-                    paddingAngle={2}
-                  >
-                    {a.composition.map((c: any) => (
-                      <Cell key={c.key} fill={COLORS[c.key]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v: number) => money(v)}
-                    contentStyle={{
-                      background: "var(--card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 12,
-                      color: "var(--foreground)",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <DonutChart
+                data={a.composition.map((c: any) => ({
+                  name: LABEL[c.key]!,
+                  value: c.value,
+                  color: COLORS[c.key]!,
+                }))}
+                innerRadius={42}
+                outerRadius={70}
+              />
             </div>
             <ul className="mt-2 space-y-1.5 text-sm">
               {a.composition.map((c: any) => (

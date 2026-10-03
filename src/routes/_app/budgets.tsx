@@ -3,6 +3,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +20,8 @@ export const Route = createFileRoute("/_app/budgets")({
     pageHead("Budget", "Batas pengeluaran bulanan per kategori dengan peringatan otomatis."),
   loader: ({ context }) => context.queryClient.ensureQueryData(budgetsQuery(currentMonth())),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: BudgetsPage,
 });
 

@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/app-shell";
 import { Pagination } from "@/components/pagination";
 import { SortButton, type SortDirection } from "@/components/sort-button";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { TransactionDialog, newTxDraft, type TxDraft } from "@/components/transaction-dialog";
 import { ReceiptScanner } from "@/components/receipt-scanner";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -68,6 +69,8 @@ export const Route = createFileRoute("/_app/transactions")({
   head: () => pageHead("Transaksi", "Catat dan kelola semua pemasukan, pengeluaran, dan transfer."),
   loader: ({ context }) => context.queryClient.ensureQueryData(txQuery({ month: currentMonth() })),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: TransactionsPage,
 });
 

@@ -5,6 +5,7 @@ import { CheckCircle2, Plus, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { CURRENCY_OPTIONS } from "@/components/entity-dialog";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { useConfirm } from "@/components/confirm-dialog";
@@ -27,6 +28,8 @@ export const Route = createFileRoute("/_app/debts")({
     pageHead("Hutang & Cicilan", "Pantau paylater, pinjaman, dan cicilan beserta jatuh temponya."),
   loader: ({ context }) => context.queryClient.ensureQueryData(debtsQuery()),
   errorComponent: RouteError,
+  pendingComponent: PageSkeleton,
+  pendingMs: PENDING_MS,
   component: DebtsPage,
 });
 
