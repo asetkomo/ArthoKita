@@ -64,3 +64,32 @@ export function readSession(): { u: string } | null {
 export function destroySession(): void {
   deleteCookie(COOKIE, cookieOpts);
 }
+
+// Two-step login: short-lived proof that the password step passed. The HMAC is
+// domain-separated so a challenge can never validate as a session cookie.
+const CHALLENGE_TTL = 5 * 60_000;
+const CHALLENGE_TAG = "totp-challenge.";
+
+export function createLoginChallenge(username: string, now = Date.now()): string {
+  const payload = Buffer.from(JSON.stringify({ u: username, exp: now + CHALLENGE_TTL })).toString(
+    "base64url",
+  );
+  return `${payload}.${sign(CHALLENGE_TAG + payload)}`;
+}
+
+/** Returns the username when the challenge is authentic and unexpired. */
+export function readLoginChallenge(token: string, now = Date.now()): string | null {
+  const [payload, sig, extra] = token.split(".");
+  if (!payload || !sig || extra !== undefined) return null;
+  if (!safeEq(sig, sign(CHALLENGE_TAG + payload))) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
+      u: unknown;
+      exp: unknown;
+    };
+    if (typeof data.u !== "string" || typeof data.exp !== "number" || data.exp < now) return null;
+    return data.u;
+  } catch {
+    return null;
+  }
+}

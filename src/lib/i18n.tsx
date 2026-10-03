@@ -505,6 +505,40 @@ const DICT: Record<string, string> = {
     "This goal has no savings account yet, so only the goal amount changes. Pick a savings account under Edit goal to record it as a transfer.",
   "Dana target masih kosong": "This goal has no funds yet",
   "Nominal harus diisi": "Enter an amount",
+  // Two-step login (TOTP)
+  "Kode verifikasi": "Verification code",
+  "Masukkan 6 digit kode dari aplikasi authenticator Anda.":
+    "Enter the 6-digit code from your authenticator app.",
+  Verifikasi: "Verify",
+  "Sesi verifikasi kedaluwarsa. Silakan masuk lagi.":
+    "Verification session expired. Please sign in again.",
+  "Kode verifikasi salah atau sudah dipakai": "Verification code is wrong or already used",
+  "Verifikasi dua langkah (2FA)": "Two-step verification (2FA)",
+  "Aktif — login meminta kode 6 digit dari aplikasi authenticator.":
+    "Active — sign-in asks for a 6-digit code from your authenticator app.",
+  "Belum aktif — login hanya memakai username dan password.":
+    "Not active — sign-in uses only username and password.",
+  "APP_TOTP_SECRET tidak valid sehingga diabaikan. Buat kunci baru di bawah.":
+    "APP_TOTP_SECRET is invalid and ignored. Generate a new key below.",
+  "Untuk menonaktifkan atau mengganti perangkat, hapus/ubah APP_TOTP_SECRET di Vercel lalu redeploy.":
+    "To disable it or switch devices, remove/change APP_TOTP_SECRET in Vercel and redeploy.",
+  "Gagal membuat kunci rahasia": "Failed to generate secret key",
+  "Membuat…": "Generating…",
+  "Buat kunci rahasia": "Generate secret key",
+  "Di Google Authenticator / Aegis, pilih tambah akun → masukkan kunci secara manual (berbasis waktu).":
+    "In Google Authenticator / Aegis, add an account → enter a setup key manually (time-based).",
+  "Tambahkan kunci ini sebagai APP_TOTP_SECRET di Vercel, lalu redeploy.":
+    "Add this key as APP_TOTP_SECRET in Vercel, then redeploy.",
+  "Setelah redeploy, login akan meminta kode 6 digit.":
+    "After redeploying, sign-in will ask for a 6-digit code.",
+  "Kunci rahasia": "Secret key",
+  "URI otpauth (untuk aplikasi yang mendukung impor tautan)":
+    "otpauth URI (for apps that can import links)",
+  "Kunci ini hanya ditampilkan sekarang dan tidak disimpan. Simpan cadangannya di tempat aman.":
+    "This key is shown only now and is not stored. Keep a backup somewhere safe.",
+  Salin: "Copy",
+  Disalin: "Copied",
+  "Gagal menyalin": "Copy failed",
 };
 
 const LangContext = createContext<{

@@ -27,8 +27,10 @@ function LoginPage() {
   const { t } = useI18n();
   const run = useServerFn(login);
   const [busy, setBusy] = useState(false);
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [code, setCode] = useState("");
 
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submitPassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     setBusy(true);
@@ -39,48 +41,121 @@ function LoginPage() {
           password: String(fd.get("password") ?? ""),
         },
       });
-      if (!res.ok) {
+      if (res.ok) {
+        window.location.href = "/dashboard";
+        return;
+      }
+      if ("needTotp" in res && res.needTotp) {
+        setChallenge(res.challenge);
+        setCode("");
+      } else {
         toast.error(
           res.locked
             ? t("Terlalu banyak percobaan masuk yang gagal. Coba lagi dalam 15 menit.")
             : t("Username atau password salah"),
         );
-        setBusy(false);
-        return;
       }
-      window.location.href = "/dashboard";
+      setBusy(false);
     } catch {
       toast.error(t("Username atau password salah"));
       setBusy(false);
     }
   }
 
+  async function submitCode(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!challenge) return;
+    setBusy(true);
+    try {
+      const res = await run({ data: { challenge, code } });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+        return;
+      }
+      if (res.locked) {
+        toast.error(t("Terlalu banyak percobaan masuk yang gagal. Coba lagi dalam 15 menit."));
+        setChallenge(null);
+      } else if ("expired" in res && res.expired) {
+        toast.error(t("Sesi verifikasi kedaluwarsa. Silakan masuk lagi."));
+        setChallenge(null);
+      } else {
+        toast.error(t("Kode verifikasi salah atau sudah dipakai"));
+        setCode("");
+      }
+      setBusy(false);
+    } catch {
+      toast.error(t("Kode verifikasi salah atau sudah dipakai"));
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="grid min-h-screen place-items-center bg-sidebar px-4">
-      <Card className="w-full max-w-sm p-8">
+      <Card className="w-full max-w-sm p-6 sm:p-8">
         <p className="font-display text-3xl font-bold">
           Dompetku<span className="text-sidebar-primary">.</span>
         </p>
         <p className="mt-1 text-sm text-ink-muted">{t("buku kas pribadi")}</p>
-        <form className="mt-6 space-y-4" onSubmit={submit}>
-          <div className="space-y-1.5">
-            <Label htmlFor="username">{t("Username")}</Label>
-            <Input id="username" name="username" autoComplete="username" required autoFocus />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">{t("Password")}</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? t("Memeriksa…") : t("Masuk")}
-          </Button>
-        </form>
+        {challenge ? (
+          <form className="mt-6 space-y-4" onSubmit={submitCode}>
+            <div className="space-y-1.5">
+              <Label htmlFor="code">{t("Kode verifikasi")}</Label>
+              <Input
+                id="code"
+                name="code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9 ]*"
+                maxLength={7}
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/[^0-9 ]/g, ""))}
+                className="num text-center text-lg tracking-[0.3em]"
+                required
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("Masukkan 6 digit kode dari aplikasi authenticator Anda.")}
+              </p>
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={busy || code.replace(/\s/g, "").length !== 6}
+            >
+              {busy ? t("Memeriksa…") : t("Verifikasi")}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              disabled={busy}
+              onClick={() => setChallenge(null)}
+            >
+              {t("Kembali")}
+            </Button>
+          </form>
+        ) : (
+          <form className="mt-6 space-y-4" onSubmit={submitPassword}>
+            <div className="space-y-1.5">
+              <Label htmlFor="username">{t("Username")}</Label>
+              <Input id="username" name="username" autoComplete="username" required autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">{t("Password")}</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? t("Memeriksa…") : t("Masuk")}
+            </Button>
+          </form>
+        )}
       </Card>
     </div>
   );
