@@ -13,19 +13,34 @@ function must<T>(res: Res<T>): T {
 export const today = () => todayStr(process.env["APP_TIMEZONE"] || "Asia/Jakarta");
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+/** True when PostgREST reports a table that has not been created yet (schema v3 not run). */
+export function isMissingTable(err: { message?: string; code?: string } | null | undefined): boolean {
+  if (!err) return false;
+  return err.code === "PGRST205" || err.code === "42P01" || /could not find the table|does not exist/i.test(err.message ?? "");
+}
+
 /* ---------------- Activity log ---------------- */
 export async function logActivity(action: string, entity?: string | null, detail?: unknown) {
   try {
-    await db().from("activity_log").insert({ action, entity: entity ?? null, detail: detail ?? null });
+    const res = await db().from("activity_log").insert({ action, entity: entity ?? null, detail: detail ?? null });
+    if (res.error && !isMissingTable(res.error)) console.error("activity log failed", res.error.message);
   } catch (e) {
     console.error("activity log failed", e);
   }
 }
 
 export async function listActivity(limit = 30) {
-  const res = await db().from("activity_log").select("*").order("created_at", { ascending: false }).limit(limit);
-  if (res.error) throw new Error(res.error.message);
-  return (res.data ?? []) as any[];
+  try {
+    const res = await db().from("activity_log").select("id, action, entity, detail, created_at").order("created_at", { ascending: false }).limit(limit);
+    if (res.error) {
+      if (!isMissingTable(res.error)) console.error("activity list failed", res.error.message);
+      return [] as any[];
+    }
+    return (res.data ?? []) as any[];
+  } catch (e) {
+    console.error("activity list failed", e);
+    return [] as any[];
+  }
 }
 
 
@@ -101,14 +116,14 @@ export async function insertTransaction(input: TransactionInput, raw?: unknown) 
 export async function updateTransaction(id: string, input: TransactionInput) {
   const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
   const res = await db().from("transactions").update(row).eq("id", id).select().single();
-  let data: Record<string, unknown> | null = null;
+  let data: Record<string, unknown>;
   if (res.error && isMissingReceiptColumn(res.error)) {
     const { receipt_path: _drop, ...fallback } = row;
     data = must<any>(await db().from("transactions").update(fallback).eq("id", id).select().single());
-  } else if (!res.error) {
-    data = res.data as Record<string, unknown>;
+  } else {
+    data = must<any>(res);
   }
-  if (data) await logActivity("transaction.update", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency });
+  await logActivity("transaction.update", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency, description: input.description ?? null });
   return data as any;
 }
 
