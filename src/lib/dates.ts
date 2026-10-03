@@ -45,21 +45,22 @@ export function addMonthsKeepDay(date: string, n: number, day?: number): string 
   return `${y2}-${String(m2 + 1).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
 }
 
-export function monthLabel(m: string): string {
-  return new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+export function monthLabel(m: string, locale = "id-ID"): string {
+  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(m + "-01T00:00:00Z"),
   );
 }
 
-export function shortMonth(m: string): string {
-  return new Intl.DateTimeFormat("id-ID", { month: "short", timeZone: "UTC" }).format(
+export function shortMonth(m: string, locale = "id-ID"): string {
+  return new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(
     new Date(m + "-01T00:00:00Z"),
   );
 }
 
-export function dateLabel(d: string | null | undefined): string {
+export function dateLabel(d: string | null | undefined, locale = "id-ID"): string {
   if (!d) return "-";
-  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
     new Date(d.slice(0, 10) + "T00:00:00Z"),
   );
 }
+
