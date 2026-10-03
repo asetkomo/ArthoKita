@@ -46,23 +46,44 @@ export async function listActivity(limit = 30) {
 
 
 /* ---------------- FX ---------------- */
+// Warm-lambda memo: one rate per day, re-checked every 10 min. Only real (cached/fetched) rates are
+// memoised; the "last known / env" fallback is retried on the next call, exactly as before.
+const FX_MEMO_TTL_MS = 10 * 60 * 1000;
+const fxMemo = new Map<string, { at: number; rate: Promise<{ rate: number; fresh: boolean }> }>();
+
 export async function getUsdIdr(): Promise<number> {
   const d = today();
+  const hit = fxMemo.get(d);
+  if (hit && Date.now() - hit.at < FX_MEMO_TTL_MS) return (await hit.rate).rate;
+  const rate = loadUsdIdr(d);
+  fxMemo.clear();
+  fxMemo.set(d, { at: Date.now(), rate });
+  try {
+    const r = await rate;
+    if (!r.fresh && fxMemo.get(d)?.rate === rate) fxMemo.delete(d);
+    return r.rate;
+  } catch (e) {
+    if (fxMemo.get(d)?.rate === rate) fxMemo.delete(d);
+    throw e;
+  }
+}
+
+async function loadUsdIdr(d: string): Promise<{ rate: number; fresh: boolean }> {
   const cached = await db().from("fx_rates").select("rate").eq("rate_date", d).eq("base", "USD").eq("quote", "IDR").maybeSingle();
-  if (cached.data) return Number(cached.data.rate);
+  if (cached.data) return { rate: Number(cached.data.rate), fresh: true };
   try {
     const res = await fetch("https://open.er-api.com/v6/latest/USD");
     const j: any = await res.json();
     const rate = Number(j?.rates?.IDR);
     if (rate > 0) {
       await db().from("fx_rates").upsert({ rate_date: d, base: "USD", quote: "IDR", rate });
-      return rate;
+      return { rate, fresh: true };
     }
   } catch (e) {
     console.error("FX fetch failed", e);
   }
   const last = await db().from("fx_rates").select("rate").order("rate_date", { ascending: false }).limit(1).maybeSingle();
-  return last.data ? Number(last.data.rate) : Number(process.env["FALLBACK_USD_IDR"] || 16000);
+  return { rate: last.data ? Number(last.data.rate) : Number(process.env["FALLBACK_USD_IDR"] || 16000), fresh: false };
 }
 
 async function toIdr(amount: number, currency: string, rate?: number): Promise<number> {
@@ -284,8 +305,12 @@ export async function exportCsv(month?: string) {
 /* ---------------- Budgets ---------------- */
 export async function computeBudgets(month: string) {
   const { start, end } = monthRange(month);
-  const budgets = must<any[]>(await db().from("budgets").select("*, category:categories(id,name,color)"));
-  const tx = must<any[]>(await db().from("transactions").select("category_id, amount_idr").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end));
+  const [budgetsRes, txRes] = await Promise.all([
+    db().from("budgets").select("*, category:categories(id,name,color)"),
+    db().from("transactions").select("category_id, amount_idr").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end),
+  ]);
+  const budgets = must<any[]>(budgetsRes);
+  const tx = must<any[]>(txRes);
   const spent = new Map<string, number>();
   for (const t of tx) if (t.category_id) spent.set(t.category_id, (spent.get(t.category_id) ?? 0) + Number(t.amount_idr));
   return budgets.map((b) => {
@@ -297,8 +322,9 @@ export async function computeBudgets(month: string) {
 
 /* ---------------- Debts ---------------- */
 export async function computeDebts() {
-  const debts = must<any[]>(await db().from("debts").select("*").order("created_at"));
-  const pays = must<any[]>(await db().from("debt_payments").select("*").order("installment_no"));
+  const [debtsRes, paysRes] = await Promise.all([db().from("debts").select("*").order("created_at"), db().from("debt_payments").select("*").order("installment_no")]);
+  const debts = must<any[]>(debtsRes);
+  const pays = must<any[]>(paysRes);
   return debts.map((d) => {
     const payments = pays.filter((p) => p.debt_id === d.id);
     const paid = payments.length;
@@ -396,22 +422,39 @@ export type Reminder = {
   overdue: boolean;
 };
 
-export async function computeReminders(days = 30): Promise<Reminder[]> {
-  await applyMonthlyFees();
+type MaybePromise<T> = T | Promise<T>;
+/** Pre-fetched inputs so a caller that already loads them (dashboard) avoids duplicate queries. */
+export type ReminderInputs = {
+  /** Caller already ran applyMonthlyFees() for this request. */
+  skipFees?: boolean;
+  rate?: MaybePromise<number>;
+  debts?: MaybePromise<Awaited<ReturnType<typeof computeDebts>>>;
+  /** Budgets for the current month (today().slice(0, 7)). */
+  budgets?: MaybePromise<Awaited<ReturnType<typeof computeBudgets>>>;
+};
+
+export async function computeReminders(days = 30, pre: ReminderInputs = {}): Promise<Reminder[]> {
+  if (!pre.skipFees) await applyMonthlyFees();
   const t = today();
   const limit = addDays(t, days);
-  const rate = await getUsdIdr();
+  const [rate, debts, subsRes, accRes, budgets] = await Promise.all([
+    pre.rate ?? getUsdIdr(),
+    pre.debts ?? computeDebts(),
+    db().from("subscriptions").select("*").eq("active", true).lte("next_due", limit),
+    db().from("accounts").select("*").eq("archived", false),
+    pre.budgets ?? computeBudgets(t.slice(0, 7)),
+  ]);
   const out: Reminder[] = [];
-  for (const d of await computeDebts()) {
+  for (const d of debts) {
     if (!d.next_due || d.next_due > limit) continue;
     out.push({ type: "debt", id: d.id, title: `Cicilan ${d.name} (${d.paid_count + 1}/${d.total_installments})`, amount: d.installment_amount, currency: d.currency, amount_idr: await toIdr(d.installment_amount, d.currency, rate), due_date: d.next_due, days_left: diffDays(t, d.next_due), overdue: d.next_due < t });
   }
-  const subs = must<any[]>(await db().from("subscriptions").select("*").eq("active", true).lte("next_due", limit));
+  const subs = must<any[]>(subsRes);
   for (const s of subs) {
     const amt = withTax(Number(s.amount), s.tax_percent);
     out.push({ type: "subscription", id: s.id, title: `Langganan ${s.name} (${s.cycle === "yearly" ? "tahunan" : "bulanan"})`, amount: amt, currency: s.currency, amount_idr: await toIdr(amt, s.currency, rate), due_date: s.next_due, days_left: diffDays(t, s.next_due), overdue: s.next_due < t });
   }
-  for (const a of must<any[]>(await db().from("accounts").select("*").eq("archived", false))) {
+  for (const a of must<any[]>(accRes)) {
     if (!(Number(a.monthly_fee) > 0)) continue;
     let due = feeDate(t.slice(0, 7), Number(a.monthly_fee_day) || 1);
     if (due < t) due = feeDate(shiftMonth(t.slice(0, 7), 1), Number(a.monthly_fee_day) || 1);
@@ -419,7 +462,7 @@ export async function computeReminders(days = 30): Promise<Reminder[]> {
     const amt = Number(a.monthly_fee);
     out.push({ type: "fee", id: a.id, title: `Biaya bulanan ${a.name} (otomatis)`, amount: amt, currency: a.currency, amount_idr: await toIdr(amt, a.currency, rate), due_date: due, days_left: diffDays(t, due), overdue: false });
   }
-  for (const b of await computeBudgets(t.slice(0, 7))) {
+  for (const b of budgets) {
     if (b.percent >= b.alert_percent) {
       out.push({ type: "budget", id: b.id, title: `Budget ${b.category} terpakai ${Math.round(b.percent)}%`, amount: b.spent, currency: "IDR", amount_idr: b.spent, due_date: t, days_left: 0, overdue: b.percent >= 100 });
     }
@@ -441,11 +484,14 @@ export function remindersText(list: Reminder[]): string {
 /** Record due monthly account fees once per month (idempotent via notes marker). */
 export async function applyMonthlyFees(): Promise<number> {
   const t = today();
-  const accRes = await db().from("accounts").select("*");
+  // Both reads are independent; fetch them together to save a round trip.
+  const [accRes, existing] = await Promise.all([
+    db().from("accounts").select("*"),
+    db().from("transactions").select("notes").like("notes", `[auto:monthly_fee:%:${t.slice(0, 7)}]`),
+  ]);
   if (accRes.error) return 0;
   const candidates = (accRes.data ?? []).filter((a: any) => Number(a.monthly_fee) > 0);
   if (!candidates.length) return 0;
-  const existing = await db().from("transactions").select("notes").like("notes", `[auto:monthly_fee:%:${t.slice(0, 7)}]`);
   const recorded = new Set<string>((existing.data ?? []).map((r: any) => String(r.notes)));
   const due = dueMonthlyFees(candidates as any[], t, recorded);
   if (!due.length) return 0;
@@ -462,16 +508,27 @@ export async function computeDashboard(month: string) {
   await applyMonthlyFees();
   const { start, end } = monthRange(month);
   const trendStart = monthRange(shiftMonth(month, -5)).start;
-  const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes] = await Promise.all([
+  const curMonth = today().slice(0, 7);
+  // applyMonthlyFees ran above, so everything below can load in one parallel wave; debts, rate and
+  // the current month's budgets are shared with computeReminders instead of being fetched twice.
+  const rateP = getUsdIdr();
+  const debtsP = computeDebts();
+  const budgetsP = computeBudgets(month);
+  const curBudgetsP = month === curMonth ? budgetsP : computeBudgets(curMonth);
+  const remindersP = computeReminders(14, { skipFees: true, rate: rateP, debts: debtsP, budgets: curBudgetsP });
+  const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes, rate, debts, budgets, reminders] = await Promise.all([
     db().from("transactions").select("kind, amount_idr, category_id, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end),
     db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
     db().from("account_balances").select("*").eq("archived", false),
     db().from("goals").select("*").order("created_at"),
     db().from("subscriptions").select("*").eq("active", true),
     db().from("transactions").select("*, category:categories(name,color), account:accounts!transactions_account_id_fkey(name)").order("occurred_at", { ascending: false }).order("created_at", { ascending: false }).limit(8),
+    rateP,
+    debtsP,
+    budgetsP,
+    remindersP,
   ]);
   const tx = must<any[]>(txRes);
-  const rate = await getUsdIdr();
   let income = 0;
   let expense = 0;
   const byCat = new Map<string, { name: string; color: string | null; value: number }>();
@@ -517,7 +574,6 @@ export async function computeDashboard(month: string) {
     return row;
   });
   const balances = must<any[]>(balRes).map((b) => ({ ...b, balance: Number(b.balance), balance_idr: b.currency === "USD" ? Number(b.balance) * rate : Number(b.balance) }));
-  const debts = await computeDebts();
   const debtOutstandingIdr = debts.filter((d) => d.status === "active").reduce((a, d) => a + (d.currency === "USD" ? d.remaining_amount * rate : d.remaining_amount), 0);
   const subsMonthlyIdr = must<any[]>(subsRes).reduce((a, s) => {
     const v = withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? rate : 1);
@@ -538,8 +594,8 @@ export async function computeDashboard(month: string) {
     totalBalanceIdr: balances.reduce((a, b) => a + b.balance_idr, 0),
     debtOutstandingIdr,
     subsMonthlyIdr,
-    budgets: await computeBudgets(month),
-    reminders: (await computeReminders(14)).slice(0, 6),
+    budgets,
+    reminders: reminders.slice(0, 6),
     recent: must<any[]>(recentRes),
     goals: must<any[]>(goalsRes).map((g) => ({ ...g, target_amount: Number(g.target_amount), saved_amount: Number(g.saved_amount) })),
   };
@@ -850,16 +906,17 @@ export async function sendReminderEmail(days: number, to?: string) {
 export async function netWorthSeries(months = 12, endMonth: string) {
   const { end } = monthRange(endMonth);
   const assets = await import("./assets.server");
-  const [rate, accRes, txRes, goldRows, prices] = await Promise.all([
-    getUsdIdr(),
+  const rateP = getUsdIdr();
+  const [rate, accRes, txRes, goldRows, prices, recv] = await Promise.all([
+    rateP,
     db().from("accounts").select("initial_balance, currency"),
     db().from("transactions").select("occurred_at, kind, amount_idr").neq("kind", "transfer").lt("occurred_at", end).limit(200000),
     assets.goldGramsByMonth(),
     assets.getGoldPrices().catch(() => ({ world: null, antam: null })),
+    rateP.then((r) => assets.receivableDeltasByMonth(r)),
   ]);
   const accs = must<any[]>(accRes);
   const rows = must<any[]>(txRes);
-  const recv = await assets.receivableDeltasByMonth(rate);
   let initial = 0;
   for (const a of accs) initial += Number(a.initial_balance) * (a.currency === "USD" ? rate : 1);
   const first = shiftMonth(endMonth, -(months - 1));

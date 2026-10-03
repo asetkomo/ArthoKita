@@ -92,11 +92,10 @@ export async function goldSummary(options: GoldListOptions = {}) {
     if (isMissingTable(res.error)) return { ready: false as const };
     throw new Error(res.error.message);
   }
-  const all = await db().from("gold_purchases").select("kind, grams, price_per_gram, total").order("occurred_at", { ascending: false });
+  const [all, prices] = await Promise.all([db().from("gold_purchases").select("kind, grams, price_per_gram, total").order("occurred_at", { ascending: false }), getGoldPrices()]);
   if (all.error) throw new Error(all.error.message);
   const rows = (res.data ?? []).map((r: any) => ({ ...r, grams: Number(r.grams), price_per_gram: Number(r.price_per_gram), total: Number(r.total) }));
   const holdingsRows = (all.data ?? []).map((r: any) => ({ ...r, grams: Number(r.grams), price_per_gram: Number(r.price_per_gram), total: Number(r.total) }));
-  const prices = await getGoldPrices();
   return { ready: true as const, rows, total: res.count ?? rows.length, holdings: goldHoldings(holdingsRows), prices };
 }
 
@@ -151,9 +150,10 @@ export async function goldGramsByMonth(): Promise<{ month: string; grams: number
 export async function listReceivables(options: { offset?: number; limit?: number } = {}) {
   const offset = options.offset ?? 0;
   const limit = options.limit ?? 24;
-  const [r, p] = await Promise.all([
+  const [r, p, outstanding] = await Promise.all([
     db().from("receivables").select("*", { count: "exact" }).order("lent_at", { ascending: false }).range(offset, offset + limit - 1),
     db().from("receivable_payments").select("id, receivable_id, amount, paid_at, account_id").order("paid_at"),
+    db().from("receivables").select("id, amount, currency, status").eq("status", "active"),
   ]);
   if (r.error || p.error) {
     if (isMissingTable(r.error) || isMissingTable(p.error)) return { ready: false as const };
@@ -163,7 +163,6 @@ export async function listReceivables(options: { offset?: number; limit?: number
     const payments = (p.data ?? []).filter((y: any) => y.receivable_id === x.id).map((y: any) => ({ ...y, amount: Number(y.amount) }));
     return { ...x, amount: Number(x.amount), payments, ...receivableStatus(Number(x.amount), payments) };
   });
-  const outstanding = await db().from("receivables").select("id, amount, currency, status").eq("status", "active");
   const outstandingRows = (outstanding.data ?? []).map((x: any) => {
     const paid = (p.data ?? []).filter((y: any) => y.receivable_id === x.id).reduce((a: number, y: any) => a + Number(y.amount), 0);
     return { currency: String(x.currency), remaining: Math.max(0, Number(x.amount) - paid) };
@@ -256,8 +255,8 @@ export async function receivableDeltasByMonth(rate: number): Promise<{ month: st
 
 /** Dashboard overview: asset composition, gold position, receivables, goals and today's gold prices. */
 export async function assetsOverview() {
-  const rate = await getUsdIdr();
-  const [bal, goals, gold, rec] = await Promise.all([
+  const [rate, bal, goals, gold, rec] = await Promise.all([
+    getUsdIdr(),
     db().from("account_balances").select("type, currency, balance").eq("archived", false),
     db().from("goals").select("target_amount, saved_amount"),
     goldSummary({ limit: 1 }),
