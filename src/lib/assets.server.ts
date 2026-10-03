@@ -123,11 +123,12 @@ export async function listReceivables(options: { offset?: number; limit?: number
     return { ...x, amount: Number(x.amount), payments, ...receivableStatus(Number(x.amount), payments) };
   });
   const outstanding = await db().from("receivables").select("id, amount, currency, status").eq("status", "active");
-  const outstandingIdr = (outstanding.data ?? []).filter((x: any) => x.currency === "IDR").reduce((sum: number, x: any) => {
+  const outstandingRows = (outstanding.data ?? []).map((x: any) => {
     const paid = (p.data ?? []).filter((y: any) => y.receivable_id === x.id).reduce((a: number, y: any) => a + Number(y.amount), 0);
-    return sum + Math.max(0, Number(x.amount) - paid);
-  }, 0);
-  return { ready: true as const, items, total: r.count ?? items.length, outstandingIdr };
+    return { currency: String(x.currency), remaining: Math.max(0, Number(x.amount) - paid) };
+  });
+  const outstandingIdr = outstandingRows.filter((x) => x.currency === "IDR").reduce((sum, x) => sum + x.remaining, 0);
+  return { ready: true as const, items, total: r.count ?? items.length, outstandingIdr, outstandingRows };
 }
 
 export async function saveReceivable(id: string | null, v: ReceivableInput) {
@@ -235,7 +236,7 @@ export async function assetsOverview() {
         return { ready: true, grams: h.grams, cost: h.cost, avgPrice: h.avgPrice, realized: h.realized, world: val(gold.prices.world), antam: val(gold.prices.antam) };
       })()
     : { ready: false as const };
-  const receivablesOutstanding = rec.ready ? rec.items.filter((i: any) => i.status !== "paid").reduce((a: number, i: any) => a + i.remaining * (i.currency === "USD" ? rate : 1), 0) : 0;
+  const receivablesOutstanding = rec.ready ? rec.outstandingRows.reduce((a: number, i: any) => a + i.remaining * (i.currency === "USD" ? rate : 1), 0) : 0;
   const g = (goals.data ?? []) as any[];
   const goalsSaved = g.reduce((a, x) => a + Number(x.saved_amount), 0);
   const goalsTarget = g.reduce((a, x) => a + Number(x.target_amount), 0);

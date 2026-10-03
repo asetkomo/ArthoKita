@@ -97,14 +97,14 @@ function GoldPage() {
         {rows.length === 0 ? <p className="p-10 text-center text-sm text-muted-foreground">{t("Belum ada catatan emas.")}</p> : (
           <ul className="divide-y">
             {rows.map((r) => (
-              <li key={r.id} className="flex min-w-0 items-center gap-3 px-4 py-3">
+               <li key={r.id} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
                 <Badge variant={r.kind === "buy" ? "secondary" : "outline"} className="shrink-0">{r.kind === "buy" ? t("Beli") : t("Jual")}</Badge>
                 <div className="min-w-0 flex-1">
                    <p className="truncate text-sm font-medium">{r.grams} g{r.gold_type ? ` · ${r.gold_type}` : ""}{r.place ? ` · ${r.place}` : ""}</p>
                    <p className="truncate text-xs text-muted-foreground">{dateLabel(r.occurred_at, locale)} · {money(r.price_per_gram)}/g{r.product_number ? ` · ${r.product_number}` : ""}</p>
                 </div>
-                <p className="num shrink-0 text-sm font-semibold">{money(r.total)}</p>
-                 <RowActions onEdit={() => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, gold_type: r.gold_type, product_number: r.product_number, notes: r.notes })} onDelete={() => crud.remove(r.id, `${r.grams} g`)} />
+                 <p className="num shrink-0 text-sm font-semibold">{money(r.total)}</p>
+                 <div className="col-start-2 col-end-4 justify-self-end sm:col-auto"><RowActions onEdit={() => crud.openEdit({ id: r.id, kind: r.kind, occurred_at: r.occurred_at, grams: r.grams, price_per_gram: r.price_per_gram, total: r.total, place: r.place, gold_type: r.gold_type, product_number: r.product_number, notes: r.notes })} onDelete={() => crud.remove(r.id, `${r.grams} g`)} /></div>
               </li>
             ))}
           </ul>

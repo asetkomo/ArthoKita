@@ -42,19 +42,19 @@ function RekapPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-5">
+         <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Total pemasukan")}</p>
-          <p className="num mt-2 text-2xl font-semibold text-income">{money(d.income)}</p>
+           <p className="num mt-2 truncate text-xl font-semibold text-income sm:text-2xl">{money(d.income)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{t("Rata-rata ")}{money(d.avgIncome)}/{t("bln")}</p>
         </Card>
-        <Card className="p-5">
+         <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Total pengeluaran")}</p>
-          <p className="num mt-2 text-2xl font-semibold text-expense">{money(d.expense)}</p>
+           <p className="num mt-2 truncate text-xl font-semibold text-expense sm:text-2xl">{money(d.expense)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{t("Rata-rata ")}{money(d.avgExpense)}/{t("bln")}</p>
         </Card>
-        <Card className="p-5">
+         <Card className="min-w-0 p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Selisih setahun")}</p>
-          <p className={`num mt-2 text-2xl font-semibold ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
+           <p className={`num mt-2 truncate text-xl font-semibold sm:text-2xl ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{d.net >= 0 ? t("Surplus") : t("Defisit")} {money(Math.abs(d.net / 12))}/{t("bln")}</p>
         </Card>
         <Card className="bg-ink p-5 text-ink-foreground">

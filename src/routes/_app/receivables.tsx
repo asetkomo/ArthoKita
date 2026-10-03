@@ -82,7 +82,7 @@ function ReceivablesPage() {
                 </div>
                 <RowActions onEdit={() => setEdit({ open: true, id: r.id, initial: { name: r.name, borrower: r.borrower, amount: r.amount, currency: r.currency, lent_at: r.lent_at, due_date: r.due_date, account_id: r.account_id, notes: r.notes } })} onDelete={() => action(r.id, "delete", `${t("Hapus ")}${r.name}${t("?")}`, true)} />
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+               <div className="mt-4 grid grid-cols-1 gap-2 text-sm min-[430px]:grid-cols-3">
                 <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("Dipinjam")}</p><p className="num truncate font-semibold">{money(r.amount, r.currency)}</p></div>
                 <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("Sisa")}</p><p className="num truncate font-semibold text-expense">{money(r.remaining, r.currency)}</p></div>
                 <div className="min-w-0"><p className="text-xs text-muted-foreground">{t("Tenggat")}</p><p className="truncate font-semibold">{r.due_date ? dateLabel(r.due_date, locale) : "-"}</p></div>
@@ -99,9 +99,9 @@ function ReceivablesPage() {
               {r.payments.length ? (
                 <ul className="mt-3 divide-y rounded-lg border text-sm">
                   {r.payments.map((p: any) => (
-                    <li key={p.id} className="flex items-center justify-between gap-2 px-3 py-1.5">
-                      <span>{dateLabel(p.paid_at, locale)}</span>
-                      <span className="flex items-center gap-2"><span className="num">{money(p.amount, r.currency)}</span><Button size="icon" variant="ghost" className="size-7" aria-label={t("Batalkan")} onClick={() => action(p.id, "delete_payment", t("Batalkan pembayaran ini?"), true)}><Undo2 className="size-3.5" /></Button></span>
+                     <li key={p.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-1.5">
+                       <span className="truncate">{dateLabel(p.paid_at, locale)}</span>
+                       <span className="flex shrink-0 items-center gap-2"><span className="num">{money(p.amount, r.currency)}</span><Button size="icon" variant="ghost" className="size-7" aria-label={t("Batalkan")} onClick={() => action(p.id, "delete_payment", t("Batalkan pembayaran ini?"), true)}><Undo2 className="size-3.5" /></Button></span>
                     </li>
                   ))}
                 </ul>
