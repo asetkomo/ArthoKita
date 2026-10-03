@@ -40,6 +40,7 @@ function SubsPage() {
   const active = subs.filter((s) => s.active);
   const monthly = active.reduce((a, s) => a + (s.cycle === "yearly" ? toIdr(s) / 12 : toIdr(s)), 0);
   const today = todayStr();
+  const accName = (id: string | null | undefined) => accounts.find((a) => a.id === id)?.name;
 
   async function doPay(s: Subscription) {
     try { const r = await pay({ data: { id: s.id } }); await Promise.all([invalidateFor(qc, "transactions"), invalidateFor(qc, "subscriptions")]); toast.success(`${t("Tercatat. Tagihan berikutnya")} ${dateLabel(r.next_due, locale)}`); } catch (e) { toast.error(errMsg(e)); }
@@ -57,20 +58,30 @@ function SubsPage() {
           {subs.map((s) => {
             const left = diffDays(today, s.next_due);
             return (
-               <div key={s.id} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:flex sm:flex-wrap ${s.active ? "" : "opacity-50"}`}>
-                <div className="min-w-0 flex-1">
-                   <p className="min-w-0 truncate font-medium">{s.name}</p><Badge variant="outline" className="mt-1">{s.cycle === "yearly" ? t("Tahunan") : t("Bulanan")}</Badge>
-                  <p className={`text-xs ${left < 0 ? "text-expense" : left <= 3 ? "text-warning" : "text-muted-foreground"}`}>{t("Jatuh tempo")} {dateLabel(s.next_due, locale)} {left < 0 ? `(${t("terlambat")} ${-left} ${t("hari")})` : left === 0 ? `(${t("hari ini")})` : `(${left} ${t("hari lagi")})`}</p>
+              <div key={s.id} className={`grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center ${s.active ? "" : "opacity-50"}`}>
+                <div className="min-w-0">
+                  <p className="min-w-0 truncate font-medium">{s.name}</p>
+                  <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+                    <Badge variant="outline">{s.cycle === "yearly" ? t("Tahunan") : t("Bulanan")}</Badge>
+                    {Number(s.tax_percent) > 0 ? <Badge variant="secondary" className="num">+{t("pajak")} {s.tax_percent}%</Badge> : null}
+                    {s.active ? null : <Badge variant="outline">{t("Nonaktif")}</Badge>}
+                  </div>
                 </div>
-                 <div className="shrink-0 text-right">
-                  <p className="num font-semibold">{money(withTax(Number(s.amount), s.tax_percent), s.currency)}</p>
-                  {Number(s.tax_percent) > 0 ? <p className="num text-xs text-muted-foreground">{money(s.amount, s.currency)} + {t("pajak")} {s.tax_percent}%</p> : null}
-                  {s.currency === "USD" ? <p className="num text-xs text-muted-foreground">≈ {money(toIdr(s))}</p> : null}
+                <div className="min-w-0 text-right sm:row-span-2 sm:self-center">
+                  <p className="num break-words font-semibold">{money(withTax(Number(s.amount), s.tax_percent), s.currency)}</p>
+                  {Number(s.tax_percent) > 0 ? <p className="num break-words text-xs text-muted-foreground">{money(s.amount, s.currency)} + {s.tax_percent}%</p> : null}
+                  {s.currency === "USD" ? <p className="num break-words text-xs text-muted-foreground">≈ {money(toIdr(s))}</p> : null}
                 </div>
-                 <div className="col-span-2 flex flex-wrap items-center justify-end gap-1 sm:ml-auto">
-                   {s.active ? <Button size="sm" variant="outline" onClick={() => doPay(s)}><CheckCircle2 className="size-4" /> {t("Sudah bayar")}</Button> : null}
-                   <RowActions onEdit={() => crud.openEdit({ ...s })} onDelete={() => crud.remove(s.id, s.name)} />
-                 </div>
+                <div className="col-span-2 min-w-0 border-t pt-2 sm:col-span-1 sm:col-start-1 sm:row-start-2 sm:border-0 sm:pt-0">
+                  <div className="min-w-0 text-xs">
+                    <p className={left < 0 ? "text-expense" : left <= 3 ? "text-warning" : "text-muted-foreground"}>{t("Jatuh tempo")} {dateLabel(s.next_due, locale)} {left < 0 ? `(${t("terlambat")} ${-left} ${t("hari")})` : left === 0 ? `(${t("hari ini")})` : `(${left} ${t("hari lagi")})`}</p>
+                    {accName(s.account_id) ? <p className="truncate text-muted-foreground">{t("Dibayar dari")} {accName(s.account_id)}</p> : null}
+                  </div>
+                </div>
+                <div className="col-span-2 flex items-center justify-end gap-1 sm:col-span-1 sm:col-start-3 sm:row-span-2 sm:row-start-1">
+                  {s.active ? <Button size="sm" variant="outline" className="mr-auto sm:mr-0" onClick={() => doPay(s)}><CheckCircle2 className="size-4" /> {t("Sudah bayar")}</Button> : null}
+                  <RowActions onEdit={() => crud.openEdit({ ...s })} onDelete={() => crud.remove(s.id, s.name)} />
+                </div>
               </div>
             );
           })}
