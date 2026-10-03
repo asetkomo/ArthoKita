@@ -399,7 +399,7 @@ export async function computeDashboard(month: string) {
     db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
     db().from("account_balances").select("*").eq("archived", false),
     db().from("goals").select("*").order("created_at"),
-    db().from("subscriptions").select("amount, currency, cycle").eq("active", true),
+    db().from("subscriptions").select("*").eq("active", true),
     db().from("transactions").select("*, category:categories(name,color), account:accounts!transactions_account_id_fkey(name)").order("occurred_at", { ascending: false }).order("created_at", { ascending: false }).limit(8),
   ]);
   const tx = must<any[]>(txRes);
@@ -452,7 +452,7 @@ export async function computeDashboard(month: string) {
   const debts = await computeDebts();
   const debtOutstandingIdr = debts.filter((d) => d.status === "active").reduce((a, d) => a + (d.currency === "USD" ? d.remaining_amount * rate : d.remaining_amount), 0);
   const subsMonthlyIdr = must<any[]>(subsRes).reduce((a, s) => {
-    const v = Number(s.amount) * (s.currency === "USD" ? rate : 1);
+    const v = withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? rate : 1);
     return a + (s.cycle === "yearly" ? v / 12 : v);
   }, 0);
   const feesIdr = tx.filter((t) => t.kind === "expense" && t.category?.name === FEE_CATEGORY).reduce((a, t) => a + Number(t.amount_idr), 0);

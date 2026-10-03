@@ -240,3 +240,13 @@ end $$;
 
 insert into public.categories (name, kind, color) values ('Piutang','expense','#9a7b3c'), ('Piutang','income','#9a7b3c')
 on conflict (name, kind) do nothing;
+
+-- ============ v4: biaya admin/transfer, biaya bulanan akun, pajak langganan (aman dijalankan ulang) ============
+alter table public.accounts add column if not exists transfer_fees jsonb not null default '[]'::jsonb;
+alter table public.accounts add column if not exists topup_fees jsonb not null default '[]'::jsonb;
+alter table public.accounts add column if not exists monthly_fee numeric(18,2);
+alter table public.accounts add column if not exists monthly_fee_day int check (monthly_fee_day between 1 and 31);
+alter table public.subscriptions add column if not exists tax_percent numeric(6,2) check (tax_percent >= 0 and tax_percent <= 100);
+insert into public.categories (name, kind, color) values ('Biaya Admin','expense','#8a6d5a')
+on conflict (name, kind) do nothing;
+create index if not exists transactions_notes_auto_idx on public.transactions (notes) where notes like '[auto:%';
