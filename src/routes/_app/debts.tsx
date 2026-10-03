@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { CURRENCY_OPTIONS } from "@/components/entity-dialog";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,15 +43,16 @@ function DebtsPage() {
   const del = useServerFn(deleteRow);
   const qc = useQueryClient();
   const crud = useCrudDialog("debts", { kind: "paylater", currency: "IDR", start_date: todayStr(), due_day: 5, total_installments: 3, status: "active" });
+  const ask = useConfirm();
   const active = (debts as any[]).filter((d) => d.status === "active");
   const totalRemaining = active.reduce((a, d) => a + (d.currency === "IDR" ? d.remaining_amount : 0), 0);
 
   async function doPay(d: any) {
-    if (!confirm(`Catat pembayaran cicilan ke-${d.paid_count + 1} ${d.name} sebesar ${money(d.installment_amount, d.currency)}?`)) return;
+    if (!(await ask.confirm(`Catat pembayaran cicilan ke-${d.paid_count + 1}?`, { description: `${d.name} · ${money(d.installment_amount, d.currency)} — otomatis tercatat sebagai pengeluaran.`, confirmLabel: "Ya, catat" }))) return;
     try { await pay({ data: { debt_id: d.id } }); await qc.invalidateQueries(); toast.success("Cicilan tercatat & masuk ke pengeluaran"); } catch (e) { toast.error(errMsg(e)); }
   }
   async function undo(id: string) {
-    if (!confirm("Batalkan pembayaran ini? Transaksinya juga akan dihapus.")) return;
+    if (!(await ask.confirm("Batalkan pembayaran ini?", { description: "Transaksi pengeluaran terkait juga akan dihapus.", confirmLabel: "Ya, batalkan", destructive: true }))) return;
     try { await del({ data: { table: "debt_payments", id } }); await qc.invalidateQueries(); } catch (e) { toast.error(errMsg(e)); }
   }
 
@@ -121,6 +123,7 @@ function DebtsPage() {
         { name: "status", label: "Status", type: "select", half: true, options: [{ value: "active", label: "Aktif" }, { value: "paid_off", label: "Lunas" }] },
         { name: "notes", label: "Catatan", type: "textarea" },
       ])}
+      {ask.element}
     </>
   );
 }
