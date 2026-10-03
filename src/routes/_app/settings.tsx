@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { CsvImport } from "@/components/csv-import";
+import { BackupRestore } from "@/components/backup-restore";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
@@ -186,6 +187,8 @@ function SettingsPage() {
           </div>
         </Card>
       </div>
+
+      <BackupRestore />
 
       <Card className="mt-4 min-w-0 p-5">
         <h2 className="flex items-center gap-2 text-lg font-semibold">

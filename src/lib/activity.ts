@@ -29,6 +29,7 @@ const SPECIAL: Record<string, string> = {
   "goal.funds": "Dana target diperbarui",
   import: "Impor CSV",
   "backup.export": "Cadangan diunduh",
+  "backup.restore": "Cadangan dipulihkan",
   "auth.login": "Login berhasil",
   "auth.login_failed": "Login gagal",
   "auth.logout": "Logout",
@@ -56,5 +57,6 @@ export function activityDetail(detail: unknown, fmt: (n: number, c: string) => s
   if (typeof d["from"] === "string" && typeof d["to"] === "string")
     parts.push(`${d["from"]} → ${d["to"]}`);
   if (typeof d["imported"] === "number") parts.push(`${d["imported"]} baris`);
+  if (typeof d["restored"] === "number") parts.push(`${d["restored"]} baris`);
   return parts.join(" · ");
 }

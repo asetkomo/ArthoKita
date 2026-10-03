@@ -67,6 +67,13 @@ Pengaturan → **Impor CSV transaksi**. Kolom: `tanggal` (YYYY-MM-DD atau DD/MM/
 ## 7. Cadangan data
 Pengaturan → **Cadangan data** → *Unduh cadangan (JSON)*: satu berkas berisi seluruh tabel (akun, kategori, transaksi, hutang, pembayaran cicilan, langganan, budget, target, kurs). Simpan berkas ini sebagai cadangan rutin.
 
+**Pulihkan dari backup** (Pengaturan): pilih berkas JSON (maks. 20 MB) → isi dicek di browser dan jumlah baris per tabel ditampilkan → pilih mode:
+- *Gabungkan* (default): upsert per `id` (fx_rates/gold_prices per kunci tanggal), urutan aman FK. Kategori/budget/cicilan yang sudah ada dengan nama/kunci sama dipakai ulang (ID di berkas dipetakan otomatis).
+- *Ganti semua*: ketik `GANTI`; seluruh data sekarang dihapus (urutan FK terbalik) lalu diisi dari berkas.
+Berkas dikirim per potongan ≤ 500 baris / ≤ 2 MB (batas body Vercel 4,5 MB), sehingga cadangan besar tetap aman. Tabel yang belum ada di database (schema belum dijalankan) dan kolom yang tidak dikenal dilewati. `bot_drafts` dan `activity_log` tidak pernah dipulihkan. Pemulihan dicatat di Catatan aktivitas.
+
+**Backup otomatis via n8n:** `GET /api/public/n8n/backup` (header `x-api-key`) mengembalikan JSON yang sama + `filename`. Workflow `n8n/05-dompetku-backup.json` menyimpannya ke Google Drive tiap Minggu 02:00 (lihat `n8n/README.md`).
+
 ## 8. PWA & bahasa
 - Aplikasi bisa dipasang di layar utama HP (ikon aplikasi, tampilan penuh layar) — buka di browser HP → "Tambahkan ke layar utama". Tidak ada mode luring.
 - Sakelar **ID/EN** di sidebar (atau header di HP) mengganti bahasa tampilan; pilihan disimpan di browser.

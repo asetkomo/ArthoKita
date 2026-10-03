@@ -25,6 +25,7 @@ import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubscriptionsRouteImport } from './routes/_app/subscriptions'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
+import { Route as ApiPublicN8nBackupRouteImport } from './routes/api/public/n8n/backup'
 import { Route as ApiPublicN8nBotRouteImport } from './routes/api/public/n8n/bot'
 import { Route as ApiPublicN8nCommandRouteImport } from './routes/api/public/n8n/command'
 import { Route as ApiPublicN8nMessageRouteImport } from './routes/api/public/n8n/message'
@@ -115,6 +116,11 @@ const AppTransactionsRoute = AppTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicN8nBackupRoute = ApiPublicN8nBackupRouteImport.update({
+  id: '/api/public/n8n/backup',
+  path: '/api/public/n8n/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicN8nBotRoute = ApiPublicN8nBotRouteImport.update({
   id: '/api/public/n8n/bot',
   path: '/api/public/n8n/bot',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/backup': typeof ApiPublicN8nBackupRoute
   '/api/public/n8n/bot': typeof ApiPublicN8nBotRoute
   '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/backup': typeof ApiPublicN8nBackupRoute
   '/api/public/n8n/bot': typeof ApiPublicN8nBotRoute
   '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subscriptions': typeof AppSubscriptionsRoute
   '/_app/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/backup': typeof ApiPublicN8nBackupRoute
   '/api/public/n8n/bot': typeof ApiPublicN8nBotRoute
   '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/transactions'
+    | '/api/public/n8n/backup'
     | '/api/public/n8n/bot'
     | '/api/public/n8n/command'
     | '/api/public/n8n/message'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/transactions'
+    | '/api/public/n8n/backup'
     | '/api/public/n8n/bot'
     | '/api/public/n8n/command'
     | '/api/public/n8n/message'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/subscriptions'
     | '/_app/transactions'
+    | '/api/public/n8n/backup'
     | '/api/public/n8n/bot'
     | '/api/public/n8n/command'
     | '/api/public/n8n/message'
@@ -341,6 +353,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicN8nBackupRoute: typeof ApiPublicN8nBackupRoute
   ApiPublicN8nBotRoute: typeof ApiPublicN8nBotRoute
   ApiPublicN8nCommandRoute: typeof ApiPublicN8nCommandRoute
   ApiPublicN8nMessageRoute: typeof ApiPublicN8nMessageRoute
@@ -467,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransactionsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/n8n/backup': {
+      id: '/api/public/n8n/backup'
+      path: '/api/public/n8n/backup'
+      fullPath: '/api/public/n8n/backup'
+      preLoaderRoute: typeof ApiPublicN8nBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/n8n/bot': {
       id: '/api/public/n8n/bot'
       path: '/api/public/n8n/bot'
@@ -578,6 +598,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicN8nBackupRoute: ApiPublicN8nBackupRoute,
   ApiPublicN8nBotRoute: ApiPublicN8nBotRoute,
   ApiPublicN8nCommandRoute: ApiPublicN8nCommandRoute,
   ApiPublicN8nMessageRoute: ApiPublicN8nMessageRoute,
