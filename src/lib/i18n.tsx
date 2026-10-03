@@ -96,7 +96,6 @@ const DICT: Record<string, string> = {
   "Sebelumnya": "Previous",
   "Berikutnya": "Next",
   "Masuk": "In",
-  "Keluar": "Out",
   "Cari deskripsi / merchant…": "Search description / merchant…",
   "Memuat…": "Loading…",
   "Belum ada transaksi di bulan ini.": "No transactions this month.",
@@ -119,7 +118,6 @@ const DICT: Record<string, string> = {
   "File maksimal 5 MB": "File max 5 MB",
   "Kolom wajib tidak ada: ": "Missing required columns: ",
   "Baris": "Row",
-  "Jumlah": "Amount",
   "Catatan / Status": "Notes / Status",
   "valid": "valid",
   " bermasalah (dilewati)": " problematic (skipped)",
@@ -165,7 +163,6 @@ const DICT: Record<string, string> = {
   "punya cerita.": "has a story.",
   "Pemasukan, pengeluaran, cicilan paylater, dan langganan — tercatat rapi, diingatkan tepat waktu.": "Income, expenses, paylater installments, and subscriptions — neatly recorded, reminded on time.",
   "Akses pribadi": "Private access",
-  "Masuk": "Sign in",
   "Gunakan akun yang terdaftar di server.": "Use the account registered on the server.",
   "Username": "Username",
   "Password": "Password",
@@ -247,7 +244,6 @@ const DICT: Record<string, string> = {
   "Sisa ": "Remaining ",
   " · peringatan di ": " · alert at ",
   "%": "%",
-  "Kategori pengeluaran": "Expense category",
   "Batas per bulan (IDR)": "Monthly limit (IDR)",
   "Peringatan saat (%)": "Alert at (%)",
   /* Goals */
@@ -273,7 +269,6 @@ const DICT: Record<string, string> = {
   "Bayar": "Pay",
   "Pembayaran tercatat": "Payment recorded",
   "Peringatan budget bulan ini": "Budget alert for this month",
-  "terlambat ": "late by ",
   /* Rekap */
   "Gambaran besar keuangan Anda selama setahun penuh.": "The big picture of your finances for a full year.",
   "Cetak PDF": "Print PDF",
@@ -321,9 +316,7 @@ const DICT: Record<string, string> = {
   "Gagal membaca nota": "Failed to read receipt",
   /* Misc leftovers */
   "terlambat": "late by",
-  "hari lagi": "days left",
   "kurs otomatis harian": "daily automatic rate",
-  "Pembayaran tercatat": "Payment recorded",
   /* 404 / errors */
   "Halaman tidak ditemukan": "Page not found",
   "Halaman gagal dimuat": "Failed to load page",

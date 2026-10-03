@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Login } from "@/lib/auth.functions";
+import { login } from "@/lib/auth.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { t } = useI18n();
-  const run = useServerFn(Login);
+  const run = useServerFn(login);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
