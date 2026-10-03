@@ -156,3 +156,35 @@ export const scanReceipt = createServerFn({ method: "POST" })
     const { categoryNames } = await import("./finance.server");
     return parseReceipt(data.image, await categoryNames());
   });
+
+export const getYearly = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ year: z.string().regex(/^\d{4}$/) }).parse(d))
+  .handler(async ({ data }) => {
+    const { computeYearly } = await import("./finance.server");
+    return (await computeYearly(data.year)) as any;
+  });
+
+export const importTransactionsCsv = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ csv: z.string().min(1).max(5_000_000) }).parse(d))
+  .handler(async ({ data }) => {
+    const { importCsv } = await import("./finance.server");
+    return importCsv(data.csv);
+  });
+
+export const uploadReceiptImage = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ image: z.string().startsWith("data:image/").max(8_000_000) }).parse(d))
+  .handler(async ({ data }) => {
+    const { uploadReceipt } = await import("./receipt.server");
+    return uploadReceipt(data.image);
+  });
+
+export const getReceiptUrl = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ path: z.string().min(1).max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    const { receiptUrl } = await import("./receipt.server");
+    return { url: await receiptUrl(data.path) };
+  });

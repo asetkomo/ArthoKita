@@ -1,6 +1,6 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getReminders, listRows, listTransactions, saveRow } from "./finance.functions";
+import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getReminders, getYearly, listRows, listTransactions, saveRow } from "./finance.functions";
 import type { CrudTable } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -13,6 +13,7 @@ export const balancesQuery = () => queryOptions({ queryKey: ["balances"], queryF
 export const fxQuery = () => queryOptions({ queryKey: ["fx"], queryFn: () => getFxRate(), staleTime: 3600_000 });
 export type TxFilter = { month?: string; kind?: "income" | "expense" | "transfer"; search?: string };
 export const txQuery = (f: TxFilter) => queryOptions({ queryKey: ["tx", f], queryFn: () => listTransactions({ data: f }) });
+export const yearlyQuery = (year: string) => queryOptions({ queryKey: ["yearly", year], queryFn: () => getYearly({ data: { year } }) });
 
 export function useCrud(table: CrudTable) {
   const qc = useQueryClient();
