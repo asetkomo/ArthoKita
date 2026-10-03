@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { TransactionDialog, newTxDraft, type TxDraft } from "@/components/transaction-dialog";
 import { ReceiptScanner } from "@/components/receipt-scanner";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ function TransactionsPage() {
   const receipt = useServerFn(getReceiptUrl);
   const [importing, setImporting] = useState(false);
   const qc = useQueryClient();
+  const ask = useConfirm();
 
   async function openReceipt(path: string) {
     try {
@@ -56,7 +58,7 @@ function TransactionsPage() {
     try {
       const text = await file.text();
       const lines = text.split("\n").filter((l) => l.trim()).length - 1;
-      if (!confirm(`Impor ${Math.max(0, lines)} baris dari "${file.name}"?`)) return;
+      if (!(await ask.confirm(`Impor ${Math.max(0, lines)} baris?`, { description: `Dari berkas "${file.name}". Baris yang tidak valid akan dilewati dan dilaporkan.`, confirmLabel: "Ya, impor" }))) return;
       const res = await imp({ data: { csv: text } });
       await qc.invalidateQueries();
       if (res.failed) toast.warning(res.message, { description: res.errors.join("\n") });
@@ -72,7 +74,7 @@ function TransactionsPage() {
   }, { inc: 0, exp: 0 });
 
   async function remove(id: string) {
-    if (!confirm("Hapus transaksi ini?")) return;
+    if (!(await ask.confirm("Hapus transaksi ini?", { confirmLabel: "Ya, hapus", destructive: true }))) return;
     try { await del({ data: { table: "transactions", id } }); await qc.invalidateQueries(); toast.success("Dihapus"); } catch (e) { toast.error(errMsg(e)); }
   }
   async function download() {
@@ -159,6 +161,7 @@ function TransactionsPage() {
         )}
       </Card>
       <TransactionDialog open={dlg.open} onOpenChange={(o) => setDlg((s) => ({ ...s, open: o }))} initial={dlg.draft} id={dlg.id} />
+      {ask.element}
     </>
   );
 }
