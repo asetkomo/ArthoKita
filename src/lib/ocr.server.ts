@@ -5,6 +5,24 @@ import { isValidDate, matchCategory } from "./bot";
 export type ParseContext = { income: string[]; expense: string[]; accounts?: string[] };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/** Short, secret-free provider message (OpenAI `{error:{message}}` or Gemini `[{error:{message}}]`). */
+export function aiErrorReason(body: string): string | null {
+  let msg: unknown;
+  try {
+    const j: any = JSON.parse(body);
+    msg = (Array.isArray(j) ? j[0] : j)?.error?.message;
+  } catch {
+    return null;
+  }
+  if (typeof msg !== "string" || !msg.trim()) return null;
+  return msg
+    .replace(/(key=|Bearer\s+)[^\s&"']+/gi, "$1***")
+    .replace(/\b(sk-|AIza)[\w-]{8,}/g, "***")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+}
+
 async function aiJson(messages: unknown[], vision: boolean): Promise<unknown> {
   const url = process.env["AI_API_URL"] || "https://ai.gateway.lovable.dev/v1/chat/completions";
   const key = process.env["AI_API_KEY"] || process.env["LOVABLE_API_KEY"];
@@ -24,10 +42,12 @@ async function aiJson(messages: unknown[], vision: boolean): Promise<unknown> {
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) {
-    console.error(`AI request failed [${res.status}]: ${(await res.text()).slice(0, 500)}`);
+    const body = await res.text();
+    console.error(`AI request failed [${res.status}] model=${model}: ${body.slice(0, 500)}`);
     if (res.status === 429) throw new Error("Batas pemakaian AI tercapai, coba lagi sebentar.");
     if (res.status === 402) throw new Error("Kredit AI habis.");
-    throw new Error(`Gagal membaca dengan AI [${res.status}].`);
+    const reason = aiErrorReason(body);
+    throw new Error(`Gagal membaca dengan AI [${res.status}]${reason ? `: ${reason}` : "."}`);
   }
   const j: any = await res.json();
   const content: string = j?.choices?.[0]?.message?.content ?? "{}";
