@@ -1,6 +1,7 @@
 import { db } from "./db.server";
 import { addDays, addMonthsKeepDay, diffDays, monthRange, shiftMonth, todayStr } from "./dates";
 import type { ExternalTx, TransactionInput } from "./schemas";
+import { dupKey } from "./csv";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Res<T> = { data: T | null; error: { message: string } | null };
@@ -11,6 +12,22 @@ function must<T>(res: Res<T>): T {
 
 export const today = () => todayStr(process.env["APP_TIMEZONE"] || "Asia/Jakarta");
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/* ---------------- Activity log ---------------- */
+export async function logActivity(action: string, entity?: string | null, detail?: unknown) {
+  try {
+    await db().from("activity_log").insert({ action, entity: entity ?? null, detail: detail ?? null });
+  } catch (e) {
+    console.error("activity log failed", e);
+  }
+}
+
+export async function listActivity(limit = 30) {
+  const res = await db().from("activity_log").select("*").order("created_at", { ascending: false }).limit(limit);
+  if (res.error) throw new Error(res.error.message);
+  return (res.data ?? []) as any[];
+}
+
 
 /* ---------------- FX ---------------- */
 export async function getUsdIdr(): Promise<number> {
@@ -66,25 +83,35 @@ function isMissingReceiptColumn(err: { message?: string } | null) {
   return !!err?.message && err.message.includes("receipt_path");
 }
 
-export async function insertTransaction(input: TransactionInput, raw?: unknown) {
-  const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency), raw: raw ?? null };
+async function insertTxRow(row: Record<string, unknown>) {
   const res = await db().from("transactions").insert(row).select().single();
   if (res.error && isMissingReceiptColumn(res.error)) {
-    const { receipt_path: _drop, ...fallback } = row as Record<string, unknown>;
+    const { receipt_path: _drop, ...fallback } = row;
     return must<any>(await db().from("transactions").insert(fallback).select().single());
   }
   return must<any>(res);
 }
 
+export async function insertTransaction(input: TransactionInput, raw?: unknown) {
+  const tx = await insertTxRow({ ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency), raw: raw ?? null });
+  await logActivity("transaction.create", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency, description: input.description ?? null, source: input.source });
+  return tx;
+}
+
 export async function updateTransaction(id: string, input: TransactionInput) {
   const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
   const res = await db().from("transactions").update(row).eq("id", id).select().single();
+  let data: Record<string, unknown> | null = null;
   if (res.error && isMissingReceiptColumn(res.error)) {
-    const { receipt_path: _drop, ...fallback } = row as Record<string, unknown>;
-    return must<any>(await db().from("transactions").update(fallback).eq("id", id).select().single());
+    const { receipt_path: _drop, ...fallback } = row;
+    data = must<any>(await db().from("transactions").update(fallback).eq("id", id).select().single());
+  } else if (!res.error) {
+    data = res.data as Record<string, unknown>;
   }
-  return must<any>(res);
+  if (data) await logActivity("transaction.update", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency });
+  return data as any;
 }
+
 
 export async function createFromExternal(t: ExternalTx) {
   const category_id = t.kind !== "transfer" && t.category ? await ensureCategory(t.category, t.kind) : null;
@@ -110,17 +137,9 @@ export async function createFromExternal(t: ExternalTx) {
   return { transaction: tx, message };
 }
 
-export type TxFilters = { month?: string | undefined; kind?: string | undefined; search?: string | undefined; category_id?: string | undefined; account_id?: string | undefined; limit?: number | undefined };
+export type TxFilters = { month?: string | undefined; kind?: string | undefined; search?: string | undefined; category_id?: string | undefined; account_id?: string | undefined; limit?: number | undefined; offset?: number | undefined };
 
-export async function listTransactions(f: TxFilters) {
-  let q = db()
-    .from("transactions")
-    .select(
-      "*, category:categories(id,name,color), account:accounts!transactions_account_id_fkey(id,name), to_account:accounts!transactions_to_account_id_fkey(id,name)",
-    )
-    .order("occurred_at", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(f.limit ?? 500);
+function applyTxFilters(q: any, f: TxFilters) {
   if (f.month) {
     const { start, end } = monthRange(f.month);
     q = q.gte("occurred_at", start).lt("occurred_at", end);
@@ -132,8 +151,29 @@ export async function listTransactions(f: TxFilters) {
     const s = f.search.replace(/[%,()*]/g, "").trim();
     if (s) q = q.or(`description.ilike.%${s}%,merchant.ilike.%${s}%,notes.ilike.%${s}%`);
   }
-  return must<any[]>(await q);
+  return q;
 }
+
+export async function listTransactions(f: TxFilters) {
+  const limit = f.limit ?? 500;
+  const offset = f.offset ?? 0;
+  const q = db()
+    .from("transactions")
+    .select(
+      "*, category:categories(id,name,color), account:accounts!transactions_account_id_fkey(id,name), to_account:accounts!transactions_to_account_id_fkey(id,name)",
+    )
+    .order("occurred_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  return must<any[]>(await applyTxFilters(q, f));
+}
+
+export async function countTransactions(f: TxFilters) {
+  const res = await applyTxFilters(db().from("transactions").select("id", { count: "exact", head: true }), f);
+  if (res.error) throw new Error(res.error.message);
+  return res.count ?? 0;
+}
+
 
 export async function exportCsv(month?: string) {
   const rows = await listTransactions({ month, limit: 10000 });
@@ -208,8 +248,10 @@ export async function payDebt(debtId: string, accountId: string | null, date: st
   });
   must(await db().from("debt_payments").insert({ debt_id: debtId, installment_no: paid + 1, amount: d.installment_amount, paid_at: date ?? today(), transaction_id: tx.id }));
   if (paid + 1 >= d.total_installments) await db().from("debts").update({ status: "paid_off" }).eq("id", debtId);
+  await logActivity("debt.pay", "debts", { name: d.name, amount: Number(d.installment_amount), currency: d.currency, installment: paid + 1 });
   return { ok: true };
 }
+
 
 export async function deleteDebtPayment(id: string) {
   const p = must<any>(await db().from("debt_payments").select("*").eq("id", id).single());
@@ -239,8 +281,10 @@ export async function paySubscription(id: string, accountId: string | null, date
   });
   const next = addMonthsKeepDay(s.next_due, s.cycle === "yearly" ? 12 : 1);
   must(await db().from("subscriptions").update({ next_due: next }).eq("id", id));
+  await logActivity("subscription.pay", "subscriptions", { name: s.name, amount: Number(s.amount), currency: s.currency });
   return { ok: true, next_due: next };
 }
+
 
 /* ---------------- Reminders ---------------- */
 export type Reminder = {
