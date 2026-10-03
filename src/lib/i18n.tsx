@@ -95,7 +95,7 @@ const DICT: Record<string, string> = {
   "Catat": "Record",
   "Sebelumnya": "Previous",
   "Berikutnya": "Next",
-  "Masuk": "In",
+  "Masuk": "Sign in",
   "Cari deskripsi / merchant…": "Search description / merchant…",
   "Memuat…": "Loading…",
   "Belum ada transaksi di bulan ini.": "No transactions this month.",
