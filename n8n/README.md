@@ -85,6 +85,12 @@ Telegram Trigger butuh URL **HTTPS publik**. Jangan expose port 5678 langsung ta
 | `/minggu`, `/bulan`, `/saldo`, `/paylater`, `/langganan`, `/tagihan 30`, `/budget` | laporan (0 token AI) |
 | chat dari akun lain | diabaikan |
 
+## Troubleshooting
+| Gejala | Penyebab / solusi |
+|---|---|
+| Tombol ✅/❌ tidak bereaksi, tidak ada eksekusi di n8n | Telegram Trigger v1.2 hanya mengenali `chatIds` untuk pesan, sehingga callback tombol dibuang diam-diam. Hapus **Restrict to Chat IDs** di node Telegram Trigger. Allow-list tetap dijaga oleh `Normalize & Guard` dan server. Setelah mengubah trigger, nonaktifkan lalu aktifkan lagi workflow 01. |
+| `Gagal membaca dengan AI [400]` | Biasanya `AI_API_KEY` tidak valid, nama `AI_MODEL` salah, atau `AI_API_URL` tidak sesuai. Pesan bot sekarang menyertakan alasan dari penyedia AI. |
+
 ## Hemat token
 - Perintah `/…` dan tombol: **0 token**.
 - Chat sederhana: parser regex + kata kunci + riwayat kategori → **0 token**. AI hanya untuk pesan ambigu (`BOT_TEXT_AI=never` untuk mematikan total).
@@ -92,7 +98,7 @@ Telegram Trigger butuh URL **HTTPS publik**. Jangan expose port 5678 langsung ta
 - Tidak ada AI Agent/memori percakapan di n8n, sehingga tidak ada token sistem prompt berulang.
 
 ## Keamanan
-- Allow-list berlapis: filter `chatIds` di trigger → `Normalize & Guard` (fail-closed) → `BOT_ALLOWED_CHAT_IDS` di server (wajib, juga fail-closed: kosong = tolak semua, tanpa menyentuh DB).
+- Allow-list berlapis: `Normalize & Guard` (fail-closed, juga untuk tombol inline) → `BOT_ALLOWED_CHAT_IDS` di server (wajib, juga fail-closed: kosong = tolak semua, tanpa menyentuh DB).
 - API key tersimpan terenkripsi sebagai credential n8n; perbandingan timing-safe di server.
 - Data eksekusi sukses tidak disimpan (`saveDataSuccessExecution: none`) agar foto struk & data keuangan tidak menumpuk di DB n8n.
 - Undo dibatasi untuk transaksi dari bot berumur ≤ 7 hari.
