@@ -9,9 +9,18 @@ Arsitektur: **n8n = orkestrator tipis**, **web Dompetku = otak**. n8n menerima u
 | `03-dompetku-error-handler.json` | Notifikasi Telegram saat workflow gagal |
 | `04-dompetku-setup-commands.json` | Sekali jalan: daftarkan menu `/` di Telegram + cek webhook |
 
+Endpoint yang dipanggil workflow (semua dengan header `x-api-key`; daftar lengkap di `docs/SETUP.md` §4):
+
+| Workflow | Method & path | Field respons yang dipakai |
+|---|---|---|
+| 01 | `POST /api/public/n8n/bot` body `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` | `method`, `text`, `reply_markup`, `toast` |
+| 02 | `GET /api/public/n8n/reminders?days=3` | `count`, `message` |
+| 02 | `GET /api/public/n8n/report?period=today\|lastweek\|lastmonth` | `message` |
+
 ## 1. Siapkan web (Vercel)
 1. Merge branch `feat/telegram-bot-v2`, lalu jalankan bagian **v7** di `supabase/schema.sql`.
-2. Env Vercel baru: `BOT_DEFAULT_ACCOUNT` (mis. `BCA`), `BOT_ALLOWED_CHAT_IDS` (chat_id Anda), opsional `AI_MODEL_TEXT`, `BOT_TEXT_AI=auto`.
+2. Pastikan `N8N_API_KEY` sudah diisi (string acak **≥ 24 karakter**; bila kosong/lebih pendek semua endpoint n8n membalas 503).
+   Env Vercel baru: `BOT_DEFAULT_ACCOUNT` (mis. `BCA`), `BOT_ALLOWED_CHAT_IDS` (chat_id Anda), opsional `AI_MODEL_TEXT`, `BOT_TEXT_AI=auto` (`auto` | `always` | `never`), `APP_TIMEZONE` (default `Asia/Jakarta`; samakan dengan zona waktu workflow agar `period=today` tepat).
 3. AI (rekomendasi Gemini via endpoint OpenAI-compatible):
    ```
    AI_API_URL=https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
@@ -19,7 +28,8 @@ Arsitektur: **n8n = orkestrator tipis**, **web Dompetku = otak**. n8n menerima u
    AI_MODEL=gemini-2.5-flash          # OCR struk (vision)
    AI_MODEL_TEXT=gemini-2.5-flash-lite  # chat ambigu (lebih murah)
    ```
-4. Pastikan durasi fungsi Vercel cukup untuk OCR (≥ 30 detik).
+   Tanpa `AI_API_URL` server memakai Lovable AI gateway (nama model berawalan `google/…`, lihat `docs/SETUP.md`). Endpoint Gemini langsung memakai nama model tanpa prefix seperti di atas.
+4. Durasi fungsi Vercel untuk `/api/public/n8n/bot` sudah diset 60 detik lewat `vite.config.ts` (`vercel.functionRules`); pastikan paket Vercel Anda mengizinkan ≥ 60 detik.
 
 ## 2. Buat bot Telegram
 1. @BotFather → `/newbot` → simpan token.
@@ -55,7 +65,7 @@ Telegram Trigger butuh URL **HTTPS publik**. Jangan expose port 5678 langsung ta
 
 ## 4. Credential di n8n
 1. **Telegram API** → nama bebas, isi token bot (dipakai Telegram Trigger).
-2. **Header Auth** → Name: `x-api-key`, Value: nilai `N8N_API_KEY` di Vercel. Beri nama `Fintrack x-api-key`.
+2. **Header Auth** → Name: `x-api-key`, Value: nilai `N8N_API_KEY` di Vercel. Beri nama `Fintrack x-api-key` (dipakai node `Fintrack /bot` di workflow 01 dan keempat node HTTP di workflow 02).
 
 ## 5. Impor & aktifkan
 1. Impor keempat file JSON (Workflows → Import from file). Pilih ulang credential di node yang bertanda merah.
