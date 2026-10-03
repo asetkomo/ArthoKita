@@ -69,7 +69,7 @@ function ReceivablesPage() {
     <>
       <PageHeader title={t("Piutang")} subtitle={`${t("Belum kembali (IDR):")} ${money(outstanding)}`} actions={<Button onClick={() => setEdit({ open: true, id: null, initial: { currency: "IDR", lent_at: todayStr() } })}><Plus className="size-4" /> {t("Tambah")}</Button>} />
       {items.length === 0 ? <Empty text={t("Belum ada piutang. Catat uang yang dipinjam teman atau keluarga.")} /> : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {items.map((r) => (
             <Card key={r.id} className="min-w-0 p-5">
               <div className="flex items-start justify-between gap-2">

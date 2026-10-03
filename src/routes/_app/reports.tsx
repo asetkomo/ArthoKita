@@ -54,7 +54,7 @@ function CategoryTrend() {
   const toggle = (id: string) => setSelected((s) => ((s ?? []).includes(id) ? (s ?? []).filter((x) => x !== id) : [...(s ?? []), id]));
 
   return (
-    <Card className="p-5">
+    <Card className="min-w-0 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{t("Tren pengeluaran per kategori")}</h2>
         <Tabs value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
@@ -120,7 +120,7 @@ function YearlyRecap() {
   }
 
   return (
-    <Card className="mt-4 p-5">
+    <Card className="mt-4 min-w-0 p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{t("Rekap tahunan")}</h2>
         <div className="flex flex-wrap items-center gap-1">
@@ -133,7 +133,7 @@ function YearlyRecap() {
       </div>
       {y ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label={t("Total pemasukan")} value={y.income} className="text-income" />
             <Stat label={t("Total pengeluaran")} value={y.expense} className="text-expense" />
             <Stat label={t("Selisih")} value={y.net} className={y.net >= 0 ? "text-income" : "text-expense"} />

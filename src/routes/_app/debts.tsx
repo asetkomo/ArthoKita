@@ -61,7 +61,7 @@ function DebtsPage() {
     <>
       <PageHeader title={t("Hutang & Cicilan")} subtitle={`${t("Sisa kewajiban (IDR):")} ${money(totalRemaining)}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Tambah")}</Button>} />
       {debts.length === 0 ? <Empty text={t("Belum ada hutang/cicilan. Tambahkan paylater, KTA, atau pinjaman teman.")} /> : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {(debts as any[]).map((d) => {
             const pct = (d.paid_count / d.total_installments) * 100;
             return (

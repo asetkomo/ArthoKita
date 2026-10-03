@@ -185,16 +185,16 @@ function TransactionsPage() {
         {isFetching ? <span className="text-xs text-muted-foreground">{t("Memuat…")}</span> : null}
       </Card>
       <div className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pemasukan")}</p><p className="num break-words text-lg font-semibold text-income">{money(totals.inc)}</p></Card>
-        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pengeluaran")}</p><p className="num break-words text-lg font-semibold text-expense">{money(totals.exp)}</p></Card>
-        <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Selisih")}</p><p className="num break-words text-lg font-semibold">{money(totals.inc - totals.exp)}</p></Card>
+        <Card className="min-w-0 p-4"><p className="text-xs text-muted-foreground">{t("Pemasukan")}</p><p className="num break-words text-lg font-semibold text-income">{money(totals.inc)}</p></Card>
+        <Card className="min-w-0 p-4"><p className="text-xs text-muted-foreground">{t("Pengeluaran")}</p><p className="num break-words text-lg font-semibold text-expense">{money(totals.exp)}</p></Card>
+        <Card className="min-w-0 p-4"><p className="text-xs text-muted-foreground">{t("Selisih")}</p><p className="num break-words text-lg font-semibold">{money(totals.inc - totals.exp)}</p></Card>
       </div>
       <div className="no-print mb-2 flex max-w-full flex-wrap items-center gap-1" aria-label={t("Urutkan")}>
         <SortButton label={t("Tanggal transaksi")} active={sort === "occurred_at"} direction={direction} onClick={() => sortBy("occurred_at")} />
         <SortButton label={t("Jumlah")} active={sort === "amount"} direction={direction} onClick={() => sortBy("amount")} />
         <SortButton label={t("Deskripsi")} active={sort === "description"} direction={direction} onClick={() => sortBy("description")} />
       </div>
-      <Card className="overflow-hidden">
+      <Card className="min-w-0 overflow-hidden">
         {list.length === 0 ? (
           <p className="p-10 text-center text-sm text-muted-foreground">{t("Belum ada transaksi di bulan ini.")}</p>
         ) : (
