@@ -71,17 +71,45 @@ async function toIdr(amount: number, currency: string, rate?: number): Promise<n
 }
 
 /* ---------------- Lookups ---------------- */
+/** Escape LIKE/ILIKE wildcards (`%`, `_`) and the escape char `\\` so user input matches literally. */
+export function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+const normName = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Pure, deterministic name resolution: exact (case/whitespace-insensitive) match first, then a partial
+ * match ranked prefix > word-start > substring, then shortest name, then name and id as tie-breakers.
+ */
+export function pickBestNameMatch<T extends { id: string; name: string }>(rows: readonly T[], query: string | null | undefined): T | null {
+  const q = normName(query ?? "");
+  if (!q) return null;
+  const byNameThenId = (a: T, b: T) => (a.name < b.name ? -1 : a.name > b.name ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const exact = rows.filter((r) => normName(r.name) === q).sort(byNameThenId);
+  if (exact[0]) return exact[0];
+  const rank = (n: string) => (n.startsWith(q) ? 0 : (" " + n).includes(" " + q) ? 1 : 2);
+  const partial = rows
+    .map((r) => ({ r, n: normName(r.name) }))
+    .filter((x) => x.n.includes(q))
+    .sort((a, b) => rank(a.n) - rank(b.n) || a.n.length - b.n.length || byNameThenId(a.r, b.r));
+  return partial[0]?.r ?? null;
+}
+
 export async function ensureCategory(name: string, kind: "income" | "expense"): Promise<string> {
-  const found = await db().from("categories").select("id").ilike("name", name.trim()).eq("kind", kind).limit(1).maybeSingle();
-  if (found.data) return found.data.id as string;
-  const created = must<any>(await db().from("categories").insert({ name: name.trim(), kind }).select("id").single());
+  const clean = name.trim().replace(/\s+/g, " ");
+  const rows = must<any[]>(await db().from("categories").select("id, name").eq("kind", kind).ilike("name", escapeLike(clean)));
+  const found = rows.filter((r) => normName(r.name) === normName(clean)).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0];
+  if (found) return found.id as string;
+  const created = must<any>(await db().from("categories").insert({ name: clean, kind }).select("id").single());
   return created.id;
 }
 
 export async function findAccount(name?: string | null): Promise<string | null> {
-  if (!name) return null;
-  const r = await db().from("accounts").select("id").ilike("name", `%${name.replace(/[%,()]/g, "").trim()}%`).limit(1).maybeSingle();
-  return (r.data?.id as string) ?? null;
+  const q = (name ?? "").trim().replace(/\s+/g, " ");
+  if (!q) return null;
+  const rows = must<any[]>(await db().from("accounts").select("id, name").ilike("name", `%${escapeLike(q)}%`));
+  return pickBestNameMatch(rows as { id: string; name: string }[], q)?.id ?? null;
 }
 
 /* ---------------- Transactions ---------------- */
@@ -936,8 +964,8 @@ export async function botCommand(text: string): Promise<{ message: string; type:
 async function botPay(target: string, clean: (s: string) => string): Promise<string> {
   if (!target) return "Sebutkan namanya juga, mis. 'sudah bayar Netflix' atau 'bayar cicilan KTA'.";
   const token = clean(target);
-  const subs = must<any[]>(await db().from("subscriptions").select("id, name").ilike("name", `%${token}%`).limit(5));
-  const debts = must<any[]>(await db().from("debts").select("id, name").ilike("name", `%${token}%`).limit(5));
+  const subs = must<any[]>(await db().from("subscriptions").select("id, name").ilike("name", `%${escapeLike(token)}%`).limit(5));
+  const debts = must<any[]>(await db().from("debts").select("id, name").ilike("name", `%${escapeLike(token)}%`).limit(5));
   if (!subs.length && !debts.length) return `❓ Tidak menemukan langganan/cicilan bernama "${target}".`;
   if (subs.length + debts.length > 1) return `❓ Nama "${target}" cocok dengan beberapa item (${[...subs, ...debts].map((x) => x.name).join(", ")}). Sebutkan lebih spesifik.`;
   if (subs[0]) {
