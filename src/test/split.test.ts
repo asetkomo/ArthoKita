@@ -62,6 +62,10 @@ describe("rowsFromItems", () => {
     const r = balanceLastRow(110000, rowsFromItems(items, guess));
     expect(r[1]!.amount).toBe(10000);
     expect(splitRemaining(110000, r)).toBe(0);
-    expect(balanceLastRow(100, [{ category_id: "a", amount: 500 }])[0]!.amount).toBe(500);
+    const neg = [
+      { category_id: "a", amount: 500 },
+      { category_id: "b", amount: 50 },
+    ];
+    expect(balanceLastRow(100, neg)).toBe(neg);
   });
 });
