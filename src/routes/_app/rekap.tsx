@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { Empty } from "./dashboard";
@@ -11,7 +11,9 @@ import { Card } from "@/components/ui/card";
 import { yearlyQuery } from "@/lib/queries";
 import { currentMonth, shortMonth } from "@/lib/dates";
 import { compact, money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
+
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const Route = createFileRoute("/_app/rekap")({
