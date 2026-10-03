@@ -1,20 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Download, History } from "lucide-react";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { CsvImport } from "@/components/csv-import";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { fxQuery, rowsQuery } from "@/lib/queries";
+import { fxQuery, activityQuery, rowsQuery } from "@/lib/queries";
+import { exportBackupJson } from "@/lib/finance.functions";
 import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Category } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_app/settings")({
-  head: () => pageHead("Pengaturan", "Kategori, kurs, dan integrasi bot n8n."),
+  head: () => pageHead("Pengaturan", "Kategori, kurs, cadangan data, dan integrasi bot n8n."),
   loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery())]),
   errorComponent: RouteError,
   component: SettingsPage,
@@ -22,6 +26,7 @@ export const Route = createFileRoute("/_app/settings")({
 
 const ENDPOINTS = [
   { method: "POST", path: "/api/public/n8n/message", desc: "Teks bebas dari bot → dicatat otomatis", body: `{ "text": "makan siang 25rb", "source": "telegram", "account": "GoPay" }` },
+  { method: "POST", path: "/api/public/n8n/command", desc: "Perintah bebas bot: saldo, laporan, bayar, pengingat", body: `{ "text": "saldo" } · { "text": "laporan 2026-10" } · { "text": "sudah bayar Netflix" }` },
   { method: "POST", path: "/api/public/n8n/ocr", desc: "Foto nota (base64) → dibaca AI & dicatat", body: `{ "image_base64": "...", "mime_type": "image/jpeg", "source": "telegram" }` },
   { method: "POST", path: "/api/public/n8n/transactions", desc: "Data transaksi terstruktur (satu atau array)", body: `{ "kind": "expense", "amount": 25000, "category": "Makanan & Minuman", "account": "GoPay", "description": "Kopi" }` },
   { method: "GET", path: "/api/public/n8n/reminders?days=7", desc: "Daftar tagihan + teks siap kirim (jadwalkan harian di n8n)", body: "" },
@@ -31,21 +36,38 @@ const ENDPOINTS = [
 ];
 
 function SettingsPage() {
+  const { t } = useI18n();
   const categories = useSuspenseQuery(rowsQuery("categories")).data as Category[];
   const { usdIdr } = useSuspenseQuery(fxQuery()).data;
+  const activity = useSuspenseQuery(activityQuery(30)).data as any[];
   const crud = useCrudDialog("categories", { kind: "expense", color: "#d0703c" });
+  const backup = useServerFn(exportBackupJson);
   const [origin, setOrigin] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => setOrigin(window.location.origin), []);
+
+  async function downloadBackup() {
+    setBusy(true);
+    try {
+      const data = await backup();
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = `dompetku-cadangan-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+      URL.revokeObjectURL(url);
+      toast.success(t("Cadangan diunduh"));
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Gagal"); }
+    finally { setBusy(false); }
+  }
 
   return (
     <>
-      <PageHeader title="Pengaturan" />
+      <PageHeader title={t("Pengaturan")} />
       <div className="grid gap-4 lg:grid-cols-2">
         {(["expense", "income"] as const).map((kind) => (
           <Card key={kind} className="p-5">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Kategori {kind === "expense" ? "pengeluaran" : "pemasukan"}</h2>
-              <Button size="sm" variant="outline" onClick={() => crud.openNew({ kind })}><Plus className="size-4" /> Tambah</Button>
+              <h2 className="text-lg font-semibold">{kind === "expense" ? t("Kategori pengeluaran") : t("Kategori pemasukan")}</h2>
+              <Button size="sm" variant="outline" onClick={() => crud.openNew({ kind })}><PlusIcon /> {t("Tambah")}</Button>
             </div>
             <ul className="divide-y">
               {categories.filter((c) => c.kind === kind).map((c) => (
@@ -61,29 +83,62 @@ function SettingsPage() {
 
       <CsvImport />
 
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <h2 className="text-lg font-semibold">{t("Kurs")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("Diperbarui otomatis sekali sehari. Saat ini ")}<span className="num font-semibold text-foreground">1 USD = {money(usdIdr)}</span>.</p>
+        </Card>
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">{t("Cadangan data")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("Unduh seluruh data (akun, kategori, transaksi, hutang, langganan, budget, target, kurs) sebagai satu berkas JSON.")}</p>
+            </div>
+            <Button size="sm" variant="outline" disabled={busy} onClick={downloadBackup}><Download className="size-4" /> {t("Unduh cadangan (JSON)")}</Button>
+          </div>
+        </Card>
+      </div>
+
       <Card className="mt-4 p-5">
-        <h2 className="text-lg font-semibold">Kurs</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Diperbarui otomatis sekali sehari. Saat ini <span className="num font-semibold text-foreground">1 USD = {money(usdIdr)}</span>.</p>
+        <h2 className="flex items-center gap-2 text-lg font-semibold"><History className="size-4" /> {t("Catatan aktivitas")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("Riwayat perubahan data terbaru.")}</p>
+        {activity.length ? (
+          <ul className="mt-3 max-h-72 space-y-1 overflow-auto text-sm">
+            {activity.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 odd:bg-muted/50">
+                <span className="truncate">
+                  <span className="num text-xs text-muted-foreground">{String(a.action)}</span>
+                  {(a.detail as any)?.name ? <span className="ml-2">{String((a.detail as any).name)}</span> : null}
+                </span>
+                <span className="num shrink-0 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="mt-3 text-sm text-muted-foreground">{t("Belum ada aktivitas.")}</p>}
       </Card>
 
       <Card className="mt-4 p-5">
-        <h2 className="text-lg font-semibold">Integrasi n8n (Telegram / WhatsApp / Email)</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Kirim header <code className="rounded bg-muted px-1">x-api-key: &lt;N8N_API_KEY&gt;</code> di setiap request. Semua respons berisi field <code className="rounded bg-muted px-1">message</code> yang bisa langsung dibalas ke chat.</p>
+        <h2 className="text-lg font-semibold">{t("Integrasi n8n (Telegram / WhatsApp / Email)")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("Kirim header ")}<code className="rounded bg-muted px-1">x-api-key: <N8N_API_KEY></code>{t(" di setiap request. Semua respons berisi field ")}<code className="rounded bg-muted px-1">message</code>{t(" yang bisa langsung dibalas ke chat.")}</p>
         <ul className="mt-4 space-y-3">
           {ENDPOINTS.map((e) => (
             <li key={e.path} className="rounded-xl border p-3">
               <p className="text-sm"><span className="mr-2 rounded bg-ink px-1.5 py-0.5 text-xs font-semibold text-ink-foreground">{e.method}</span><code className="num break-all text-xs">{origin}{e.path}</code></p>
-              <p className="mt-1 text-xs text-muted-foreground">{e.desc}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t(e.desc)}</p>
               {e.body ? <pre className="num mt-2 overflow-x-auto rounded-lg bg-muted p-2 text-xs">{e.body}</pre> : null}
             </li>
           ))}
         </ul>
       </Card>
-      {crud.dialog("kategori", [
-        { name: "name", label: "Nama", type: "text" },
-        { name: "kind", label: "Jenis", type: "select", half: true, options: [{ value: "expense", label: "Pengeluaran" }, { value: "income", label: "Pemasukan" }] },
-        { name: "color", label: "Warna", type: "color", half: true },
+      {crud.dialog(t("kategori"), [
+        { name: "name", label: t("Nama"), type: "text" },
+        { name: "kind", label: t("Jenis"), type: "select", half: true, options: [{ value: "expense", label: t("Pengeluaran") }, { value: "income", label: t("Pemasukan") }] },
+        { name: "color", label: t("Warna"), type: "color", half: true },
       ])}
     </>
   );
+}
+
+function PlusIcon() {
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4"><path d="M5 12h14" /><path d="M12 5v14" /></svg>;
 }
