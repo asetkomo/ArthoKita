@@ -69,3 +69,9 @@ Pengaturan → **Cadangan data** → *Unduh cadangan (JSON)*: satu berkas berisi
 - Database hanya diakses server dengan service role; RLS aktif & tanpa akses publik.
 - Login via cookie httpOnly bertanda tangan HMAC, berlaku 7 hari.
 - Endpoint n8n dilindungi API key (perbandingan timing-safe) dan validasi input zod.
+
+## Pembaruan v3 (catatan aktivitas, Emas, Piutang)
+1. Buka Supabase → SQL Editor, tempel ulang seluruh `supabase/schema.sql` (aman dijalankan ulang) atau cukup bagian **v3**.
+2. Halaman baru: **Emas** (`/gold`) dan **Piutang** (`/receivables`). Sebelum skema v3 dijalankan, halaman tetap terbuka dengan pesan petunjuk.
+3. Harga emas: harga dunia dari `api.gold-api.com` (XAU→IDR/gram memakai kurs harian) dan harga Antam dari logammulia.com. Disimpan sekali sehari di tabel `gold_prices`; jika sumber gagal dipakai harga terakhir, atau perkiraan (ditandai "perkiraan").
+4. Tarik tunai ATM: tombol **Tarik tunai** di halaman Transaksi, atau kirim ke bot `POST /api/public/n8n/command` dengan `{ "text": "tarik tunai 500rb dari BCA" }`. Tercatat sebagai transfer ke akun bertipe Tunai (dibuat otomatis oleh bot jika belum ada).
