@@ -4,13 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { scanReceipt } from "@/lib/finance.functions";
+import { scanReceipt, uploadReceiptImage } from "@/lib/finance.functions";
 import { errMsg, rowsQuery } from "@/lib/queries";
 import { todayStr } from "@/lib/dates";
 import type { Category } from "@/lib/schemas";
 import type { TxDraft } from "./transaction-dialog";
 
-async function resize(file: File, max = 1600): Promise<string> {
+export async function resize(file: File, max = 1600): Promise<string> {
   const bmp = await createImageBitmap(file);
   const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement("canvas");
@@ -24,13 +24,15 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const scan = useServerFn(scanReceipt);
+  const upload = useServerFn(uploadReceiptImage);
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
 
   async function onFile(file: File) {
     setBusy(true);
     const t = toast.loading("Membaca nota…");
     try {
-      const d = await scan({ data: { image: await resize(file) } });
+      const image = await resize(file);
+      const [d, up] = await Promise.all([scan({ data: { image } }), upload({ data: { image } }).catch(() => null)]);
       const cat = d.category ? categories.find((c) => c.kind === d.kind && c.name.toLowerCase() === d.category!.toLowerCase().replace(/\s*\((income|expense)\)$/, "")) : undefined;
       onDraft({
         kind: d.kind,
@@ -42,6 +44,7 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
         category_id: cat?.id ?? null,
         items: d.items.length ? d.items : null,
         source: "ocr",
+        receipt_path: up?.path ?? null,
       });
       toast.success("Nota terbaca — periksa lalu simpan", { id: t });
     } catch (e) {
