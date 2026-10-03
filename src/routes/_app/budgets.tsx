@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { budgetsQuery, rowsQuery } from "@/lib/queries";
 import { currentMonth, monthLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Category } from "@/lib/schemas";
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_app/budgets")({
 });
 
 function BudgetsPage() {
+  const { t, lang } = useI18n();
   const month = currentMonth();
   const { data: budgets } = useSuspenseQuery(budgetsQuery(month));
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
@@ -29,8 +31,8 @@ function BudgetsPage() {
   const spent = budgets.reduce((a, b) => a + b.spent, 0);
   return (
     <>
-      <PageHeader title="Budget" subtitle={`Bulan ${monthLabel(month)} · terpakai ${money(spent)} dari ${money(total)}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> Budget</Button>} />
-      {budgets.length === 0 ? <Empty text="Belum ada budget. Contoh: Makanan Rp2.000.000 per bulan." /> : (
+      <PageHeader title={t("Budget")} subtitle={`${t("Bulan")} ${monthLabel(month, lang === "en" ? "en-US" : "id-ID")} · ${t("terpakai")} ${money(spent)} ${t("dari")} ${money(total)}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Budget")}</Button>} />
+      {budgets.length === 0 ? <Empty text={t("Belum ada budget. Contoh: Makanan Rp2.000.000 per bulan.")} /> : (
         <div className="grid gap-4 sm:grid-cols-2">
           {budgets.map((b) => {
             const tone = b.percent >= 100 ? "text-expense" : b.percent >= b.alert_percent ? "text-warning" : "text-income";
@@ -38,20 +40,20 @@ function BudgetsPage() {
               <Card key={b.id} className="p-5">
                 <div className="flex items-start justify-between">
                   <p className="flex items-center gap-2 font-display text-lg font-semibold"><span className="size-3 rounded-full" style={{ background: b.color ?? "var(--primary)" }} />{b.category}</p>
-                  <RowActions onEdit={() => crud.openEdit({ id: b.id, category_id: b.category_id, amount: b.amount, alert_percent: b.alert_percent })} onDelete={() => crud.remove(b.id, `budget ${b.category}`)} />
+                  <RowActions onEdit={() => crud.openEdit({ id: b.id, category_id: b.category_id, amount: b.amount, alert_percent: b.alert_percent })} onDelete={() => crud.remove(b.id, `${t("budget")} ${b.category}`)} />
                 </div>
                 <p className="mt-3 text-sm"><span className={`num text-xl font-semibold ${tone}`}>{money(b.spent)}</span> <span className="text-muted-foreground">/ {money(b.amount)}</span></p>
                 <Progress className="mt-3" value={Math.min(100, b.percent)} />
-                <p className="mt-2 text-xs text-muted-foreground">{b.percent >= 100 ? `Lewat ${money(b.spent - b.amount)}` : `Sisa ${money(b.amount - b.spent)}`} · peringatan di {b.alert_percent}%</p>
+                <p className="mt-2 text-xs text-muted-foreground">{b.percent >= 100 ? `${t("Lewat")} ${money(b.spent - b.amount)}` : `${t("Sisa")} ${money(b.amount - b.spent)}`} · {t("peringatan di")} {b.alert_percent}%</p>
               </Card>
             );
           })}
         </div>
       )}
-      {crud.dialog("budget", [
-        { name: "category_id", label: "Kategori pengeluaran", type: "select", options: categories.filter((c) => c.kind === "expense").map((c) => ({ value: c.id, label: c.name })) },
-        { name: "amount", label: "Batas per bulan (IDR)", type: "number", half: true },
-        { name: "alert_percent", label: "Peringatan saat (%)", type: "number", half: true },
+      {crud.dialog(t("budget"), [
+        { name: "category_id", label: t("Kategori pengeluaran"), type: "select", options: categories.filter((c) => c.kind === "expense").map((c) => ({ value: c.id, label: c.name })) },
+        { name: "amount", label: t("Batas per bulan (IDR)"), type: "number", half: true },
+        { name: "alert_percent", label: t("Peringatan saat (%)"), type: "number", half: true },
       ])}
     </>
   );

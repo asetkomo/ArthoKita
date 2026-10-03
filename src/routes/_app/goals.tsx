@@ -15,6 +15,7 @@ import { errMsg, rowsQuery } from "@/lib/queries";
 import { addGoalFunds } from "@/lib/finance.functions";
 import { dateLabel, diffDays, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Goal } from "@/lib/schemas";
 
@@ -26,28 +27,30 @@ export const Route = createFileRoute("/_app/goals")({
 });
 
 function GoalsPage() {
+  const { t } = useI18n();
   const goals = useSuspenseQuery(rowsQuery("goals")).data as Goal[];
   const crud = useCrudDialog("goals", { saved_amount: 0, color: "#c99a2e" });
   return (
     <>
-      <PageHeader title="Target Tabungan" subtitle="Dana darurat, liburan, DP rumah…" actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> Target</Button>} />
-      {goals.length === 0 ? <Empty text="Belum ada target tabungan." /> : (
+      <PageHeader title={t("Target Tabungan")} subtitle={t("Dana darurat, liburan, DP rumah…")} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Target")}</Button>} />
+      {goals.length === 0 ? <Empty text={t("Belum ada target tabungan.")} /> : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {goals.map((g) => <GoalCard key={g.id} g={g} onEdit={() => crud.openEdit({ ...g })} onDelete={() => crud.remove(g.id, g.name)} />)}
         </div>
       )}
-      {crud.dialog("target", [
-        { name: "name", label: "Nama target", type: "text" },
-        { name: "target_amount", label: "Target (IDR)", type: "number", half: true },
-        { name: "saved_amount", label: "Sudah terkumpul", type: "number", half: true },
-        { name: "deadline", label: "Tenggat (opsional)", type: "date", half: true },
-        { name: "color", label: "Warna", type: "color", half: true },
+      {crud.dialog(t("target"), [
+        { name: "name", label: t("Nama target"), type: "text" },
+        { name: "target_amount", label: t("Target (IDR)"), type: "number", half: true },
+        { name: "saved_amount", label: t("Sudah terkumpul"), type: "number", half: true },
+        { name: "deadline", label: t("Tenggat (opsional)"), type: "date", half: true },
+        { name: "color", label: t("Warna"), type: "color", half: true },
       ])}
     </>
   );
 }
 
 function GoalCard({ g, onEdit, onDelete }: { g: Goal; onEdit: () => void; onDelete: () => void }) {
+  const { t } = useI18n();
   const [amt, setAmt] = useState("");
   const add = useServerFn(addGoalFunds);
   const qc = useQueryClient();
@@ -69,10 +72,10 @@ function GoalCard({ g, onEdit, onDelete }: { g: Goal; onEdit: () => void; onDele
       </div>
       <p className="mt-3"><span className="num text-xl font-semibold">{money(saved)}</span> <span className="text-sm text-muted-foreground">/ {money(target)}</span></p>
       <Progress className="mt-3" value={Math.min(100, pct)} />
-      <p className="mt-2 text-xs text-muted-foreground">{Math.round(pct)}%{g.deadline ? ` · tenggat ${dateLabel(g.deadline)}` : ""}{perMonth ? ` · perlu ${money(perMonth)}/bln` : ""}</p>
+      <p className="mt-2 text-xs text-muted-foreground">{Math.round(pct)}%{g.deadline ? ` · ${t("tenggat")} ${dateLabel(g.deadline)}` : ""}{perMonth ? ` · ${t("perlu")} ${money(perMonth)}/${t("bln")}` : ""}</p>
       <div className="mt-4 flex gap-2">
-        <Input className="num" inputMode="decimal" placeholder="Nominal" value={amt} onChange={(e) => setAmt(e.target.value)} />
-        <Button variant="secondary" onClick={() => submit(1)}>+ Tambah</Button>
+        <Input className="num" inputMode="decimal" placeholder={t("Nominal")} value={amt} onChange={(e) => setAmt(e.target.value)} />
+        <Button variant="secondary" onClick={() => submit(1)}>+ {t("Tambah")}</Button>
         <Button variant="ghost" onClick={() => submit(-1)}>−</Button>
       </div>
     </Card>
