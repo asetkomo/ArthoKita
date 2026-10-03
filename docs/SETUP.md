@@ -164,3 +164,7 @@ Jalankan bagian **v12** di `supabase/schema.sql` (kolom `transactions.split_grou
 - **Banyak foto**: hingga 5 foto nota per transaksi; `receipt_path` tetap berisi foto pertama.
 - **Cari item**: pencarian transaksi juga mencocokkan nama item dari nota.
 Sebelum v12 dijalankan: split tetap tersimpan sebagai transaksi terpisah (tanpa penanda grup), hanya foto pertama yang disimpan, dan pencarian item dilewati.
+
+## v13 — Laporan per akun & rekonsiliasi (opsional)
+Jalankan bagian **v13** di `supabase/schema.sql`. Menambah fungsi `dk_account_monthly` (ringkasan masuk/keluar per bulan untuk satu akun, dihitung di database) dan tabel `account_reconciliations` (titik rekonsiliasi dengan rekening koran).
+Buka **Akun → klik nama akun** untuk melihat saldo awal/akhir bulan, grafik saldo 12 bulan, pengeluaran per kategori, daftar transaksi, dan kartu **Rekonsiliasi** (isi saldo rekening koran atau impor CSV mutasi: tanggal, keterangan, jumlah ±). Tanpa v13 halaman tetap berjalan (perhitungan JS, hasil sama) dan riwayat rekonsiliasi tidak disimpan.

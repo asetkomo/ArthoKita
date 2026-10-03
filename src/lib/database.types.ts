@@ -863,6 +863,42 @@ export type Database = {
           },
         ];
       };
+      /** v13 (optional table): bank statement reconciliation checkpoints. */
+      account_reconciliations: {
+        Row: {
+          id: string;
+          account_id: string;
+          as_of: string;
+          statement_balance: number;
+          app_balance: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          as_of: string;
+          statement_balance: number;
+          app_balance: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          account_id?: string;
+          as_of?: string;
+          statement_balance?: number;
+          app_balance?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "account_reconciliations_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       account_balances: {
@@ -910,6 +946,11 @@ export type Database = {
       dk_monthly_net: {
         Args: { p_end: string };
         Returns: { month: string; net: number }[];
+      };
+      /** v13: per-month inflow/outflow (account currency) of one account before p_end. */
+      dk_account_monthly: {
+        Args: { p_account: string; p_end: string };
+        Returns: { month: string; inflow: number; outflow: number }[];
       };
     };
     Enums: {

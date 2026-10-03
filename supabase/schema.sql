@@ -410,3 +410,42 @@ alter table public.transactions add column if not exists receipt_paths text[];
 alter table public.transactions add column if not exists items_search text
   generated always as (lower(coalesce(items::text, ''))) stored;
 notify pgrst, 'reload schema';
+
+-- ============ v13: laporan per akun & rekonsiliasi mutasi bank (aman dijalankan ulang) ============
+-- Opsional: tanpa bagian ini halaman akun memakai perhitungan JS (hasil identik) dan
+-- kartu "terakhir direkonsiliasi" disembunyikan.
+-- Logika sama dengan view account_balances: masuk = pemasukan di akun + transfer ke akun;
+-- keluar = pengeluaran + transfer dari akun (memakai kolom amount, mata uang akun).
+create or replace function public.dk_account_monthly(p_account uuid, p_end date)
+returns table (month text, inflow numeric, outflow numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month,
+    sum(case
+      when t.account_id = p_account and t.kind = 'income' then t.amount
+      when t.account_id = p_account then 0
+      when t.to_account_id = p_account and t.kind = 'transfer' then t.amount
+      else 0 end) as inflow,
+    sum(case
+      when t.account_id = p_account and t.kind in ('expense','transfer') then t.amount
+      else 0 end) as outflow
+  from public.transactions t
+  where (t.account_id = p_account or t.to_account_id = p_account) and t.occurred_at < p_end
+  group by 1;
+$$;
+revoke all on function public.dk_account_monthly(uuid, date) from public, anon, authenticated;
+grant execute on function public.dk_account_monthly(uuid, date) to service_role;
+
+create table if not exists public.account_reconciliations (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid not null references public.accounts(id) on delete cascade,
+  as_of date not null,
+  statement_balance numeric(18,2) not null,
+  app_balance numeric(18,2) not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists account_reconciliations_account_idx
+  on public.account_reconciliations (account_id, as_of desc, created_at desc);
+revoke all on public.account_reconciliations from anon, authenticated;
+grant all on public.account_reconciliations to service_role;
+alter table public.account_reconciliations enable row level security;
+notify pgrst, 'reload schema';
