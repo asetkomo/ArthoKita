@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "./auth-middleware";
-import { CRUD_TABLES, DELETABLE_TABLES, tableSchemas, transactionSchema } from "./schemas";
+import { CRUD_TABLES, DELETABLE_TABLES, importRowSchema, tableSchemas, transactionSchema } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const month = z.string().regex(/^\d{4}-\d{2}$/);
@@ -41,6 +41,11 @@ export const deleteRow = createServerFn({ method: "POST" })
       return { ok: true };
     }
     const { db } = await import("./db.server");
+    if (data.table === "transactions") {
+      const old = await db().from("transactions").select("receipt_path").eq("id", data.id).maybeSingle();
+      const { removeReceipt } = await import("./receipt.server");
+      await removeReceipt((old.data as any)?.receipt_path);
+    }
     const res = await db().from(data.table).delete().eq("id", data.id);
     if (res.error) throw new Error(res.error.message);
     return { ok: true };
@@ -187,4 +192,28 @@ export const getReceiptUrl = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { receiptUrl } = await import("./receipt.server");
     return { url: await receiptUrl(data.path) };
+  });
+
+export const getCategoryTrend = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ months: z.number().int().min(3).max(24), end: month }).parse(d))
+  .handler(async ({ data }) => {
+    const { categoryTrend } = await import("./finance.server");
+    return categoryTrend(data.months, data.end);
+  });
+
+export const getYearlySummary = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ year: z.number().int().min(2000).max(2100) }).parse(d))
+  .handler(async ({ data }) => {
+    const { yearlySummary } = await import("./finance.server");
+    return yearlySummary(data.year);
+  });
+
+export const importCsvTransactions = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ rows: z.array(importRowSchema).min(1).max(5000), createMissing: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const { importTransactions } = await import("./finance.server");
+    return importTransactions(data.rows, data.createMissing);
   });

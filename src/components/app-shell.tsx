@@ -7,6 +7,7 @@ import { logout } from "@/lib/auth.functions";
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transactions", label: "Transaksi", icon: Receipt },
+  { to: "/reports", label: "Laporan", icon: BarChart3 },
   { to: "/rekap", label: "Rekap Tahunan", icon: BarChart3 },
   { to: "/accounts", label: "Akun", icon: Wallet },
   { to: "/debts", label: "Hutang & Cicilan", icon: CreditCard },

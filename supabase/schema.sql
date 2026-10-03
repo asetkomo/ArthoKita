@@ -149,3 +149,14 @@ insert into public.categories (name, kind, color) values
   ('Tagihan & Utilitas','expense','#5b7fa6'), ('Hiburan','expense','#8a6fb0'), ('Kesehatan','expense','#4f9a94'),
   ('Pendidikan','expense','#6a8f3a'), ('Langganan','expense','#a3683a'), ('Cicilan & Hutang','expense','#8c3f3f'), ('Lainnya','expense','#7d7d6f')
 on conflict (name, kind) do nothing;
+
+-- ===== v2: foto nota & impor CSV (aman dijalankan ulang) =====
+alter table public.transactions add column if not exists receipt_path text;
+
+-- Bucket privat untuk foto nota. Jika perintah ini ditolak, buat manual:
+-- Dashboard Supabase → Storage → New bucket → nama "receipts", Public: OFF, batas 5 MB.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('receipts', 'receipts', false, 5242880)
+on conflict (id) do nothing;
+-- Tidak perlu policy: hanya server (service role) yang mengakses bucket ini;
+-- browser melihat foto lewat signed URL berlaku 10 menit.

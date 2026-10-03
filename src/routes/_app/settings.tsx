@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
+import { CsvImport } from "@/components/csv-import";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,6 +25,8 @@ const ENDPOINTS = [
   { method: "POST", path: "/api/public/n8n/ocr", desc: "Foto nota (base64) → dibaca AI & dicatat", body: `{ "image_base64": "...", "mime_type": "image/jpeg", "source": "telegram" }` },
   { method: "POST", path: "/api/public/n8n/transactions", desc: "Data transaksi terstruktur (satu atau array)", body: `{ "kind": "expense", "amount": 25000, "category": "Makanan & Minuman", "account": "GoPay", "description": "Kopi" }` },
   { method: "GET", path: "/api/public/n8n/reminders?days=7", desc: "Daftar tagihan + teks siap kirim (jadwalkan harian di n8n)", body: "" },
+  { method: "GET", path: "/api/public/n8n/reminders-email?days=7", desc: "Pengingat siap-email (subject, text, html) untuk node Email n8n", body: "" },
+  { method: "POST", path: "/api/public/n8n/reminders-send-email", desc: "Kirim email pengingat langsung (butuh RESEND_API_KEY, EMAIL_FROM, EMAIL_TO)", body: `{ "days": 7 }` },
   { method: "GET", path: "/api/public/n8n/summary?month=2026-10", desc: "Ringkasan bulanan + teks laporan", body: "" },
 ];
 
@@ -55,6 +58,8 @@ function SettingsPage() {
           </Card>
         ))}
       </div>
+
+      <CsvImport />
 
       <Card className="mt-4 p-5">
         <h2 className="text-lg font-semibold">Kurs</h2>

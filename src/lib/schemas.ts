@@ -43,7 +43,7 @@ export const transactionSchema = z.object({
   description: optText(500),
   merchant: optText(200),
   occurred_at: dateStr,
-  source: z.enum(["web", "telegram", "whatsapp", "ocr", "n8n"]).default("web"),
+  source: z.enum(["web", "telegram", "whatsapp", "ocr", "n8n", "import"]).default("web"),
   items: z.array(itemSchema).max(200).nullable().default(null),
   notes: optText(1000),
   receipt_path: optText(500),
@@ -138,3 +138,14 @@ export type Debt = z.output<typeof debtSchema> & { id: string };
 export type Subscription = z.output<typeof subscriptionSchema> & { id: string };
 export type Budget = z.output<typeof budgetSchema> & { id: string };
 export type Goal = z.output<typeof goalSchema> & { id: string };
+
+export const importRowSchema = z.object({
+  date: dateStr,
+  kind: z.enum(["income", "expense"]),
+  amount: z.number().finite().positive(),
+  currency: z.enum(CURRENCIES),
+  category: z.string().trim().max(60).nullable(),
+  account: z.string().trim().max(80).nullable(),
+  notes: z.string().max(1000).nullable(),
+});
+export type ImportRowInput = z.output<typeof importRowSchema>;

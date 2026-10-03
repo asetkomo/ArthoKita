@@ -1,6 +1,6 @@
 import { queryOptions, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getReminders, getYearly, listRows, listTransactions, saveRow } from "./finance.functions";
+import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getReminders, getYearly, getCategoryTrend, getYearlySummary, listRows, listTransactions, saveRow } from "./finance.functions";
 import type { CrudTable } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -11,6 +11,8 @@ export const debtsQuery = () => queryOptions({ queryKey: ["debts"], queryFn: () 
 export const budgetsQuery = (month: string) => queryOptions({ queryKey: ["budgets", month], queryFn: () => getBudgets({ data: { month } }) });
 export const balancesQuery = () => queryOptions({ queryKey: ["balances"], queryFn: () => getBalances() });
 export const fxQuery = () => queryOptions({ queryKey: ["fx"], queryFn: () => getFxRate(), staleTime: 3600_000 });
+export const trendQuery = (months: number, end: string) => queryOptions({ queryKey: ["trend", months, end], queryFn: () => getCategoryTrend({ data: { months, end } }) });
+export const yearlySummaryQuery = (year: number) => queryOptions({ queryKey: ["yearly-summary", year], queryFn: () => getYearlySummary({ data: { year } }) });
 export type TxFilter = { month?: string; kind?: "income" | "expense" | "transfer"; search?: string };
 export const txQuery = (f: TxFilter) => queryOptions({ queryKey: ["tx", f], queryFn: () => listTransactions({ data: f }) });
 export const yearlyQuery = (year: string) => queryOptions({ queryKey: ["yearly", year], queryFn: () => getYearly({ data: { year } }) });
