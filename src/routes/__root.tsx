@@ -13,16 +13,18 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { LanguageProvider, useI18n } from "@/lib/i18n";
 
 function NotFoundComponent() {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Halaman tidak ditemukan</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{t("Halaman tidak ditemukan")}</h2>
         <div className="mt-6">
           <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-            Kembali
+            {t("Kembali")}
           </Link>
         </div>
       </div>
@@ -32,6 +34,7 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
+  const { t } = useI18n();
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
@@ -40,7 +43,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Halaman gagal dimuat</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("Halaman gagal dimuat")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -50,7 +53,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Coba lagi
+            {t("Coba lagi")}
           </button>
         </div>
       </div>
@@ -75,6 +78,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -88,6 +93,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="id">
       <head>
         <HeadContent />
+        <meta name="theme-color" content="#1d3b2f" />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('dk-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`,
@@ -107,8 +113,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster richColors position="top-center" />
+      <LanguageProvider>
+        <Outlet />
+        <Toaster richColors position="top-center" />
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

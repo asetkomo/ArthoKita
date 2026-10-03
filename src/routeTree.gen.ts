@@ -23,6 +23,7 @@ import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubscriptionsRouteImport } from './routes/_app/subscriptions'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
+import { Route as ApiPublicN8nCommandRouteImport } from './routes/api/public/n8n/command'
 import { Route as ApiPublicN8nMessageRouteImport } from './routes/api/public/n8n/message'
 import { Route as ApiPublicN8nOcrRouteImport } from './routes/api/public/n8n/ocr'
 import { Route as ApiPublicN8nRemindersRouteImport } from './routes/api/public/n8n/reminders'
@@ -100,6 +101,11 @@ const AppTransactionsRoute = AppTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicN8nCommandRoute = ApiPublicN8nCommandRouteImport.update({
+  id: '/api/public/n8n/command',
+  path: '/api/public/n8n/command',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicN8nMessageRoute = ApiPublicN8nMessageRouteImport.update({
   id: '/api/public/n8n/message',
   path: '/api/public/n8n/message',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subscriptions': typeof AppSubscriptionsRoute
   '/_app/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/transactions'
+    | '/api/public/n8n/command'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/transactions'
+    | '/api/public/n8n/command'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/subscriptions'
     | '/_app/transactions'
+    | '/api/public/n8n/command'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicN8nCommandRoute: typeof ApiPublicN8nCommandRoute
   ApiPublicN8nMessageRoute: typeof ApiPublicN8nMessageRoute
   ApiPublicN8nOcrRoute: typeof ApiPublicN8nOcrRoute
   ApiPublicN8nRemindersRoute: typeof ApiPublicN8nRemindersRoute
@@ -390,6 +403,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransactionsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/n8n/command': {
+      id: '/api/public/n8n/command'
+      path: '/api/public/n8n/command'
+      fullPath: '/api/public/n8n/command'
+      preLoaderRoute: typeof ApiPublicN8nCommandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/n8n/message': {
       id: '/api/public/n8n/message'
       path: '/api/public/n8n/message'
@@ -476,6 +496,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicN8nCommandRoute: ApiPublicN8nCommandRoute,
   ApiPublicN8nMessageRoute: ApiPublicN8nMessageRoute,
   ApiPublicN8nOcrRoute: ApiPublicN8nOcrRoute,
   ApiPublicN8nRemindersRoute: ApiPublicN8nRemindersRoute,

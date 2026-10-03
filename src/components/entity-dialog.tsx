@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { errMsg } from "@/lib/queries";
+import { useI18n } from "@/lib/i18n";
+
 
 export type FieldDef = {
   name: string;
@@ -32,8 +34,10 @@ export function EntityDialog(props: {
   onSubmit: (v: Values) => Promise<void>;
   extra?: (v: Values, set: (k: string, v: unknown) => void) => ReactNode;
 }) {
+  const { t } = useI18n();
   const [values, setValues] = useState<Values>(props.initial);
   const [busy, setBusy] = useState(false);
+
   useEffect(() => {
     if (props.open) setValues(props.initial);
   }, [props.open, props.initial]);
@@ -45,12 +49,13 @@ export function EntityDialog(props: {
     e.preventDefault();
     setBusy(true);
     try {
-      await props.onSubmit(values);
-      toast.success("Tersimpan");
+    await props.onSubmit(values);
+      toast.success(t("Tersimpan"));
       props.onOpenChange(false);
     } catch (err) {
-      toast.error("Gagal menyimpan", { description: errMsg(err) });
+      toast.error(t("Gagal menyimpan"), { description: errMsg(err) });
     } finally {
+
       setBusy(false);
     }
   }
@@ -78,8 +83,9 @@ export function EntityDialog(props: {
                     {f.type === "select" ? (
                       <Select value={v == null || v === "" ? NONE : String(v)} onValueChange={(x) => set(f.name, x === NONE ? null : x)}>
                         <SelectTrigger id={f.name}>
-                          <SelectValue placeholder={f.placeholder ?? "Pilih"} />
+                          <SelectValue placeholder={f.placeholder ?? t("Pilih")} />
                         </SelectTrigger>
+
                         <SelectContent>
                           {(f.options ?? []).map((o) => (
                             <SelectItem key={o.value || NONE} value={o.value || NONE}>
@@ -110,12 +116,13 @@ export function EntityDialog(props: {
           {props.extra ? <div className="col-span-2">{props.extra(values, set)}</div> : null}
           <DialogFooter className="col-span-2">
             <Button type="button" variant="ghost" onClick={() => props.onOpenChange(false)}>
-              Batal
+              {t("Batal")}
             </Button>
             <Button type="submit" disabled={busy}>
-              {busy ? "Menyimpan…" : "Simpan"}
+              {busy ? t("Menyimpan…") : t("Simpan")}
             </Button>
           </DialogFooter>
+
         </form>
       </DialogContent>
     </Dialog>

@@ -9,11 +9,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useI18n } from "@/lib/i18n";
+
 
 type Pending = { title: string; description?: string | undefined; confirmLabel: string; destructive: boolean; resolve: (ok: boolean) => void };
 
 /** Promise-based confirm dialog matching the app design (replaces window.confirm). */
 export function useConfirm() {
+  const { t } = useI18n();
   const [pending, setPending] = useState<Pending | null>(null);
   const resolver = useRef<((ok: boolean) => void) | null>(null);
 
@@ -24,13 +27,14 @@ export function useConfirm() {
         setPending({
           title,
           description: opts?.description,
-          confirmLabel: opts?.confirmLabel ?? "Ya, lanjutkan",
+          confirmLabel: opts?.confirmLabel ?? t("Ya, lanjutkan"),
           destructive: opts?.destructive ?? false,
           resolve,
         });
       }),
-    [],
+    [t],
   );
+
 
   const settle = (ok: boolean) => {
     resolver.current?.(ok);
@@ -46,7 +50,7 @@ export function useConfirm() {
           {pending?.description ? <AlertDialogDescription>{pending.description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogCancel>{t("Batal")}</AlertDialogCancel>
           <AlertDialogAction
             className={pending?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
             onClick={() => settle(true)}
@@ -54,6 +58,7 @@ export function useConfirm() {
             {pending?.confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
+
       </AlertDialogContent>
     </AlertDialog>
   );

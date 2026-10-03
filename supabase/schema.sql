@@ -110,6 +110,15 @@ create table if not exists public.goals (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.activity_log (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  entity text,
+  detail jsonb,
+  created_at timestamptz not null default now()
+);
+
+
 create table if not exists public.fx_rates (
   rate_date date not null,
   base text not null,
@@ -134,7 +143,7 @@ group by a.id;
 do $$
 declare t text;
 begin
-  foreach t in array array['accounts','categories','transactions','debts','debt_payments','subscriptions','budgets','goals','fx_rates'] loop
+  foreach t in array array['accounts','categories','transactions','debts','debt_payments','subscriptions','budgets','goals','fx_rates','activity_log'] loop
     execute format('revoke all on public.%I from anon, authenticated', t);
     execute format('grant all on public.%I to service_role', t);
     execute format('alter table public.%I enable row level security', t);

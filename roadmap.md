@@ -13,3 +13,12 @@
 - [x] Impor CSV transaksi (format hasil ekspor) di halaman Transaksi
 - [x] Lampiran foto nota per transaksi (Supabase Storage bucket "receipts")
 - [x] Mode gelap/terang (tombol di sidebar & header mobile)
+- [ ] Grafik kekayaan bersih 12 bulan di dashboard
+- [ ] Bot n8n bisa aksi langsung (cek saldo, laporan, bayar cicilan/langganan, pengingat)
+- [ ] Filter kategori/akun + paginasi di halaman Transaksi
+- [ ] PWA (manifest + ikon, bisa dipasang di HP)
+- [ ] Cetak PDF di rekap tahunan
+- [ ] Deteksi duplikat saat impor CSV
+- [ ] Cadangan data satu klik (JSON) di Pengaturan
+- [ ] Catatan aktivitas di Pengaturan (tabel activity_log)
+- [ ] Ganti bahasa Indonesia/Inggris (toggle di sidebar & header)

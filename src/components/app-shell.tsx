@@ -1,8 +1,9 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, type ReactNode } from "react";
-import { BarChart3, Bell, CreditCard, LayoutDashboard, LogOut, Moon, PiggyBank, Receipt, Repeat, Settings, Sun, Target, Wallet } from "lucide-react";
+import { BarChart3, Bell, CreditCard, LayoutDashboard, Languages, LogOut, Moon, PiggyBank, Receipt, Repeat, Settings, Sun, Target, Wallet } from "lucide-react";
 import { logout } from "@/lib/auth.functions";
+import { useI18n } from "@/lib/i18n";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ const NAV = [
 ] as const;
 
 export function ThemeToggle({ className }: { className?: string }) {
+  const { t } = useI18n();
   const [dark, setDark] = useState(false);
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -30,14 +32,29 @@ export function ThemeToggle({ className }: { className?: string }) {
     setDark(d);
   }
   return (
-    <button onClick={toggle} aria-label={dark ? "Mode terang" : "Mode gelap"} className={className ?? "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}>
+    <button onClick={toggle} aria-label={dark ? t("Mode terang") : t("Mode gelap")} className={className ?? "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}>
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-      {className === undefined ? (dark ? "Mode terang" : "Mode gelap") : null}
+      {className === undefined ? (dark ? t("Mode terang") : t("Mode gelap")) : null}
+    </button>
+  );
+}
+
+export function LanguageToggle({ className }: { className?: string }) {
+  const { lang, setLang, t } = useI18n();
+  return (
+    <button
+      onClick={() => setLang(lang === "id" ? "en" : "id")}
+      aria-label={t("Ganti bahasa")}
+      className={className ?? "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"}
+    >
+      <Languages className="size-4" />
+      {className === undefined ? (lang === "id" ? "EN" : "ID") : <span className="text-xs font-semibold">{lang.toUpperCase()}</span>}
     </button>
   );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const doLogout = useServerFn(logout);
   const navigate = useNavigate();
   const router = useRouter();
@@ -51,33 +68,37 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="no-print sticky top-0 hidden h-screen flex-col bg-sidebar p-4 text-sidebar-foreground lg:flex">
         <div className="mb-8 px-2 pt-2">
           <p className="font-display text-2xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
-          <p className="text-xs text-ink-muted">buku kas pribadi</p>
+          <p className="text-xs text-ink-muted">{t("buku kas pribadi")}</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.map((n) => (
             <Link key={n.to} to={n.to} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent" activeProps={{ className: "bg-sidebar-accent text-sidebar-primary font-semibold" }}>
-              <n.icon className="size-4" /> {n.label}
+              <n.icon className="size-4" /> {t(n.label)}
             </Link>
           ))}
         </nav>
-        <ThemeToggle />
-        <button onClick={out} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent">
-          <LogOut className="size-4" /> Keluar
-        </button>
+        <div className="flex flex-col gap-0.5">
+          <ThemeToggle />
+          <LanguageToggle />
+          <button onClick={out} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent">
+            <LogOut className="size-4" /> {t("Keluar")}
+          </button>
+        </div>
       </aside>
       <div className="min-w-0">
         <header className="no-print sticky top-0 z-30 bg-sidebar text-sidebar-foreground lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <p className="font-display text-xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
             <div className="flex items-center gap-1">
+              <LanguageToggle className="p-2" />
               <ThemeToggle className="p-2" />
-              <button onClick={out} aria-label="Keluar"><LogOut className="size-4" /></button>
+              <button onClick={out} aria-label={t("Keluar")}><LogOut className="size-4" /></button>
             </div>
           </div>
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs" activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" }}>
-                <n.icon className="size-3.5" /> {n.label}
+                <n.icon className="size-3.5" /> {t(n.label)}
               </Link>
             ))}
           </nav>

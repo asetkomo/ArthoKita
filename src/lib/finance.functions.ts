@@ -28,6 +28,8 @@ export const saveRow = createServerFn({ method: "POST" })
     const q = data.id ? db().from(data.table).update(values).eq("id", data.id) : db().from(data.table).insert(values);
     const res = await q.select().single();
     if (res.error) throw new Error(res.error.message);
+    const { logActivity } = await import("./finance.server");
+    await logActivity(`${data.table}.${data.id ? "update" : "create"}`, data.table, { name: (values as any).name ?? null });
     return res.data as any;
   });
 
@@ -36,8 +38,9 @@ export const deleteRow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ table: z.enum(DELETABLE_TABLES), id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     if (data.table === "debt_payments") {
-      const { deleteDebtPayment } = await import("./finance.server");
+      const { deleteDebtPayment, logActivity } = await import("./finance.server");
       await deleteDebtPayment(data.id);
+      await logActivity("debt_payment.delete", "debt_payments", { id: data.id });
       return { ok: true };
     }
     const { db } = await import("./db.server");
@@ -48,8 +51,11 @@ export const deleteRow = createServerFn({ method: "POST" })
     }
     const res = await db().from(data.table).delete().eq("id", data.id);
     if (res.error) throw new Error(res.error.message);
+    const { logActivity } = await import("./finance.server");
+    await logActivity(`${data.table}.delete`, data.table, { id: data.id });
     return { ok: true };
   });
+
 
 export const saveTransaction = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -59,15 +65,24 @@ export const saveTransaction = createServerFn({ method: "POST" })
     return (data.id ? await updateTransaction(data.id, data.values) : await insertTransaction(data.values)) as any;
   });
 
+const txFilterSchema = z.object({ month: month.optional(), kind: z.enum(["income", "expense", "transfer"]).optional(), search: z.string().max(100).optional(), category_id: z.string().uuid().optional(), account_id: z.string().uuid().optional() });
+
 export const listTransactions = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ month: month.optional(), kind: z.enum(["income", "expense", "transfer"]).optional(), search: z.string().max(100).optional(), category_id: z.string().uuid().optional(), account_id: z.string().uuid().optional() }).parse(d),
-  )
+  .inputValidator((d: unknown) => txFilterSchema.extend({ offset: z.number().int().min(0).optional() }).parse(d))
   .handler(async ({ data }) => {
     const { listTransactions } = await import("./finance.server");
     return (await listTransactions(data)) as any[];
   });
+
+export const getTxCount = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => txFilterSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { countTransactions } = await import("./finance.server");
+    return countTransactions(data);
+  });
+
 
 export const getDashboard = createServerFn({ method: "GET" })
   .middleware([requireAuth])
@@ -217,3 +232,27 @@ export const importCsvTransactions = createServerFn({ method: "POST" })
     const { importTransactions } = await import("./finance.server");
     return importTransactions(data.rows, data.createMissing);
   });
+
+export const getNetWorth = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ months: z.number().int().min(3).max(36), end: month }).parse(d))
+  .handler(async ({ data }) => {
+    const { netWorthSeries } = await import("./finance.server");
+    return netWorthSeries(data.months, data.end);
+  });
+
+export const exportBackupJson = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { exportBackup } = await import("./finance.server");
+    return exportBackup();
+  });
+
+export const getActivity = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ limit: z.number().int().min(1).max(100).default(30) }).parse(d))
+  .handler(async ({ data }) => {
+    const { listActivity } = await import("./finance.server");
+    return listActivity(data.limit ?? 30);
+  });
+
