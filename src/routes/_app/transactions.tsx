@@ -187,7 +187,7 @@ function TransactionsPage() {
         ) : (
           <ul className="divide-y">
             {list.map((tx) => (
-              <li key={tx.id} className="flex min-w-0 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+              <li key={tx.id} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 sm:flex sm:gap-3 sm:px-4">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: tx.category?.color ?? "var(--muted-foreground)" }} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{tx.description || tx.merchant || tx.category?.name || KIND_LABEL[tx.kind]}</p>
@@ -203,7 +203,7 @@ function TransactionsPage() {
                   <p className={`num text-sm font-semibold ${tx.kind === "income" ? "text-income" : tx.kind === "expense" ? "text-expense" : ""}`}>{tx.kind === "income" ? "+" : tx.kind === "expense" ? "−" : ""}{money(tx.amount, tx.currency)}</p>
                   {tx.currency === "USD" ? <p className="num text-xs text-muted-foreground">{money(tx.amount_idr)}</p> : null}
                 </div>
-                <div className="no-print flex shrink-0 flex-col sm:flex-row">
+                <div className="no-print col-start-2 col-end-4 flex shrink-0 justify-self-end sm:col-auto sm:flex-row">
                   <Button size="icon" variant="ghost" aria-label={t("Ubah")} onClick={() => setDlg({ open: true, id: tx.id, draft: { kind: tx.kind, amount: tx.amount, currency: tx.currency, occurred_at: tx.occurred_at, account_id: tx.account_id, to_account_id: tx.to_account_id, category_id: tx.category_id, description: tx.description, merchant: tx.merchant, notes: tx.notes, source: tx.source, items: tx.items, receipt_path: tx.receipt_path } })}><Pencil className="size-4" /></Button>
                   <Button size="icon" variant="ghost" aria-label={t("Hapus")} onClick={() => remove(tx.id)}><Trash2 className="size-4" /></Button>
                 </div>

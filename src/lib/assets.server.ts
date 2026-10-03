@@ -220,7 +220,7 @@ export async function assetsOverview() {
     db().from("account_balances").select("type, currency, balance").eq("archived", false),
     db().from("goals").select("target_amount, saved_amount"),
     goldSummary({ limit: 1 }),
-    listReceivables({ limit: 100 }),
+    listReceivables({ limit: 10000 }),
   ]);
   const groups: Record<string, number> = { cash: 0, investment: 0, credit: 0 };
   for (const b of (bal.data ?? []) as any[]) {

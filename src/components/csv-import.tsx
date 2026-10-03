@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { FileUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SortButton, type SortDirection } from "@/components/sort-button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,8 @@ export function CsvImport() {
   const [fileName, setFileName] = useState("");
   const [createMissing, setCreateMissing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [sort, setSort] = useState<"line" | "date" | "kind" | "amount" | "category" | "account">("line");
+  const [direction, setDirection] = useState<SortDirection>("asc");
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
   const run = useServerFn(importCsvTransactions);
@@ -81,6 +84,12 @@ export function CsvImport() {
 
   const invalid = (rows ?? []).length - valid.length - dupCount;
   const totalValid = valid.length + dupCount;
+  const sortedRows = useMemo(() => [...(rows ?? [])].sort((a, b) => {
+    const av = sort === "line" ? a.line : sort === "date" ? a.value?.date ?? "" : sort === "kind" ? a.value?.kind ?? "" : sort === "amount" ? a.value?.amount ?? -1 : sort === "category" ? a.value?.category ?? "" : a.value?.account ?? "";
+    const bv = sort === "line" ? b.line : sort === "date" ? b.value?.date ?? "" : sort === "kind" ? b.value?.kind ?? "" : sort === "amount" ? b.value?.amount ?? -1 : sort === "category" ? b.value?.category ?? "" : b.value?.account ?? "";
+    return (typeof av === "number" ? av - Number(bv) : String(av).localeCompare(String(bv))) * (direction === "asc" ? 1 : -1);
+  }), [rows, sort, direction]);
+  const sortBy = (column: typeof sort) => { setDirection((d) => sort === column ? (d === "asc" ? "desc" : "asc") : "asc"); setSort(column); };
   return (
     <Card className="mt-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -101,10 +110,10 @@ export function CsvImport() {
           <div className="max-h-80 overflow-auto rounded-lg border">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-muted text-left text-xs text-muted-foreground">
-                <tr><th className="px-3 py-2">{t("Baris")}</th><th className="px-3 py-2">{t("Tanggal")}</th><th className="px-3 py-2">{t("Jenis")}</th><th className="px-3 py-2 text-right">{t("Jumlah")}</th><th className="px-3 py-2">{t("Kategori")}</th><th className="px-3 py-2">{t("Akun")}</th><th className="px-3 py-2">{t("Catatan / Status")}</th></tr>
+                <tr><th className="px-3 py-1"><SortButton label={t("Baris")} active={sort === "line"} direction={direction} onClick={() => sortBy("line")} /></th><th className="px-3 py-1"><SortButton label={t("Tanggal")} active={sort === "date"} direction={direction} onClick={() => sortBy("date")} /></th><th className="px-3 py-1"><SortButton label={t("Jenis")} active={sort === "kind"} direction={direction} onClick={() => sortBy("kind")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Jumlah")} active={sort === "amount"} direction={direction} onClick={() => sortBy("amount")} /></th><th className="px-3 py-1"><SortButton label={t("Kategori")} active={sort === "category"} direction={direction} onClick={() => sortBy("category")} /></th><th className="px-3 py-1"><SortButton label={t("Akun")} active={sort === "account"} direction={direction} onClick={() => sortBy("account")} /></th><th className="px-3 py-2">{t("Catatan / Status")}</th></tr>
               </thead>
               <tbody className="divide-y">
-                {rows.map((r) => (
+                {sortedRows.map((r) => (
                   <tr key={r.line} className={r.value ? (r.duplicate ? "bg-warning/10" : "") : "bg-destructive/10"}>
                     <td className="num px-3 py-1.5 text-xs text-muted-foreground">{r.line}</td>
                     {r.value ? (
