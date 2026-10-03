@@ -11,7 +11,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trendQuery, yearlySummaryQuery } from "@/lib/queries";
 import { currentMonth, monthLabel, shortMonth } from "@/lib/dates";
 import { compact, money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
+
 
 export const Route = createFileRoute("/_app/reports")({
   head: () => pageHead("Laporan", "Tren pengeluaran per kategori dan rekap tahunan."),
@@ -27,9 +29,10 @@ const FALLBACK = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--c
 const tooltipStyle = { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" };
 
 function ReportsPage() {
+  const { t } = useI18n();
   return (
     <>
-      <PageHeader title="Laporan" subtitle="Lihat ke mana uang Anda pergi dari bulan ke bulan dan sepanjang tahun." actions={<Button variant="outline" onClick={() => window.print()}>Cetak PDF</Button>} />
+      <PageHeader title={t("Laporan")} subtitle={t("Lihat ke mana uang Anda pergi dari bulan ke bulan dan sepanjang tahun.")} actions={<Button variant="outline" onClick={() => window.print()}>{t("Cetak PDF")}</Button>} />
       <CategoryTrend />
       <YearlyRecap />
     </>
@@ -37,25 +40,29 @@ function ReportsPage() {
 }
 
 function CategoryTrend() {
+  const { t, lang } = useI18n();
+  const locale = lang === "en" ? "en-US" : "id-ID";
   const [months, setMonths] = useState(6);
   const { data } = useQuery({ ...trendQuery(months, currentMonth()), placeholderData: (p) => p });
   const [selected, setSelected] = useState<string[] | null>(null);
   const cats = data?.categories ?? [];
   useEffect(() => { if (selected === null && cats.length) setSelected(cats.slice(0, 5).map((c) => c.id)); }, [cats, selected]);
   const sel = selected ?? [];
-  const chart = useMemo(() => (data?.series ?? []).map((r) => ({ ...r, label: shortMonth(String(r["month"])) })), [data]);
+  const chart = useMemo(() => (data?.series ?? []).map((r) => ({ ...r, label: shortMonth(String(r["month"]), locale) })), [data, locale]);
+
   const toggle = (id: string) => setSelected((s) => ((s ?? []).includes(id) ? (s ?? []).filter((x) => x !== id) : [...(s ?? []), id]));
 
   return (
     <Card className="p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Tren pengeluaran per kategori</h2>
+        <h2 className="text-lg font-semibold">{t("Tren pengeluaran per kategori")}</h2>
         <Tabs value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
-          <TabsList><TabsTrigger value="6">6 bulan</TabsTrigger><TabsTrigger value="12">12 bulan</TabsTrigger></TabsList>
+          <TabsList><TabsTrigger value="6">6 {t("bulan")}</TabsTrigger><TabsTrigger value="12">12 {t("bulan")}</TabsTrigger></TabsList>
         </Tabs>
       </div>
       {cats.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted-foreground">Belum ada pengeluaran pada periode ini.</p>
+        <p className="py-10 text-center text-sm text-muted-foreground">{t("Belum ada pengeluaran pada periode ini.")}</p>
+
       ) : (
         <>
           <div className="mb-4 flex flex-wrap gap-1.5">
