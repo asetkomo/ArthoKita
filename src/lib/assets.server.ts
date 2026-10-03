@@ -2,6 +2,7 @@ import { db } from "./db.server";
 import { getUsdIdr, insertTransaction, updateTransaction, ensureCategory, isMissingTable, logActivity, today } from "./finance.server";
 import { goldHoldings, goldLinkAction, goldLinkedTx, GOLD_CATEGORY, GOLD_LINK_COLUMNS, receivableStatus, TROY_OUNCE_GRAMS, type GoldPrice } from "./assets";
 import type { GoldInput, ReceivableInput } from "./schemas";
+import { fetchAll } from "./paginate";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const ANTAM_PREMIUM = 1.12; // fallback estimate when no Antam price is reachable
@@ -92,7 +93,11 @@ export async function goldSummary(options: GoldListOptions = {}) {
     if (isMissingTable(res.error)) return { ready: false as const };
     throw new Error(res.error.message);
   }
-  const [all, prices] = await Promise.all([db().from("gold_purchases").select("kind, grams, price_per_gram, total").order("occurred_at", { ascending: false }), getGoldPrices()]);
+  // Holdings need every row (PostgREST caps responses at 1000); prices are independent, so load both together.
+  const [all, prices] = await Promise.all([
+    fetchAll((from, to) => db().from("gold_purchases").select("kind, grams, price_per_gram, total").order("occurred_at", { ascending: false }).order("id").range(from, to)),
+    getGoldPrices(),
+  ]);
   if (all.error) throw new Error(all.error.message);
   const rows = (res.data ?? []).map((r: any) => ({ ...r, grams: Number(r.grams), price_per_gram: Number(r.price_per_gram), total: Number(r.total) }));
   const holdingsRows = (all.data ?? []).map((r: any) => ({ ...r, grams: Number(r.grams), price_per_gram: Number(r.price_per_gram), total: Number(r.total) }));
@@ -141,7 +146,7 @@ export async function saveGold(id: string | null, v: GoldInput) {
 
 /** Grams held at end of each month key (YYYY-MM) — used by net worth. */
 export async function goldGramsByMonth(): Promise<{ month: string; grams: number }[]> {
-  const res = await db().from("gold_purchases").select("kind, occurred_at, grams");
+  const res = await fetchAll((from, to) => db().from("gold_purchases").select("kind, occurred_at, grams").order("id").range(from, to));
   if (res.error) return [];
   return (res.data ?? []).map((r: any) => ({ month: String(r.occurred_at).slice(0, 7), grams: (r.kind === "sell" ? -1 : 1) * Number(r.grams) }));
 }
@@ -152,8 +157,8 @@ export async function listReceivables(options: { offset?: number; limit?: number
   const limit = options.limit ?? 24;
   const [r, p, outstanding] = await Promise.all([
     db().from("receivables").select("*", { count: "exact" }).order("lent_at", { ascending: false }).range(offset, offset + limit - 1),
-    db().from("receivable_payments").select("id, receivable_id, amount, paid_at, account_id").order("paid_at"),
-    db().from("receivables").select("id, amount, currency, status").eq("status", "active"),
+    fetchAll((from, to) => db().from("receivable_payments").select("id, receivable_id, amount, paid_at, account_id").order("paid_at").order("id").range(from, to)),
+    fetchAll((from, to) => db().from("receivables").select("id, amount, currency, status").eq("status", "active").order("id").range(from, to)),
   ]);
   if (r.error || p.error) {
     if (isMissingTable(r.error) || isMissingTable(p.error)) return { ready: false as const };
@@ -240,7 +245,10 @@ export async function deleteReceivable(id: string) {
 
 /** Outstanding receivable principal (IDR) per lent month, minus repayments per month. */
 export async function receivableDeltasByMonth(rate: number): Promise<{ month: string; delta: number }[]> {
-  const [r, p] = await Promise.all([db().from("receivables").select("id, amount, currency, lent_at, account_id"), db().from("receivable_payments").select("receivable_id, amount, paid_at")]);
+  const [r, p] = await Promise.all([
+    fetchAll((from, to) => db().from("receivables").select("id, amount, currency, lent_at, account_id").order("id").range(from, to)),
+    fetchAll((from, to) => db().from("receivable_payments").select("receivable_id, amount, paid_at").order("id").range(from, to)),
+  ]);
   if (r.error || p.error) return [];
   const cur = new Map((r.data ?? []).map((x: any) => [x.id, x]));
   const out: { month: string; delta: number }[] = [];

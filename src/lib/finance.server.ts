@@ -3,6 +3,7 @@ import { dueMonthlyFees, feeDate, FEE_CATEGORY, withTax } from "./fees";
 import { addDays, addMonthsKeepDay, diffDays, monthRange, shiftMonth, todayStr } from "./dates";
 import type { ExternalTx, TransactionInput } from "./schemas";
 import { dupKey } from "./csv";
+import { fetchAll } from "./paginate";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Res<T> = { data: T | null; error: { message: string } | null };
@@ -269,17 +270,21 @@ function applyTxFilters(q: any, f: TxFilters) {
   return q;
 }
 
+const TX_LIST_SELECT =
+  "*, category:categories(id,name,color), account:accounts!transactions_account_id_fkey(id,name), to_account:accounts!transactions_to_account_id_fkey(id,name)";
+
+function orderedTxList(f: TxFilters) {
+  return db()
+    .from("transactions")
+    .select(TX_LIST_SELECT)
+    .order(f.sort ?? "occurred_at", { ascending: (f.direction ?? "desc") === "asc", nullsFirst: false })
+    .order("created_at", { ascending: false });
+}
+
 export async function listTransactions(f: TxFilters) {
   const limit = f.limit ?? 500;
   const offset = f.offset ?? 0;
-  const q = db()
-    .from("transactions")
-    .select(
-      "*, category:categories(id,name,color), account:accounts!transactions_account_id_fkey(id,name), to_account:accounts!transactions_to_account_id_fkey(id,name)",
-    )
-    .order(f.sort ?? "occurred_at", { ascending: (f.direction ?? "desc") === "asc", nullsFirst: false })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+  const q = orderedTxList(f).range(offset, offset + limit - 1);
   return must<any[]>(await applyTxFilters(q, f));
 }
 
@@ -291,7 +296,9 @@ export async function countTransactions(f: TxFilters) {
 
 
 export async function exportCsv(month?: string) {
-  const rows = await listTransactions({ month, limit: 10000 });
+  // Same order/filters as listTransactions, paged past PostgREST's 1000-row cap (id = stable tie-break).
+  const f: TxFilters = { month };
+  const rows = must<any[]>(await fetchAll((from, to) => applyTxFilters(orderedTxList(f).order("id"), f).range(from, to), { hardCap: 10000 }));
   const head = ["Tanggal", "Jenis", "Kategori", "Akun", "Ke Akun", "Deskripsi", "Merchant", "Jumlah", "Mata Uang", "Jumlah IDR", "Sumber", "Catatan"];
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = rows.map((r) =>
@@ -307,7 +314,7 @@ export async function computeBudgets(month: string) {
   const { start, end } = monthRange(month);
   const [budgetsRes, txRes] = await Promise.all([
     db().from("budgets").select("*, category:categories(id,name,color)"),
-    db().from("transactions").select("category_id, amount_idr").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end),
+    fetchAll((from, to) => db().from("transactions").select("category_id, amount_idr").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end).order("id").range(from, to)),
   ]);
   const budgets = must<any[]>(budgetsRes);
   const tx = must<any[]>(txRes);
@@ -517,8 +524,8 @@ export async function computeDashboard(month: string) {
   const curBudgetsP = month === curMonth ? budgetsP : computeBudgets(curMonth);
   const remindersP = computeReminders(14, { skipFees: true, rate: rateP, debts: debtsP, budgets: curBudgetsP });
   const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes, rate, debts, budgets, reminders] = await Promise.all([
-    db().from("transactions").select("kind, amount_idr, category_id, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end),
-    db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
+    fetchAll((from, to) => db().from("transactions").select("kind, amount_idr, category_id, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end).order("id").range(from, to)),
+    fetchAll((from, to) => db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer").order("id").range(from, to)),
     db().from("account_balances").select("*").eq("archived", false),
     db().from("goals").select("*").order("created_at"),
     db().from("subscriptions").select("*").eq("active", true),
@@ -627,7 +634,7 @@ export async function computeYearly(year: string) {
   const start = `${year}-01-01`;
   const end = `${Number(year) + 1}-01-01`;
   const rows = must<any[]>(
-    await db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end).neq("kind", "transfer"),
+    await fetchAll((from, to) => db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end).neq("kind", "transfer").order("id").range(from, to)),
   );
   const months = new Map<string, { month: string; income: number; expense: number }>();
   for (let i = 1; i <= 12; i++) months.set(`${year}-${String(i).padStart(2, "0")}`, { month: `${year}-${String(i).padStart(2, "0")}`, income: 0, expense: 0 });
@@ -758,7 +765,7 @@ export async function importCsv(text: string) {
     const dates = items.map((i) => i.date);
     const min = dates.reduce((a, b) => (a < b ? a : b));
     const max = dates.reduce((a, b) => (a > b ? a : b));
-    const existing = must<any[]>(await db().from("transactions").select("occurred_at, kind, amount, currency, description").gte("occurred_at", min).lte("occurred_at", max).limit(50000));
+    const existing = must<any[]>(await fetchAll((from, to) => db().from("transactions").select("occurred_at, kind, amount, currency, description").gte("occurred_at", min).lte("occurred_at", max).order("id").range(from, to), { hardCap: 50000 }));
     const seen = new Set(existing.map((t) => dupKey({ date: t.occurred_at, kind: t.kind, amount: Number(t.amount), currency: t.currency, description: t.description })));
     for (const it of items) {
       try {
@@ -785,7 +792,7 @@ export async function categoryTrend(months: number, endMonth: string) {
   const first = shiftMonth(endMonth, -(months - 1));
   const { start } = monthRange(first);
   const { end } = monthRange(endMonth);
-  const rows = must<any[]>(await db().from("transactions").select("amount_idr, occurred_at, category_id, category:categories(id,name,color)").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end).limit(50000));
+  const rows = must<any[]>(await fetchAll((from, to) => db().from("transactions").select("amount_idr, occurred_at, category_id, category:categories(id,name,color)").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end).order("id").range(from, to), { hardCap: 50000 }));
   const list = Array.from({ length: months }, (_, i) => shiftMonth(first, i));
   const cats = new Map<string, { id: string; name: string; color: string | null; total: number }>();
   const series = new Map<string, Record<string, number | string>>(list.map((m) => [m, { month: m }]));
@@ -802,7 +809,7 @@ export async function categoryTrend(months: number, endMonth: string) {
 }
 
 export async function yearlySummary(year: number) {
-  const rows = must<any[]>(await db().from("transactions").select("kind, amount_idr, occurred_at").neq("kind", "transfer").gte("occurred_at", `${year}-01-01`).lt("occurred_at", `${year + 1}-01-01`).limit(100000));
+  const rows = must<any[]>(await fetchAll((from, to) => db().from("transactions").select("kind, amount_idr, occurred_at").neq("kind", "transfer").gte("occurred_at", `${year}-01-01`).lt("occurred_at", `${year + 1}-01-01`).order("id").range(from, to), { hardCap: 100000 }));
   const months = Array.from({ length: 12 }, (_, i) => ({ month: `${year}-${String(i + 1).padStart(2, "0")}`, income: 0, expense: 0, net: 0 }));
   for (const t of rows) {
     const m = months[Number(String(t.occurred_at).slice(5, 7)) - 1];
@@ -833,12 +840,17 @@ export async function importTransactions(rows: import("./schemas").ImportRowInpu
   const dates = rows.map((r) => r.date);
   const existing = dates.length
     ? must<any[]>(
-        await db()
-          .from("transactions")
-          .select("occurred_at, kind, amount, currency, description")
-          .gte("occurred_at", dates.reduce((a, b) => (a < b ? a : b)))
-          .lte("occurred_at", dates.reduce((a, b) => (a > b ? a : b)))
-          .limit(50000),
+        await fetchAll(
+          (from, to) =>
+            db()
+              .from("transactions")
+              .select("occurred_at, kind, amount, currency, description")
+              .gte("occurred_at", dates.reduce((a, b) => (a < b ? a : b)))
+              .lte("occurred_at", dates.reduce((a, b) => (a > b ? a : b)))
+              .order("id")
+              .range(from, to),
+          { hardCap: 50000 },
+        ),
       )
     : [];
   const seen = new Set(existing.map((t) => dupKey({ date: t.occurred_at, kind: t.kind, amount: Number(t.amount), currency: t.currency, description: t.description })));
@@ -910,7 +922,7 @@ export async function netWorthSeries(months = 12, endMonth: string) {
   const [rate, accRes, txRes, goldRows, prices, recv] = await Promise.all([
     rateP,
     db().from("accounts").select("initial_balance, currency"),
-    db().from("transactions").select("occurred_at, kind, amount_idr").neq("kind", "transfer").lt("occurred_at", end).limit(200000),
+    fetchAll((from, to) => db().from("transactions").select("occurred_at, kind, amount_idr").neq("kind", "transfer").lt("occurred_at", end).order("id").range(from, to), { hardCap: 200000 }),
     assets.goldGramsByMonth(),
     assets.getGoldPrices().catch(() => ({ world: null, antam: null })),
     rateP.then((r) => assets.receivableDeltasByMonth(r)),
@@ -949,7 +961,17 @@ export async function netWorthSeries(months = 12, endMonth: string) {
 export async function exportBackup() {
   const tables = ["accounts", "categories", "transactions", "debts", "debt_payments", "subscriptions", "budgets", "goals", "fx_rates", "gold_purchases", "gold_prices", "receivables", "receivable_payments"] as const;
   const data: Record<string, any[]> = {};
-  const results = await Promise.all(tables.map((t) => db().from(t).select("*").limit(50000)));
+  // Tables keyed without an `id` column (fx_rates, gold_prices) use their composite primary key for stable paging.
+  const orderKeys: Partial<Record<(typeof tables)[number], string[]>> = { fx_rates: ["rate_date", "base", "quote"], gold_prices: ["price_date", "source"] };
+  const results = await Promise.all(
+    tables.map((t) =>
+      fetchAll((from, to) => {
+        let q: any = db().from(t).select("*");
+        for (const k of orderKeys[t] ?? ["id"]) q = q.order(k);
+        return q.range(from, to);
+      }, { hardCap: 50000 }),
+    ),
+  );
   tables.forEach((t, i) => {
     const r = results[i]!;
     if (r.error && !isMissingTable(r.error)) throw new Error(r.error.message);
