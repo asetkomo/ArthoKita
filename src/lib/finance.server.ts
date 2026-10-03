@@ -5,6 +5,7 @@ import type { ExternalTx, TransactionInput } from "./schemas";
 import { dupKey } from "./csv";
 import { fetchAll } from "./paginate";
 import { planGoalFunds } from "./goals";
+import { budgetPercent } from "./budget";
 import type { Json, Tables, TablesInsert } from "./database.types";
 import {
   categoriesByName,
@@ -574,9 +575,19 @@ export async function computeBudgets(month: string) {
   ]);
   const budgets = must(budgetsRes);
   const spent = spentByCategory(cats);
+  // v11 rollover: carry from previous months (column absent before v11 → no rollover).
+  const rolling = budgets
+    .filter((b) => b.rollover === true)
+    .map((b) => ({ ...b, amount: Number(b.amount) }));
+  const carries = rolling.length
+    ? await (await import("./budget.server")).rolloverCarries(month, rolling)
+    : new Map<string, number>();
   return budgets.map((b) => {
     const amount = Number(b.amount);
     const s = spent.get(b.category_id) ?? 0;
+    const rollover = b.rollover === true;
+    const carry = rollover ? (carries.get(b.id) ?? 0) : 0;
+    const effective = r2(amount + carry);
     return {
       id: b.id as string,
       category_id: b.category_id as string,
@@ -585,7 +596,10 @@ export async function computeBudgets(month: string) {
       amount,
       alert_percent: Number(b.alert_percent),
       spent: s,
-      percent: amount ? (s / amount) * 100 : 0,
+      percent: rollover ? budgetPercent(s, effective, amount) : amount ? (s / amount) * 100 : 0,
+      rollover,
+      carry,
+      effective,
     };
   });
 }
