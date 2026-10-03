@@ -17,6 +17,7 @@ import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDebtsRouteImport } from './routes/_app/debts'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
+import { Route as AppRekapRouteImport } from './routes/_app/rekap'
 import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubscriptionsRouteImport } from './routes/_app/subscriptions'
@@ -64,6 +65,11 @@ const AppDebtsRoute = AppDebtsRouteImport.update({
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRekapRoute = AppRekapRouteImport.update({
+  id: '/rekap',
+  path: '/rekap',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRemindersRoute = AppRemindersRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/debts': typeof AppDebtsRoute
   '/goals': typeof AppGoalsRoute
+  '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/debts': typeof AppDebtsRoute
   '/goals': typeof AppGoalsRoute
+  '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/debts': typeof AppDebtsRoute
   '/_app/goals': typeof AppGoalsRoute
+  '/_app/rekap': typeof AppRekapRoute
   '/_app/reminders': typeof AppRemindersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subscriptions': typeof AppSubscriptionsRoute
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/goals'
+    | '/rekap'
     | '/reminders'
     | '/settings'
     | '/subscriptions'
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/goals'
+    | '/rekap'
     | '/reminders'
     | '/settings'
     | '/subscriptions'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/debts'
     | '/_app/goals'
+    | '/_app/rekap'
     | '/_app/reminders'
     | '/_app/settings'
     | '/_app/subscriptions'
@@ -296,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/rekap': {
+      id: '/_app/rekap'
+      path: '/rekap'
+      fullPath: '/rekap'
+      preLoaderRoute: typeof AppRekapRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/reminders': {
       id: '/_app/reminders'
       path: '/reminders'
@@ -368,6 +387,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppDebtsRoute: typeof AppDebtsRoute
   AppGoalsRoute: typeof AppGoalsRoute
+  AppRekapRoute: typeof AppRekapRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
@@ -380,6 +400,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppDebtsRoute: AppDebtsRoute,
   AppGoalsRoute: AppGoalsRoute,
+  AppRekapRoute: AppRekapRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,

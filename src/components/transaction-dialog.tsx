@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Paperclip } from "lucide-react";
 import { CURRENCY_OPTIONS, EntityDialog, type FieldDef } from "./entity-dialog";
-import { rowsQuery } from "@/lib/queries";
-import { saveTransaction } from "@/lib/finance.functions";
+import { errMsg, rowsQuery } from "@/lib/queries";
+import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
 import type { Account, Category } from "@/lib/schemas";
@@ -45,23 +48,24 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
         await save({ data: { id: id ?? null, values: v as never } });
         await qc.invalidateQueries();
       }}
-      extra={(v) => {
-        const items = v["items"] as { name: string; qty?: number | null; price?: number | null }[] | null;
-        if (!items?.length) return null;
-        return (
-          <div className="rounded-lg border bg-muted/50 p-3 text-sm">
-            <p className="mb-2 font-medium">Rincian item dari nota</p>
-            <ul className="space-y-1">
-              {items.map((it, i) => (
-                <li key={i} className="flex justify-between gap-2">
-                  <span className="truncate">{it.qty ? `${it.qty}× ` : ""}{it.name}</span>
-                  <span className="num text-muted-foreground">{it.price != null ? money(it.price, String(v["currency"] ?? "IDR")) : ""}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      }}
+      extra={(v, set) => (
+        <div className="space-y-3">
+          {(v["items"] as { name: string; qty?: number | null; price?: number | null }[] | null)?.length ? (
+            <div className="rounded-lg border bg-muted/50 p-3 text-sm">
+              <p className="mb-2 font-medium">Rincian item dari nota</p>
+              <ul className="space-y-1">
+                {(v["items"] as { name: string; qty?: number | null; price?: number | null }[]).map((it, i) => (
+                  <li key={i} className="flex justify-between gap-2">
+                    <span className="truncate">{it.qty ? `${it.qty}× ` : ""}{it.name}</span>
+                    <span className="num text-muted-foreground">{it.price != null ? money(it.price, String(v["currency"] ?? "IDR")) : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <ReceiptField path={(v["receipt_path"] as string | null) ?? null} onChange={(p) => set("receipt_path", p)} />
+        </div>
+      )}
     />
   );
 }
