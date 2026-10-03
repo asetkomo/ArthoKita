@@ -38,7 +38,7 @@ function RemindersPage() {
     try {
       if (r.type === "debt") await pd({ data: { debt_id: r.id } });
       else await ps({ data: { id: r.id } });
-      await invalidateFor(qc, "debt_payments");
+      await Promise.all([invalidateFor(qc, "debt_payments"), invalidateFor(qc, "subscriptions")]);
       toast.success(t("Pembayaran tercatat"));
     } catch (e) { toast.error(errMsg(e)); }
   }

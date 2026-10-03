@@ -41,7 +41,7 @@ function SubsPage() {
   const today = todayStr();
 
   async function doPay(s: Subscription) {
-    try { const r = await pay({ data: { id: s.id } }); await invalidateFor(qc, "transactions"); toast.success(`${t("Tercatat. Tagihan berikutnya")} ${dateLabel(r.next_due, locale)}`); } catch (e) { toast.error(errMsg(e)); }
+    try { const r = await pay({ data: { id: s.id } }); await Promise.all([invalidateFor(qc, "transactions"), invalidateFor(qc, "subscriptions")]); toast.success(`${t("Tercatat. Tagihan berikutnya")} ${dateLabel(r.next_due, locale)}`); } catch (e) { toast.error(errMsg(e)); }
   }
 
   return (
