@@ -11,14 +11,15 @@ export const debtsQuery = () => queryOptions({ queryKey: ["debts"], queryFn: () 
 export const budgetsQuery = (month: string) => queryOptions({ queryKey: ["budgets", month], queryFn: () => getBudgets({ data: { month } }) });
 export const balancesQuery = () => queryOptions({ queryKey: ["balances"], queryFn: () => getBalances() });
 export const fxQuery = () => queryOptions({ queryKey: ["fx"], queryFn: () => getFxRate(), staleTime: 3600_000 });
-export const goldQuery = () => queryOptions({ queryKey: ["gold"], queryFn: () => getGold(), staleTime: 3600_000 });
+export type GoldFilter = { offset?: number; limit?: number; sort?: "occurred_at" | "grams" | "price_per_gram" | "total"; direction?: "asc" | "desc" };
+export const goldQuery = (f: GoldFilter = {}) => queryOptions({ queryKey: ["gold", f], queryFn: () => getGold({ data: { offset: f.offset ?? 0, limit: f.limit ?? 25, sort: f.sort ?? "occurred_at", direction: f.direction ?? "desc" } }), staleTime: 300_000 });
 export const assetsQuery = () => queryOptions({ queryKey: ["assets"], queryFn: () => getAssets() });
-export const receivablesQuery = () => queryOptions({ queryKey: ["receivables"], queryFn: () => getReceivables() });
+export const receivablesQuery = (offset = 0, limit = 24) => queryOptions({ queryKey: ["receivables", offset, limit], queryFn: () => getReceivables({ data: { offset, limit } }) });
 export const trendQuery = (months: number, end: string) => queryOptions({ queryKey: ["trend", months, end], queryFn: () => getCategoryTrend({ data: { months, end } }) });
 export const yearlySummaryQuery = (year: number) => queryOptions({ queryKey: ["yearly-summary", year], queryFn: () => getYearlySummary({ data: { year } }) });
 export const netWorthQuery = (months: number, end: string) => queryOptions({ queryKey: ["net-worth", months, end], queryFn: () => getNetWorth({ data: { months, end } }) });
 export const activityQuery = (limit: number) => queryOptions({ queryKey: ["activity", limit], queryFn: () => getActivity({ data: { limit } }) });
-export type TxFilter = { month?: string; kind?: "income" | "expense" | "transfer"; search?: string; category_id?: string; account_id?: string; offset?: number };
+export type TxFilter = { month?: string; kind?: "income" | "expense" | "transfer"; search?: string; category_id?: string; account_id?: string; offset?: number; sort?: "occurred_at" | "amount" | "description"; direction?: "asc" | "desc" };
 export const txQuery = (f: TxFilter) => queryOptions({ queryKey: ["tx", f], queryFn: () => listTransactions({ data: f }) });
 export const txCountQuery = (f: Omit<TxFilter, "offset">) => queryOptions({ queryKey: ["tx-count", f], queryFn: () => getTxCount({ data: f }) });
 export const yearlyQuery = (year: string) => queryOptions({ queryKey: ["yearly", year], queryFn: () => getYearly({ data: { year } }) });

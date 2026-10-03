@@ -107,6 +107,8 @@ export const goldSchema = z.object({
   price_per_gram: money,
   total: z.preprocess(emptyToNull, z.coerce.number().finite().positive().nullable()),
   place: optText(100),
+  gold_type: optText(100),
+  product_number: optText(120),
   notes: optText(1000),
 }).transform((v) => ({ ...v, total: v.total ?? Math.round(v.grams * v.price_per_gram) }));
 

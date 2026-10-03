@@ -28,7 +28,7 @@ export const saveRow = createServerFn({ method: "POST" })
     const run = (v: any) => (data.id ? db().from(data.table).update(v).eq("id", data.id) : db().from(data.table).insert(v)).select().single();
     let res = await run(values);
     // Optional v4 columns may not exist yet in the user's database: retry without them.
-    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : [];
+    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : data.table === "gold_purchases" ? ["gold_type", "product_number"] : [];
     if (res.error && optional.some((c) => res.error!.message.includes(c))) {
       const v: any = { ...(values as any) };
       for (const c of optional) delete v[c];
@@ -74,7 +74,7 @@ export const saveTransaction = createServerFn({ method: "POST" })
     return (data.id ? await updateTransaction(data.id, data.values) : await insertTransaction(data.values)) as any;
   });
 
-const txFilterSchema = z.object({ month: month.optional(), kind: z.enum(["income", "expense", "transfer"]).optional(), search: z.string().max(100).optional(), category_id: z.string().uuid().optional(), account_id: z.string().uuid().optional() });
+const txFilterSchema = z.object({ month: month.optional(), kind: z.enum(["income", "expense", "transfer"]).optional(), search: z.string().max(100).optional(), category_id: z.string().uuid().optional(), account_id: z.string().uuid().optional(), sort: z.enum(["occurred_at", "amount", "description"]).optional(), direction: z.enum(["asc", "desc"]).optional() });
 
 export const listTransactions = createServerFn({ method: "GET" })
   .middleware([requireAuth])
@@ -273,16 +273,18 @@ const recvSchema = () => import("./schemas").then((m) => m.receivableSchema);
 
 export const getGold = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .handler(async () => {
+  .inputValidator((d: unknown) => z.object({ offset: z.number().int().min(0).default(0), limit: z.number().int().min(1).max(100).default(25), sort: z.enum(["occurred_at", "grams", "price_per_gram", "total"]).default("occurred_at"), direction: z.enum(["asc", "desc"]).default("desc") }).parse(d))
+  .handler(async ({ data }) => {
     const { goldSummary } = await import("./assets.server");
-    return goldSummary() as Promise<any>;
+    return goldSummary(data) as Promise<any>;
   });
 
 export const getReceivables = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .handler(async () => {
+  .inputValidator((d: unknown) => z.object({ offset: z.number().int().min(0).default(0), limit: z.number().int().min(1).max(100).default(24) }).parse(d))
+  .handler(async ({ data }) => {
     const { listReceivables } = await import("./assets.server");
-    return listReceivables() as Promise<any>;
+    return listReceivables(data) as Promise<any>;
   });
 
 export const saveReceivableFn = createServerFn({ method: "POST" })

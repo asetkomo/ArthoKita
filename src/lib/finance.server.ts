@@ -163,7 +163,7 @@ export async function createFromExternal(t: ExternalTx) {
   return { transaction: tx, message };
 }
 
-export type TxFilters = { month?: string | undefined; kind?: string | undefined; search?: string | undefined; category_id?: string | undefined; account_id?: string | undefined; limit?: number | undefined; offset?: number | undefined };
+export type TxFilters = { month?: string | undefined; kind?: string | undefined; search?: string | undefined; category_id?: string | undefined; account_id?: string | undefined; limit?: number | undefined; offset?: number | undefined; sort?: "occurred_at" | "amount" | "description" | undefined; direction?: "asc" | "desc" | undefined };
 
 function applyTxFilters(q: any, f: TxFilters) {
   if (f.month) {
@@ -188,7 +188,7 @@ export async function listTransactions(f: TxFilters) {
     .select(
       "*, category:categories(id,name,color), account:accounts!transactions_account_id_fkey(id,name), to_account:accounts!transactions_to_account_id_fkey(id,name)",
     )
-    .order("occurred_at", { ascending: false })
+    .order(f.sort ?? "occurred_at", { ascending: (f.direction ?? "desc") === "asc", nullsFirst: false })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
   return must<any[]>(await applyTxFilters(q, f));
