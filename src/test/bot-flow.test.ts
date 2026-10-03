@@ -9,7 +9,10 @@ const dbCalls: string[] = [];
 /** Force every query on a table to fail with this PostgREST-style error. */
 const failing: Record<string, { message: string; code?: string }> = {};
 function like(v: unknown, pattern: string, ci: boolean) {
-  const re = new RegExp("^" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*") + "$", ci ? "i" : "");
+  const re = new RegExp(
+    "^" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*") + "$",
+    ci ? "i" : "",
+  );
   return re.test(String(v ?? ""));
 }
 function q(table: string) {
@@ -21,7 +24,8 @@ function q(table: string) {
   let lim = Infinity;
   let skip = 0;
   const api: any = {
-    select: () => api, order: () => api,
+    select: () => api,
+    order: () => api,
     insert: (v: any) => ((op = "insert"), (payload = v), api),
     update: (v: any) => ((op = "update"), (payload = v), api),
     delete: () => ((op = "delete"), api),
@@ -29,7 +33,10 @@ function q(table: string) {
     neq: (k: string, v: any) => (filters.push((r) => r[k] !== v), api),
     ilike: (k: string, v: string) => (filters.push((r) => like(r[k], v, true)), api),
     like: (k: string, v: string) => (filters.push((r) => like(r[k], v, false)), api),
-    not: (k: string, o: string, v: any) => (filters.push((r) => (o === "is" ? r[k] != null : !like(r[k], v, false))), api),
+    not: (k: string, o: string, v: any) => (
+      filters.push((r) => (o === "is" ? r[k] != null : !like(r[k], v, false))),
+      api
+    ),
     in: (k: string, v: any[]) => (filters.push((r) => v.includes(r[k])), api),
     gte: (k: string, v: any) => (filters.push((r) => r[k] >= v), api),
     lt: (k: string, v: any) => (filters.push((r) => r[k] < v), api),
@@ -44,43 +51,83 @@ function q(table: string) {
     if (failing[table]) return { data: null, error: failing[table] };
     const t = (tables[table] ??= []);
     if (op === "insert") {
-      const rows = (Array.isArray(payload) ? payload : [payload]).map((r: Row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...r }));
-      for (const r of rows) if (r.external_id && t.some((x) => x.external_id === r.external_id)) return { data: null, error: { message: "duplicate key value violates unique constraint" } };
+      const rows = (Array.isArray(payload) ? payload : [payload]).map((r: Row) => ({
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        ...r,
+      }));
+      for (const r of rows)
+        if (r.external_id && t.some((x) => x.external_id === r.external_id))
+          return {
+            data: null,
+            error: { message: "duplicate key value violates unique constraint" },
+          };
       t.push(...rows);
       return { data: single ? rows[0] : rows, error: null };
     }
     const hit = t.filter((r) => filters.every((f) => f(r)));
     if (op === "update") hit.forEach((r) => Object.assign(r, payload));
     if (op === "delete") tables[table] = t.filter((r) => !hit.includes(r));
-    const rows = hit.slice(skip, skip + lim).map((r) => ({ ...r, category: tables["categories"]?.find((c) => c.id === r.category_id) ?? null }));
-    if (single) return { data: rows[0] ?? null, error: single === "one" && !rows[0] ? { message: "not found" } : null };
+    const rows = hit.slice(skip, skip + lim).map((r) => ({
+      ...r,
+      category: tables["categories"]?.find((c) => c.id === r.category_id) ?? null,
+    }));
+    if (single)
+      return {
+        data: rows[0] ?? null,
+        error: single === "one" && !rows[0] ? { message: "not found" } : null,
+      };
     return { data: rows, error: null };
   }
   return api;
 }
-vi.mock("../lib/db.server", () => ({ db: () => ({ from: q, storage: { from: () => ({ remove: async () => ({}) }) } }) }));
+vi.mock("../lib/db.server", () => ({
+  db: () => ({ from: q, storage: { from: () => ({ remove: async () => ({}) }) } }),
+}));
 
-import { draftKey, handleBotUpdate, isBotTransaction, listText, reportText, TX_HARD_CAP } from "../lib/bot.server";
+import {
+  draftKey,
+  handleBotUpdate,
+  isBotTransaction,
+  listText,
+  reportText,
+  TX_HARD_CAP,
+} from "../lib/bot.server";
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
   dbCalls.length = 0;
   for (const k of Object.keys(failing)) delete failing[k];
   tables["categories"] = [
-    { id: "c1", name: "Makanan & Minuman", kind: "expense" }, { id: "c2", name: "Transportasi", kind: "expense" },
-    { id: "c3", name: "Lainnya", kind: "expense" }, { id: "c4", name: "Gaji", kind: "income" }, { id: "c5", name: "Lainnya", kind: "income" },
+    { id: "c1", name: "Makanan & Minuman", kind: "expense" },
+    { id: "c2", name: "Transportasi", kind: "expense" },
+    { id: "c3", name: "Lainnya", kind: "expense" },
+    { id: "c4", name: "Gaji", kind: "income" },
+    { id: "c5", name: "Lainnya", kind: "income" },
   ];
-  tables["accounts"] = [{ id: "a1", name: "BCA", archived: false, currency: "IDR", type: "bank" }, { id: "a2", name: "GoPay", archived: false, currency: "IDR", type: "ewallet" }];
+  tables["accounts"] = [
+    { id: "a1", name: "BCA", archived: false, currency: "IDR", type: "bank" },
+    { id: "a2", name: "GoPay", archived: false, currency: "IDR", type: "ewallet" },
+  ];
   process.env["BOT_DEFAULT_ACCOUNT"] = "BCA";
   process.env["BOT_ALLOWED_CHAT_IDS"] = "111";
   delete process.env["AI_API_KEY"];
 });
 
-const cb = (data: string) => handleBotUpdate({ update_id: Math.floor(Math.random() * 1e9), chat_id: "111", callback_data: data });
+const cb = (data: string) =>
+  handleBotUpdate({
+    update_id: Math.floor(Math.random() * 1e9),
+    chat_id: "111",
+    callback_data: data,
+  });
 
 describe("alur bot end-to-end (tanpa AI)", () => {
   it("chat → pratinjau → ganti kategori → simpan → idempoten → undo", async () => {
-    const r1 = await handleBotUpdate({ update_id: 1, chat_id: "111", text: "kopi 25rb pakai gopay" });
+    const r1 = await handleBotUpdate({
+      update_id: 1,
+      chat_id: "111",
+      text: "kopi 25rb pakai gopay",
+    });
     expect(r1.method).toBe("send");
     expect(r1.text).toContain("Rp");
     expect(r1.text).toContain("Makanan & Minuman");
@@ -144,9 +191,20 @@ describe("alur bot end-to-end (tanpa AI)", () => {
       else process.env["BOT_ALLOWED_CHAT_IDS"] = v;
       const t = await handleBotUpdate({ update_id: 9, chat_id: "111", text: "kopi 25rb" });
       expect(t).toMatchObject({ method: "send", reply_markup: null });
-      expect(t.text).toContain("Bot belum dikonfigurasi: tambahkan chat_id 111 ke BOT_ALLOWED_CHAT_IDS");
-      await handleBotUpdate({ update_id: 10, chat_id: "111", callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e" });
-      await handleBotUpdate({ update_id: 11, chat_id: "111", image_base64: "x".repeat(200), mime_type: "image/jpeg" });
+      expect(t.text).toContain(
+        "Bot belum dikonfigurasi: tambahkan chat_id 111 ke BOT_ALLOWED_CHAT_IDS",
+      );
+      await handleBotUpdate({
+        update_id: 10,
+        chat_id: "111",
+        callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e",
+      });
+      await handleBotUpdate({
+        update_id: 11,
+        chat_id: "111",
+        image_base64: "x".repeat(200),
+        mime_type: "image/jpeg",
+      });
     }
     expect(dbCalls).toEqual([]);
     expect(tables["bot_drafts"]).toBeUndefined();
@@ -154,13 +212,29 @@ describe("alur bot end-to-end (tanpa AI)", () => {
   });
 
   it("pesan ambigu tanpa AI key memberi error ramah (bukan crash diam)", async () => {
-    await expect(handleBotUpdate({ update_id: 5, chat_id: "111", text: "kemarin patungan sama andi" })).rejects.toThrow(/AI_API_KEY/);
+    await expect(
+      handleBotUpdate({ update_id: 5, chat_id: "111", text: "kemarin patungan sama andi" }),
+    ).rejects.toThrow(/AI_API_KEY/);
   });
 
   it("undo lewat callback tidak bisa menghapus transaksi sembarang", async () => {
     tables["transactions"] = [
-      { id: "0f8fad5b-d9cb-469f-a165-70867728950e", source: "telegram", amount: 5, currency: "IDR", created_at: new Date().toISOString(), notes: null },
-      { id: "1f8fad5b-d9cb-469f-a165-70867728950e", source: "ocr", amount: 5, currency: "IDR", created_at: new Date().toISOString(), notes: null },
+      {
+        id: "0f8fad5b-d9cb-469f-a165-70867728950e",
+        source: "telegram",
+        amount: 5,
+        currency: "IDR",
+        created_at: new Date().toISOString(),
+        notes: null,
+      },
+      {
+        id: "1f8fad5b-d9cb-469f-a165-70867728950e",
+        source: "ocr",
+        amount: 5,
+        currency: "IDR",
+        created_at: new Date().toISOString(),
+        notes: null,
+      },
     ];
     // tidak ada bot_drafts yang menautkan transaksi ini → ditolak walau source "telegram"
     const r = await cb("u:0f8fad5b-d9cb-469f-a165-70867728950e");
@@ -168,7 +242,9 @@ describe("alur bot end-to-end (tanpa AI)", () => {
     // /undo tidak menyentuh struk OCR dari web
     const u = await handleBotUpdate({ update_id: 6, chat_id: "111", text: "/undo" });
     expect(u.text).toContain("Dihapus");
-    expect(tables["transactions"]!.map((t) => t.id)).toEqual(["1f8fad5b-d9cb-469f-a165-70867728950e"]);
+    expect(tables["transactions"]!.map((t) => t.id)).toEqual([
+      "1f8fad5b-d9cb-469f-a165-70867728950e",
+    ]);
   });
 
   it("kunci idempotensi draft memuat chat_id: update_id sama di chat lain tidak bentrok", async () => {
@@ -217,7 +293,14 @@ describe("undo hanya untuk transaksi bot", () => {
 describe("laporan tidak terpotong diam-diam", () => {
   const today = new Date().toISOString().slice(0, 10);
   const mk = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ id: `t${i}`, kind: "expense", amount_idr: "1000", occurred_at: today, description: `x${i}`, category_id: "c1" }));
+    Array.from({ length: n }, (_, i) => ({
+      id: `t${i}`,
+      kind: "expense",
+      amount_idr: "1000",
+      occurred_at: today,
+      description: `x${i}`,
+      category_id: "c1",
+    }));
 
   it("menjumlahkan lebih dari 5000 transaksi lewat paging", async () => {
     tables["transactions"] = mk(7_500);
@@ -245,25 +328,45 @@ describe("laporan tidak terpotong diam-diam", () => {
 });
 
 describe("bot_drafts belum ada vs error DB lain", () => {
-  const missing = { code: "PGRST205", message: "Could not find the table 'public.bot_drafts' in the schema cache" };
+  const missing = {
+    code: "PGRST205",
+    message: "Could not find the table 'public.bot_drafts' in the schema cache",
+  };
 
   it("tabel hilang → pesan ramah 'jalankan v7', bukan crash", async () => {
     failing["bot_drafts"] = missing;
-    await expect(handleBotUpdate({ update_id: 50, chat_id: "111", text: "kopi 25rb" })).rejects.toThrow(
-      /bot_drafts belum ada.*v7/,
-    );
-    const r = await handleBotUpdate({ update_id: 51, chat_id: "111", callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e" });
+    await expect(
+      handleBotUpdate({ update_id: 50, chat_id: "111", text: "kopi 25rb" }),
+    ).rejects.toThrow(/bot_drafts belum ada.*v7/);
+    const r = await handleBotUpdate({
+      update_id: 51,
+      chat_id: "111",
+      callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e",
+    });
     expect(r.text).toMatch(/v7/);
   });
 
   it("error lain tidak ditelan (tidak dianggap draft kosong)", async () => {
-    failing["bot_drafts"] = { code: "57014", message: "canceling statement due to statement timeout" };
-    await expect(handleBotUpdate({ update_id: 52, chat_id: "111", text: "kopi 25rb" })).rejects.toThrow(/statement timeout/);
+    failing["bot_drafts"] = {
+      code: "57014",
+      message: "canceling statement due to statement timeout",
+    };
     await expect(
-      handleBotUpdate({ update_id: 53, chat_id: "111", callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e" }),
+      handleBotUpdate({ update_id: 52, chat_id: "111", text: "kopi 25rb" }),
     ).rejects.toThrow(/statement timeout/);
     await expect(
-      handleBotUpdate({ update_id: 54, chat_id: "111", callback_data: "u:0f8fad5b-d9cb-469f-a165-70867728950e" }),
+      handleBotUpdate({
+        update_id: 53,
+        chat_id: "111",
+        callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e",
+      }),
+    ).rejects.toThrow(/statement timeout/);
+    await expect(
+      handleBotUpdate({
+        update_id: 54,
+        chat_id: "111",
+        callback_data: "u:0f8fad5b-d9cb-469f-a165-70867728950e",
+      }),
     ).rejects.toThrow(/statement timeout/);
     expect(tables["transactions"] ?? []).toHaveLength(0);
   });

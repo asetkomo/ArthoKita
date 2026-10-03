@@ -21,7 +21,14 @@ export const Route = createFileRoute("/api/public/n8n/command")({
           return json({ ok: true, ...r });
         } catch (e) {
           console.error(e);
-          return json({ ok: false, error: e instanceof Error ? e.message : "Gagal", message: "⚠️ Gagal memproses perintah." }, 500);
+          return json(
+            {
+              ok: false,
+              error: e instanceof Error ? e.message : "Gagal",
+              message: "⚠️ Gagal memproses perintah.",
+            },
+            500,
+          );
         }
       },
     },

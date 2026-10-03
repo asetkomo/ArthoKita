@@ -18,7 +18,8 @@ import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
 export const Route = createFileRoute("/_app/reminders")({
-  head: () => pageHead("Pengingat", "Daftar cicilan, langganan, dan budget yang perlu diperhatikan."),
+  head: () =>
+    pageHead("Pengingat", "Daftar cicilan, langganan, dan budget yang perlu diperhatikan."),
   loader: ({ context }) => context.queryClient.ensureQueryData(remindersQuery(30)),
   errorComponent: RouteError,
   component: RemindersPage,
@@ -40,30 +41,76 @@ function RemindersPage() {
       else await ps({ data: { id: r.id } });
       await Promise.all([invalidateFor(qc, "debt_payments"), invalidateFor(qc, "subscriptions")]);
       toast.success(t("Pembayaran tercatat"));
-    } catch (e) { toast.error(errMsg(e)); }
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
   }
 
   return (
     <>
-      <PageHeader title={t("Pengingat")} subtitle={`${t("Total tagihan:")} ${money(total)}`} actions={
-        <Tabs className="w-full sm:w-auto" value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-          <TabsList className="w-full sm:w-auto"><TabsTrigger value="7">7 {t("hari")}</TabsTrigger><TabsTrigger value="30">30 {t("hari")}</TabsTrigger><TabsTrigger value="90">90 {t("hari")}</TabsTrigger></TabsList>
-        </Tabs>
-      } />
-      <p className="mb-4 text-sm text-muted-foreground">{t("Pengingat juga bisa dikirim otomatis ke Telegram/WhatsApp/email lewat n8n — lihat ")}<Link to="/settings" className="text-primary underline">{t("Pengaturan")}</Link>.</p>
-      {list.length === 0 ? <Empty text={t("Aman! Tidak ada tagihan dalam periode ini.")} /> : (
+      <PageHeader
+        title={t("Pengingat")}
+        subtitle={`${t("Total tagihan:")} ${money(total)}`}
+        actions={
+          <Tabs
+            className="w-full sm:w-auto"
+            value={String(days)}
+            onValueChange={(v) => setDays(Number(v))}
+          >
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="7">7 {t("hari")}</TabsTrigger>
+              <TabsTrigger value="30">30 {t("hari")}</TabsTrigger>
+              <TabsTrigger value="90">90 {t("hari")}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
+      />
+      <p className="mb-4 text-sm text-muted-foreground">
+        {t("Pengingat juga bisa dikirim otomatis ke Telegram/WhatsApp/email lewat n8n — lihat ")}
+        <Link to="/settings" className="text-primary underline">
+          {t("Pengaturan")}
+        </Link>
+        .
+      </p>
+      {list.length === 0 ? (
+        <Empty text={t("Aman! Tidak ada tagihan dalam periode ini.")} />
+      ) : (
         <Card className="divide-y">
           {list.map((r) => (
-             <div key={r.type + r.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-               <span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${r.overdue ? "bg-destructive/10 text-expense" : "bg-secondary text-secondary-foreground"}`}>
-                {r.type === "budget" ? <PiggyBank className="size-4" /> : r.overdue ? <AlertTriangle className="size-4" /> : <CalendarClock className="size-4" />}
+            <div
+              key={r.type + r.id}
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
+            >
+              <span
+                className={`flex size-9 shrink-0 items-center justify-center rounded-full ${r.overdue ? "bg-destructive/10 text-expense" : "bg-secondary text-secondary-foreground"}`}
+              >
+                {r.type === "budget" ? (
+                  <PiggyBank className="size-4" />
+                ) : r.overdue ? (
+                  <AlertTriangle className="size-4" />
+                ) : (
+                  <CalendarClock className="size-4" />
+                )}
               </span>
               <div className="min-w-0 flex-1">
-                 <p className="truncate font-medium">{r.title}</p>
-                <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? t("Peringatan budget bulan ini") : `${dateLabel(r.due_date, locale)} · ${r.overdue ? `${t("terlambat")} ${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("hari ini") : `${r.days_left} ${t("hari lagi")}`}`}</p>
+                <p className="truncate font-medium">{r.title}</p>
+                <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>
+                  {r.type === "budget"
+                    ? t("Peringatan budget bulan ini")
+                    : `${dateLabel(r.due_date, locale)} · ${r.overdue ? `${t("terlambat")} ${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("hari ini") : `${r.days_left} ${t("hari lagi")}`}`}
+                </p>
               </div>
-               <p className="num shrink-0 text-right font-semibold">{money(r.amount, r.currency)}</p>
-               {r.type === "debt" || r.type === "subscription" ? <Button className="col-start-2 col-end-4 justify-self-end" size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> {t("Bayar")}</Button> : null}
+              <p className="num shrink-0 text-right font-semibold">{money(r.amount, r.currency)}</p>
+              {r.type === "debt" || r.type === "subscription" ? (
+                <Button
+                  className="col-start-2 col-end-4 justify-self-end"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => pay(r)}
+                >
+                  <CheckCircle2 className="size-4" /> {t("Bayar")}
+                </Button>
+              ) : null}
             </div>
           ))}
         </Card>

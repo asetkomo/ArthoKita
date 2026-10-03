@@ -2,7 +2,15 @@ import { z } from "zod";
 import { parsePresets } from "./fees";
 
 export const CURRENCIES = ["IDR", "USD"] as const;
-export const CRUD_TABLES = ["accounts", "categories", "debts", "subscriptions", "budgets", "goals", "gold_purchases"] as const;
+export const CRUD_TABLES = [
+  "accounts",
+  "categories",
+  "debts",
+  "subscriptions",
+  "budgets",
+  "goals",
+  "gold_purchases",
+] as const;
 export type CrudTable = (typeof CRUD_TABLES)[number];
 export const DELETABLE_TABLES = [...CRUD_TABLES, "transactions", "debt_payments"] as const;
 
@@ -20,12 +28,29 @@ export const accountSchema = z.object({
   initial_balance: z.coerce.number().finite().default(0),
   color: optText(20),
   archived: z.boolean().default(false),
-  transfer_fees: z.preprocess((v) => parsePresets(v), z.array(z.object({ label: z.string(), amount: z.number() }))).default([]),
-  topup_fees: z.preprocess((v) => parsePresets(v), z.array(z.object({ label: z.string(), amount: z.number() }))).default([]),
+  transfer_fees: z
+    .preprocess(
+      (v) => parsePresets(v),
+      z.array(z.object({ label: z.string(), amount: z.number() })),
+    )
+    .default([]),
+  topup_fees: z
+    .preprocess(
+      (v) => parsePresets(v),
+      z.array(z.object({ label: z.string(), amount: z.number() })),
+    )
+    .default([]),
   monthly_fee: z.preprocess(emptyToNull, z.coerce.number().min(0).nullable()).default(null),
-  monthly_fee_day: z.preprocess(emptyToNull, z.coerce.number().int().min(1).max(31).nullable()).default(null),
+  monthly_fee_day: z
+    .preprocess(emptyToNull, z.coerce.number().int().min(1).max(31).nullable())
+    .default(null),
 });
-export const ACCOUNT_FEE_COLUMNS = ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] as const;
+export const ACCOUNT_FEE_COLUMNS = [
+  "transfer_fees",
+  "topup_fees",
+  "monthly_fee",
+  "monthly_fee_day",
+] as const;
 
 export const categorySchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -82,7 +107,9 @@ export const subscriptionSchema = z.object({
   account_id: optId,
   category_id: optId,
   active: z.boolean().default(true),
-  tax_percent: z.preprocess(emptyToNull, z.coerce.number().min(0).max(100).nullable()).default(null),
+  tax_percent: z
+    .preprocess(emptyToNull, z.coerce.number().min(0).max(100).nullable())
+    .default(null),
   notes: optText(1000),
 });
 
@@ -101,18 +128,20 @@ export const goalSchema = z.object({
   account_id: optId.default(null),
 });
 
-export const goldSchema = z.object({
-  kind: z.enum(["buy", "sell"]).default("buy"),
-  occurred_at: dateStr,
-  grams: z.coerce.number().finite().positive("Gram harus lebih dari 0").max(100000),
-  price_per_gram: money,
-  total: z.preprocess(emptyToNull, z.coerce.number().finite().positive().nullable()),
-  place: optText(100),
-  gold_type: optText(100),
-  product_number: optText(120),
-  account_id: optId.default(null),
-  notes: optText(1000),
-}).transform((v) => ({ ...v, total: v.total ?? Math.round(v.grams * v.price_per_gram) }));
+export const goldSchema = z
+  .object({
+    kind: z.enum(["buy", "sell"]).default("buy"),
+    occurred_at: dateStr,
+    grams: z.coerce.number().finite().positive("Gram harus lebih dari 0").max(100000),
+    price_per_gram: money,
+    total: z.preprocess(emptyToNull, z.coerce.number().finite().positive().nullable()),
+    place: optText(100),
+    gold_type: optText(100),
+    product_number: optText(120),
+    account_id: optId.default(null),
+    notes: optText(1000),
+  })
+  .transform((v) => ({ ...v, total: v.total ?? Math.round(v.grams * v.price_per_gram) }));
 export type GoldInput = z.infer<typeof goldSchema>;
 
 export const receivableSchema = z.object({

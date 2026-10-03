@@ -13,7 +13,17 @@ export const Route = createFileRoute("/api/public/n8n/summary")({
           const q = new URL(request.url).searchParams.get("month");
           const month = q && /^\d{4}-\d{2}$/.test(q) ? q : today().slice(0, 7);
           const d = await computeDashboard(month);
-          return json({ ok: true, month, income: d.income, expense: d.expense, net: d.net, total_balance_idr: d.totalBalanceIdr, debt_outstanding_idr: d.debtOutstandingIdr, by_category: d.byCategory, message: await summaryText(month) });
+          return json({
+            ok: true,
+            month,
+            income: d.income,
+            expense: d.expense,
+            net: d.net,
+            total_balance_idr: d.totalBalanceIdr,
+            debt_outstanding_idr: d.debtOutstandingIdr,
+            by_category: d.byCategory,
+            message: await summaryText(month),
+          });
         } catch (e) {
           console.error(e);
           return json({ ok: false, error: e instanceof Error ? e.message : "Gagal" }, 500);

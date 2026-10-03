@@ -8,7 +8,13 @@ vi.mock("../lib/db.server", () => ({
     from: (table: string) => {
       if (table === "fx_rates") {
         return {
-          select: () => ({ eq: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { rate: 16000 }, error: null }) }) }) }) }),
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                eq: () => ({ maybeSingle: async () => ({ data: { rate: 16000 }, error: null }) }),
+              }),
+            }),
+          }),
         };
       }
       return {
@@ -16,7 +22,14 @@ vi.mock("../lib/db.server", () => ({
           select: () => ({
             single: async () => {
               inserted.push(row);
-              if ("receipt_path" in row) return { data: null, error: { message: "Could not find the 'receipt_path' column of 'transactions' in the schema cache" } };
+              if ("receipt_path" in row)
+                return {
+                  data: null,
+                  error: {
+                    message:
+                      "Could not find the 'receipt_path' column of 'transactions' in the schema cache",
+                  },
+                };
               return { data: { id: "tx-1", ...row }, error: null };
             },
           }),

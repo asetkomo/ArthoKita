@@ -11,8 +11,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useI18n } from "@/lib/i18n";
 
-
-type Pending = { title: string; description?: string | undefined; confirmLabel: string; destructive: boolean; resolve: (ok: boolean) => void };
+type Pending = {
+  title: string;
+  description?: string | undefined;
+  confirmLabel: string;
+  destructive: boolean;
+  resolve: (ok: boolean) => void;
+};
 
 /** Promise-based confirm dialog matching the app design (replaces window.confirm). */
 export function useConfirm() {
@@ -21,7 +26,10 @@ export function useConfirm() {
   const resolver = useRef<((ok: boolean) => void) | null>(null);
 
   const confirm = useCallback(
-    (title: string, opts?: { description?: string; confirmLabel?: string; destructive?: boolean }) =>
+    (
+      title: string,
+      opts?: { description?: string; confirmLabel?: string; destructive?: boolean },
+    ) =>
       new Promise<boolean>((resolve) => {
         resolver.current = resolve;
         setPending({
@@ -35,7 +43,6 @@ export function useConfirm() {
     [t],
   );
 
-
   const settle = (ok: boolean) => {
     resolver.current?.(ok);
     resolver.current = null;
@@ -43,22 +50,32 @@ export function useConfirm() {
   };
 
   const element = (
-    <AlertDialog open={!!pending} onOpenChange={(o) => { if (!o) settle(false); }}>
+    <AlertDialog
+      open={!!pending}
+      onOpenChange={(o) => {
+        if (!o) settle(false);
+      }}
+    >
       <AlertDialogContent className="w-[calc(100vw-1.5rem)] max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{pending?.title}</AlertDialogTitle>
-          {pending?.description ? <AlertDialogDescription>{pending.description}</AlertDialogDescription> : null}
+          {pending?.description ? (
+            <AlertDialogDescription>{pending.description}</AlertDialogDescription>
+          ) : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t("Batal")}</AlertDialogCancel>
           <AlertDialogAction
-            className={pending?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+            className={
+              pending?.destructive
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : undefined
+            }
             onClick={() => settle(true)}
           >
             {pending?.confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
-
       </AlertDialogContent>
     </AlertDialog>
   );

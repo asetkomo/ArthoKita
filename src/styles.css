@@ -183,10 +183,18 @@
 }
 
 @layer base {
-  html, body { max-width: 100%; overflow-x: hidden; }
-  .recharts-responsive-container { min-width: 0; }
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .recharts-responsive-container {
+    min-width: 0;
+  }
 }
 @utility no-scrollbar {
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

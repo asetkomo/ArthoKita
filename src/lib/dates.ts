@@ -46,9 +46,11 @@ export function addMonthsKeepDay(date: string, n: number, day?: number): string 
 }
 
 export function monthLabel(m: string, locale = "id-ID"): string {
-  return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
-    new Date(m + "-01T00:00:00Z"),
-  );
+  return new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(m + "-01T00:00:00Z"));
 }
 
 export function shortMonth(m: string, locale = "id-ID"): string {
@@ -59,8 +61,10 @@ export function shortMonth(m: string, locale = "id-ID"): string {
 
 export function dateLabel(d: string | null | undefined, locale = "id-ID"): string {
   if (!d) return "-";
-  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
-    new Date(d.slice(0, 10) + "T00:00:00Z"),
-  );
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(d.slice(0, 10) + "T00:00:00Z"));
 }
-

@@ -8,7 +8,8 @@ function ilike(v: unknown, pattern: string) {
   let re = "";
   for (let i = 0; i < pattern.length; i++) {
     const c = pattern[i]!;
-    if (c === "\\" && i + 1 < pattern.length) re += pattern[++i]!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (c === "\\" && i + 1 < pattern.length)
+      re += pattern[++i]!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     else if (c === "%") re += ".*";
     else if (c === "_") re += ".";
     else re += c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -21,7 +22,11 @@ function q(table: string) {
   const api: any = {
     select: () => api,
     eq: (k: string, v: unknown) => (filters.push((r) => r[k] === v), api),
-    ilike: (k: string, p: string) => (calls.push({ table, pattern: p }), filters.push((r) => ilike(r[k], p)), api),
+    ilike: (k: string, p: string) => (
+      calls.push({ table, pattern: p }),
+      filters.push((r) => ilike(r[k], p)),
+      api
+    ),
     insert: (v: Row) => ((insert = v), api),
     single: () => api,
     then: (res: (v: unknown) => void) => {
@@ -67,14 +72,25 @@ describe("pickBestNameMatch", () => {
   it("ranks partial matches: prefix, then word start, then shortest, deterministically", () => {
     const only = [acc("1", "Bank Jago"), acc("3", "Jago Syariah")];
     expect(pickBestNameMatch(only, "jag")?.id).toBe("3"); // prefix beats word match
-    expect(pickBestNameMatch([acc("a", "Bank Jago Utama"), acc("b", "Bank Jago")], "jago")?.id).toBe("b"); // shortest
-    expect(pickBestNameMatch([acc("a", "Mandiri"), acc("b", "Bank Mandiri")], "andiri")?.id).toBe("a"); // substring → shortest
-    expect(pickBestNameMatch([acc("x", "Bank Mandiri"), acc("y", "Kartu Mandiri")], "mandiri")?.id).toBe("x"); // word, same length → by name
+    expect(
+      pickBestNameMatch([acc("a", "Bank Jago Utama"), acc("b", "Bank Jago")], "jago")?.id,
+    ).toBe("b"); // shortest
+    expect(pickBestNameMatch([acc("a", "Mandiri"), acc("b", "Bank Mandiri")], "andiri")?.id).toBe(
+      "a",
+    ); // substring → shortest
+    expect(
+      pickBestNameMatch([acc("x", "Bank Mandiri"), acc("y", "Kartu Mandiri")], "mandiri")?.id,
+    ).toBe("x"); // word, same length → by name
     expect(pickBestNameMatch([acc("z", "Dompet"), acc("y", "Dompet")], "dompet")?.id).toBe("y"); // tie → by id
   });
 
   it("treats wildcard characters literally", () => {
-    const w = [acc("1", "Tabungan 100%"), acc("2", "Tabungan 1000"), acc("3", "e_wallet"), acc("4", "ewallet")];
+    const w = [
+      acc("1", "Tabungan 100%"),
+      acc("2", "Tabungan 1000"),
+      acc("3", "e_wallet"),
+      acc("4", "ewallet"),
+    ];
     expect(pickBestNameMatch(w, "100%")?.id).toBe("1");
     expect(pickBestNameMatch(w, "e_wallet")?.id).toBe("3");
     expect(pickBestNameMatch(w, "%")?.id).toBe("1");
@@ -92,7 +108,14 @@ describe("findAccount", () => {
   beforeEach(() => {
     for (const k of Object.keys(tables)) delete tables[k];
     calls.length = 0;
-    tables["accounts"] = [acc("bank", "Bank Jago"), acc("jago", "Jago"), acc("pct", "Tabungan 100%"), acc("p2", "Tabungan 1000"), acc("u", "e_wallet"), acc("u2", "eXwallet")];
+    tables["accounts"] = [
+      acc("bank", "Bank Jago"),
+      acc("jago", "Jago"),
+      acc("pct", "Tabungan 100%"),
+      acc("p2", "Tabungan 1000"),
+      acc("u", "e_wallet"),
+      acc("u2", "eXwallet"),
+    ];
   });
 
   it("resolves Jago and Bank Jago to the right accounts", async () => {

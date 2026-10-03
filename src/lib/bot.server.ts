@@ -291,7 +291,8 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
       .eq("chat_id", chatId)
       .limit(1)
       .maybeSingle();
-    if (link.error && !(await fin()).isMissingTable(link.error)) throw new Error(link.error.message);
+    if (link.error && !(await fin()).isMissingTable(link.error))
+      throw new Error(link.error.message);
     if (!link.data)
       return edit("⚠️ Hanya transaksi yang disimpan lewat bot yang bisa di-undo.", null, "Gagal");
     const r = await undoTransaction(cb.id);
@@ -304,8 +305,7 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
   }
   const row = found.data as DraftRow | null;
   // A draft belongs to the chat it was created in; never act on another chat's draft.
-  if (!row || String(row.chat_id) !== chatId)
-    return edit("⚠️ Pratinjau tidak ditemukan.", null);
+  if (!row || String(row.chat_id) !== chatId) return edit("⚠️ Pratinjau tidak ditemukan.", null);
   if (row.status === "saved")
     return edit(
       "✅ Sudah tersimpan sebelumnya.",
@@ -346,8 +346,7 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
         .eq("id", row.id)
         .eq("status", "pending")
         .select("id");
-      if (!c.error && !(c.data ?? []).length)
-        return edit("ℹ️ Pratinjau ini sudah diproses.", null);
+      if (!c.error && !(c.data ?? []).length) return edit("ℹ️ Pratinjau ini sudah diproses.", null);
       if (row.receipt_path)
         await (await import("./receipt.server")).removeReceipt(row.receipt_path);
       return edit("❌ Dibatalkan, tidak ada yang disimpan.", null, "Dibatalkan");
@@ -491,7 +490,8 @@ type TxLite = {
 /** PostgREST caps a response at 1000 rows by default; page through it, up to a hard cap. */
 export const TX_PAGE_SIZE = 1000;
 export const TX_HARD_CAP = 50_000;
-export const TRUNCATED_NOTE = "⚠️ (data terpotong) Terlalu banyak transaksi; total di atas tidak lengkap, lihat di web.";
+export const TRUNCATED_NOTE =
+  "⚠️ (data terpotong) Terlalu banyak transaksi; total di atas tidak lengkap, lihat di web.";
 
 /** Transactions in [start, end) newest first, with `truncated` when the hard cap was hit. */
 async function txIn(

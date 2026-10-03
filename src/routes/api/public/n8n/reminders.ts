@@ -11,11 +11,18 @@ export const Route = createFileRoute("/api/public/n8n/reminders")({
         const url = new URL(request.url);
         const days = Math.min(365, Math.max(1, Number(url.searchParams.get("days") ?? 7) || 7));
         try {
-          const { computeReminders, remindersEmail, remindersText } = await import("@/lib/finance.server");
+          const { computeReminders, remindersEmail, remindersText } =
+            await import("@/lib/finance.server");
           const reminders = await computeReminders(days);
-          const base = { ok: true, count: reminders.length, reminders, message: remindersText(reminders) };
+          const base = {
+            ok: true,
+            count: reminders.length,
+            reminders,
+            message: remindersText(reminders),
+          };
           // ?format=email — siap diteruskan ke node email di n8n (subject + html + text)
-          if (url.searchParams.get("format") === "email") return json({ ...base, email: remindersEmail(reminders) });
+          if (url.searchParams.get("format") === "email")
+            return json({ ...base, email: remindersEmail(reminders) });
           return json(base);
         } catch (e) {
           console.error(e);

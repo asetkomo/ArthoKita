@@ -8,7 +8,9 @@ export function money(v: number | string | null | undefined, cur: string = "IDR"
 }
 
 export function compact(v: number): string {
-  return new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 }).format(v);
+  return new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 }).format(
+    v,
+  );
 }
 
 export const KIND_LABEL: Record<string, string> = {

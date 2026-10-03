@@ -46,8 +46,16 @@ export function planGoalFunds(i: GoalFundsInput): GoalFundsPlan {
   const newSaved = direction === "deposit" ? saved + moved : saved - moved;
   let transfer: GoalTransfer | null = null;
   if (i.goalAccountId && i.accountId && i.goalAccountId !== i.accountId) {
-    const [from, to] = direction === "deposit" ? [i.accountId, i.goalAccountId] : [i.goalAccountId, i.accountId];
-    transfer = { account_id: from, to_account_id: to, amount: moved, description: goalTransferDescription(direction, i.goalName), notes: goalMarker(i.goalId), occurred_at: i.date };
+    const [from, to] =
+      direction === "deposit" ? [i.accountId, i.goalAccountId] : [i.goalAccountId, i.accountId];
+    transfer = {
+      account_id: from,
+      to_account_id: to,
+      amount: moved,
+      description: goalTransferDescription(direction, i.goalName),
+      notes: goalMarker(i.goalId),
+      occurred_at: i.date,
+    };
   }
   return { direction, moved, newSaved, transfer };
 }

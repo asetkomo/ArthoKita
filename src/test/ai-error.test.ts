@@ -16,7 +16,9 @@ describe("aiErrorReason", () => {
 
   it("masks keys and caps length", () => {
     const r = aiErrorReason(
-      JSON.stringify({ error: { message: `bad key=AIzaSyABCDEFGHIJKLMNOP and sk-abcdefghijkl ${"x".repeat(300)}` } }),
+      JSON.stringify({
+        error: { message: `bad key=AIzaSyABCDEFGHIJKLMNOP and sk-abcdefghijkl ${"x".repeat(300)}` },
+      }),
     )!;
     expect(r).not.toMatch(/AIzaSy|sk-abc/);
     expect(r.length).toBeLessThanOrEqual(160);

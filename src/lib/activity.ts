@@ -38,7 +38,8 @@ const SPECIAL: Record<string, string> = {
 export function activityLabel(action: string, t: (s: string) => string = (s) => s): string {
   if (SPECIAL[action]) return t(SPECIAL[action]!);
   const [entity, verb] = action.split(".");
-  if (entity && verb && ENTITY[entity] && VERB[verb]) return `${t(ENTITY[entity]!)} ${t(VERB[verb]!)}`;
+  if (entity && verb && ENTITY[entity] && VERB[verb])
+    return `${t(ENTITY[entity]!)} ${t(VERB[verb]!)}`;
   return action;
 }
 
@@ -50,8 +51,10 @@ export function activityDetail(detail: unknown, fmt: (n: number, c: string) => s
   const name = d["name"] ?? d["description"] ?? d["text"];
   if (typeof name === "string" && name) parts.push(name);
   const amt = Number(d["amount"]);
-  if (Number.isFinite(amt) && amt > 0 && d["amount"] != null) parts.push(fmt(amt, typeof d["currency"] === "string" ? (d["currency"] as string) : "IDR"));
-  if (typeof d["from"] === "string" && typeof d["to"] === "string") parts.push(`${d["from"]} → ${d["to"]}`);
+  if (Number.isFinite(amt) && amt > 0 && d["amount"] != null)
+    parts.push(fmt(amt, typeof d["currency"] === "string" ? (d["currency"] as string) : "IDR"));
+  if (typeof d["from"] === "string" && typeof d["to"] === "string")
+    parts.push(`${d["from"]} → ${d["to"]}`);
   if (typeof d["imported"] === "number") parts.push(`${d["imported"]} baris`);
   return parts.join(" · ");
 }
