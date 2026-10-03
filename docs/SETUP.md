@@ -75,3 +75,10 @@ Pengaturan → **Cadangan data** → *Unduh cadangan (JSON)*: satu berkas berisi
 2. Halaman baru: **Emas** (`/gold`) dan **Piutang** (`/receivables`). Sebelum skema v3 dijalankan, halaman tetap terbuka dengan pesan petunjuk.
 3. Harga emas: harga dunia dari `api.gold-api.com` (XAU→IDR/gram memakai kurs harian) dan harga Antam dari logammulia.com. Disimpan sekali sehari di tabel `gold_prices`; jika sumber gagal dipakai harga terakhir, atau perkiraan (ditandai "perkiraan").
 4. Tarik tunai ATM: tombol **Tarik tunai** di halaman Transaksi, atau kirim ke bot `POST /api/public/n8n/command` dengan `{ "text": "tarik tunai 500rb dari BCA" }`. Tercatat sebagai transfer ke akun bertipe Tunai (dibuat otomatis oleh bot jika belum ada).
+
+## v4 — Biaya admin, biaya bulanan akun, pajak langganan
+Jalankan bagian **v4** di `supabase/schema.sql` (aman dijalankan ulang). Sebelum itu aplikasi tetap berjalan; kolom baru diabaikan.
+- **Preset biaya per akun** (halaman Akun): `BI-FAST=2500; Online=6500` untuk transfer keluar, dan preset admin top-up untuk e-wallet tujuan.
+- **Biaya transfer/admin** di formulir transaksi baru: isi manual atau klik preset; dicatat sebagai pengeluaran terpisah kategori "Biaya Admin" dari akun asal.
+- **Biaya bulanan otomatis**: isi nominal + tanggal potong di akun. Dicatat sekali per bulan saat dashboard/pengingat dibuka (termasuk panggilan n8n `/api/public/n8n/reminders`), dan muncul di daftar pengingat.
+- **Pajak langganan**: kolom pajak % opsional; total tagihan & pembayaran = harga + pajak.
