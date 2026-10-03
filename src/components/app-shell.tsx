@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, type ReactNode } from "react";
-import { BarChart3, Bell, CreditCard, LayoutDashboard, Languages, LogOut, Moon, PiggyBank, Receipt, Repeat, Settings, Sun, Target, Wallet } from "lucide-react";
+import { BarChart3, Bell, Coins, CreditCard, HandCoins, LayoutDashboard, Languages, LogOut, Moon, PiggyBank, Receipt, Repeat, Settings, Sun, Target, Wallet } from "lucide-react";
 import { logout } from "@/lib/auth.functions";
 import { useI18n } from "@/lib/i18n";
 
@@ -15,6 +15,8 @@ const NAV = [
   { to: "/subscriptions", label: "Langganan", icon: Repeat },
   { to: "/budgets", label: "Budget", icon: PiggyBank },
   { to: "/goals", label: "Target", icon: Target },
+  { to: "/gold", label: "Emas", icon: Coins },
+  { to: "/receivables", label: "Piutang", icon: HandCoins },
   { to: "/reminders", label: "Pengingat", icon: Bell },
   { to: "/settings", label: "Pengaturan", icon: Settings },
 ] as const;
@@ -64,8 +66,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     await navigate({ to: "/login" });
   }
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
-      <aside className="no-print sticky top-0 hidden h-screen flex-col bg-sidebar p-4 text-sidebar-foreground lg:flex">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
+      <aside className="no-print sticky top-0 hidden h-screen flex-col overflow-y-auto bg-sidebar p-4 text-sidebar-foreground lg:flex">
         <div className="mb-8 px-2 pt-2">
           <p className="font-display text-2xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
           <p className="text-xs text-ink-muted">{t("buku kas pribadi")}</p>
@@ -86,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="no-print sticky top-0 z-30 bg-sidebar text-sidebar-foreground lg:hidden">
+        <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <p className="font-display text-xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
             <div className="flex items-center gap-1">
@@ -95,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button onClick={out} aria-label={t("Keluar")}><LogOut className="size-4" /></button>
             </div>
           </div>
-          <nav className="flex gap-1 overflow-x-auto px-3 pb-3">
+          <nav className="no-scrollbar flex max-w-full gap-1 overflow-x-auto px-3 pb-3">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs" activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" }}>
                 <n.icon className="size-3.5" /> {t(n.label)}
@@ -103,7 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
         </header>
-        <main className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-6xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
@@ -112,11 +114,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
+      <div className="min-w-0">
+        <h1 className="break-words text-3xl font-bold sm:text-4xl">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="no-print flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="no-print flex max-w-full flex-wrap gap-2">{actions}</div> : null}
     </div>
   );
 }
