@@ -151,6 +151,9 @@ export const externalTxSchema = z.object({
   items: z.array(itemSchema).max(200).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
   raw: z.unknown().optional(),
+  /** Idempotency key, e.g. "tg:<update_id>". A repeated key returns the existing transaction. */
+  external_id: z.string().max(120).nullable().optional(),
+  receipt_path: z.string().max(500).nullable().optional(),
 });
 export type ExternalTx = z.output<typeof externalTxSchema>;
 
@@ -162,7 +165,8 @@ export const draftSchema = z.object({
   date: z.string().nullable().catch(null),
   category: z.string().nullable().catch(null),
   description: z.string().nullable().catch(null),
-  items: z.array(itemSchema).catch([]),
+  account: z.string().nullable().optional().catch(null),
+  items: z.array(itemSchema).max(200).catch([]),
 });
 export type Draft = z.output<typeof draftSchema>;
 

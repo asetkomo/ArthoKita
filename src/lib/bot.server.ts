@@ -1,0 +1,682 @@
+/** Telegram/n8n bot: drafts with confirm buttons, reports and lists. Shared business logic stays in finance.server. */
+import { db } from "./db.server";
+import {
+  guessCategory,
+  matchCategory,
+  money,
+  parseCallback,
+  pickerKeyboard,
+  previewKeyboard,
+  previousRange,
+  previewText,
+  quickParse,
+  resolvePeriod,
+  undoKeyboard,
+  type DraftPayload,
+  type InlineKeyboard,
+} from "./bot";
+import { addDays } from "./dates";
+import { withTax } from "./fees";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fin = () => import("./finance.server");
+const DRAFT_TTL_HOURS = 48;
+const BOT_SOURCES = ["telegram", "whatsapp", "ocr"];
+
+export type BotUpdate = {
+  update_id: number;
+  chat_id: string;
+  text?: string | null | undefined;
+  image_base64?: string | null | undefined;
+  mime_type?: string | null | undefined;
+  callback_data?: string | null | undefined;
+};
+export type BotReply = {
+  method: "send" | "edit" | "none";
+  text: string;
+  reply_markup: InlineKeyboard | null;
+  toast?: string;
+};
+
+const reply = (text: string, reply_markup: InlineKeyboard | null = null): BotReply => ({
+  method: "send",
+  text,
+  reply_markup,
+});
+const edit = (
+  text: string,
+  reply_markup: InlineKeyboard | null = null,
+  toast?: string,
+): BotReply => ({ method: "edit", text, reply_markup, ...(toast ? { toast } : {}) });
+
+/** Optional server-side allow-list (defense in depth on top of the n8n filter). */
+export function chatAllowed(chatId: string): boolean {
+  const list = (process.env["BOT_ALLOWED_CHAT_IDS"] ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.length === 0 || list.includes(String(chatId));
+}
+
+/* ---------------- Entry point ---------------- */
+export async function handleBotUpdate(u: BotUpdate): Promise<BotReply> {
+  if (!chatAllowed(u.chat_id)) return { method: "none", text: "", reply_markup: null };
+  if (u.callback_data) return handleCallback(u.callback_data);
+  if (u.image_base64) return draftFromImage(u);
+  const text = (u.text ?? "").trim();
+  if (!text)
+    return reply(
+      'Kirim teks transaksi (mis. "kopi 25rb") atau foto struk. Ketik /help untuk bantuan.',
+    );
+  const { classifyBotCommand } = await import("./bot");
+  if (text.startsWith("/") || classifyBotCommand(text).type !== "unknown") {
+    const r = await (await fin()).botCommand(text);
+    return reply(r.message);
+  }
+  return draftFromText(u, text);
+}
+
+/* ---------------- Drafts ---------------- */
+type DraftRow = {
+  id: string;
+  status: string;
+  payload: DraftPayload;
+  receipt_path: string | null;
+  transaction_id: string | null;
+  created_at: string;
+  source: string;
+};
+
+async function defaultAccountName(): Promise<string | null> {
+  const id = await (await fin()).defaultAccountId();
+  if (!id) return null;
+  return (
+    ((await db().from("accounts").select("name").eq("id", id).maybeSingle()).data
+      ?.name as string) ?? null
+  );
+}
+
+async function existingDraft(externalId: string): Promise<DraftRow | null> {
+  const r = await db().from("bot_drafts").select("*").eq("external_id", externalId).maybeSingle();
+  return (r.data as DraftRow) ?? null;
+}
+
+async function storeDraft(
+  externalId: string,
+  chatId: string,
+  payload: DraftPayload,
+  source: string,
+  receiptPath: string | null,
+): Promise<DraftRow> {
+  const res = await db()
+    .from("bot_drafts")
+    .insert({
+      external_id: externalId,
+      chat_id: chatId,
+      payload,
+      source,
+      receipt_path: receiptPath,
+      status: "pending",
+    })
+    .select("*")
+    .single();
+  if (res.error) {
+    if (/duplicate key|23505/i.test(res.error.message)) {
+      const again = await existingDraft(externalId);
+      if (again) return again;
+    }
+    if (/bot_drafts/.test(res.error.message))
+      throw new Error("Tabel bot_drafts belum ada. Jalankan bagian v7 di supabase/schema.sql.");
+    throw new Error(res.error.message);
+  }
+  // Opportunistic cleanup of old drafts (cheap, indexed).
+  void db()
+    .from("bot_drafts")
+    .delete()
+    .lt("created_at", new Date(Date.now() - 7 * 86400000).toISOString())
+    .then(() => undefined);
+  return res.data as DraftRow;
+}
+
+async function previewReply(row: DraftRow, asEdit = false): Promise<BotReply> {
+  const text = previewText(row.payload, await defaultAccountName());
+  return asEdit ? edit(text, previewKeyboard(row.id)) : reply(text, previewKeyboard(row.id));
+}
+
+/** Zero-token category guess from what the user filed before under the same description. */
+async function historyCategory(description: string, kind: string): Promise<string | null> {
+  if (description.length < 3) return null;
+  const r = await db()
+    .from("transactions")
+    .select("category:categories(name)")
+    .eq("kind", kind)
+    .ilike("description", description.replace(/[%_]/g, ""))
+    .not("category_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return ((r.data as any)?.category?.name as string) ?? null;
+}
+
+async function draftFromText(u: BotUpdate, text: string): Promise<BotReply> {
+  const externalId = `tg:${u.update_id}`;
+  const prev = await existingDraft(externalId);
+  if (prev) return previewReply(prev);
+  const f = await fin();
+  const ctx = await f.parseContext();
+  const today = f.today();
+  const mode = (process.env["BOT_TEXT_AI"] ?? "auto").toLowerCase(); // auto | always | never
+  const q = mode === "always" ? null : quickParse(text, today, ctx.accounts ?? []);
+  let payload: DraftPayload | null = null;
+  if (q) {
+    const list = q.kind === "income" ? ctx.income : ctx.expense;
+    const category =
+      guessCategory(`${q.description} ${text}`, list) ??
+      matchCategory(await historyCategory(q.description, q.kind), list) ??
+      matchCategory("Lainnya", list);
+    payload = {
+      kind: q.kind,
+      amount: q.amount,
+      currency: q.currency,
+      category,
+      account: q.account,
+      description: q.description || category,
+      merchant: null,
+      date: q.date,
+      items: [],
+      via: "quick",
+    };
+  } else if (mode !== "never") {
+    const { parseText } = await import("./ocr.server");
+    const d = await parseText(text, ctx, today);
+    if (d.amount > 0)
+      payload = {
+        kind: d.kind,
+        amount: d.amount,
+        currency: d.currency,
+        category: d.category,
+        account: d.account ?? null,
+        description: d.description ?? text.slice(0, 200),
+        merchant: d.merchant,
+        date: d.date ?? today,
+        items: d.items,
+        via: "ai",
+      };
+  }
+  if (!payload)
+    return reply(
+      '❓ Nominal tidak terbaca. Contoh: "kopi 25rb", "gaji 8jt ke BCA", atau kirim foto struk. Ketik /help untuk perintah.',
+    );
+  return previewReply(await storeDraft(externalId, u.chat_id, payload, "telegram", null));
+}
+
+async function draftFromImage(u: BotUpdate): Promise<BotReply> {
+  const externalId = `tg:${u.update_id}`;
+  const prev = await existingDraft(externalId);
+  if (prev) return previewReply(prev);
+  const mime = /^image\/(jpeg|png|webp)$/.test(u.mime_type ?? "") ? u.mime_type! : "image/jpeg";
+  const b64 = u.image_base64!.replace(/^data:[^,]+,/, "");
+  const dataUrl = `data:${mime};base64,${b64}`;
+  const f = await fin();
+  const ctx = await f.parseContext();
+  const { parseReceipt } = await import("./ocr.server");
+  const d = await parseReceipt(dataUrl, ctx);
+  if (!(d.amount > 0))
+    return reply("❓ Total nota tidak terbaca. Coba foto lebih dekat, terang, dan tidak miring.");
+  // Caption can name the account: foto + caption "pakai BCA".
+  const capAcc = u.text
+    ? (quickParse(`${u.text} 1000`, f.today(), ctx.accounts ?? [])?.account ?? null)
+    : null;
+  let receiptPath: string | null = null;
+  try {
+    receiptPath = (await (await import("./receipt.server")).uploadReceipt(dataUrl)).path;
+  } catch (e) {
+    console.error("receipt upload failed", e);
+  }
+  const payload: DraftPayload = {
+    kind: d.kind,
+    amount: d.amount,
+    currency: d.currency,
+    category: d.category,
+    account: capAcc ?? d.account ?? null,
+    description: d.description ?? d.merchant,
+    merchant: d.merchant,
+    date: d.date ?? f.today(),
+    items: d.items.slice(0, 50),
+    via: "ocr",
+  };
+  return previewReply(await storeDraft(externalId, u.chat_id, payload, "ocr", receiptPath));
+}
+
+/* ---------------- Callback buttons ---------------- */
+async function handleCallback(data: string): Promise<BotReply> {
+  const cb = parseCallback(data);
+  if (!cb) return edit("⚠️ Tombol tidak dikenali.", null, "Tidak dikenali");
+  if (cb.kind === "undo") {
+    const r = await undoTransaction(cb.id);
+    return edit(r.message, null, r.ok ? "Dibatalkan" : "Gagal");
+  }
+  const row = (await db().from("bot_drafts").select("*").eq("id", cb.id).maybeSingle())
+    .data as DraftRow | null;
+  if (!row) return edit("⚠️ Pratinjau tidak ditemukan.", null);
+  if (row.status === "saved")
+    return edit(
+      "✅ Sudah tersimpan sebelumnya.",
+      row.transaction_id ? undoKeyboard(row.transaction_id) : null,
+      "Sudah tersimpan",
+    );
+  if (row.status !== "pending")
+    return edit(
+      row.status === "cancelled" ? "❌ Dibatalkan." : "↩️ Transaksi sudah di-undo.",
+      null,
+    );
+  if (Date.parse(row.created_at) < Date.now() - DRAFT_TTL_HOURS * 3600_000) {
+    await db().from("bot_drafts").update({ status: "cancelled" }).eq("id", row.id);
+    return edit("⌛ Pratinjau kedaluwarsa, kirim ulang transaksinya.", null);
+  }
+  const f = await fin();
+  const ctx = await f.parseContext();
+  const p = row.payload;
+  const catList = p.kind === "income" ? ctx.income : ctx.expense;
+  const accList = ctx.accounts ?? [];
+  const update = async (patch: Partial<DraftPayload>) => {
+    const payload = { ...p, ...patch };
+    await db()
+      .from("bot_drafts")
+      .update({ payload, updated_at: new Date().toISOString() })
+      .eq("id", row.id)
+      .eq("status", "pending");
+    return previewReply({ ...row, payload }, true);
+  };
+  switch (cb.op) {
+    case "s":
+      return saveDraft(row);
+    case "x":
+      await db().from("bot_drafts").update({ status: "cancelled" }).eq("id", row.id);
+      if (row.receipt_path)
+        await (await import("./receipt.server")).removeReceipt(row.receipt_path);
+      return edit("❌ Dibatalkan, tidak ada yang disimpan.", null, "Dibatalkan");
+    case "b":
+      return previewReply(row, true);
+    case "k": {
+      const kind = p.kind === "income" ? "expense" : "income";
+      const list = kind === "income" ? ctx.income : ctx.expense;
+      return update({
+        kind,
+        category: matchCategory(p.category, list) ?? matchCategory("Lainnya", list),
+      });
+    }
+    case "c":
+      return edit(
+        `🏷 Pilih kategori ${p.kind === "income" ? "pemasukan" : "pengeluaran"}:`,
+        pickerKeyboard(row.id, "C", catList),
+      );
+    case "a":
+      return edit("🏦 Pilih akun:", pickerKeyboard(row.id, "A", accList));
+    case "C": {
+      const c = cb.idx != null ? catList[cb.idx] : undefined;
+      return c ? update({ category: c }) : previewReply(row, true);
+    }
+    case "A": {
+      const a = cb.idx != null ? accList[cb.idx] : undefined;
+      return a ? update({ account: a }) : previewReply(row, true);
+    }
+  }
+}
+
+async function saveDraft(row: DraftRow): Promise<BotReply> {
+  const p = row.payload;
+  const f = await fin();
+  const r = await f.createFromExternal({
+    kind: p.kind,
+    amount: p.amount,
+    currency: p.currency,
+    category: p.category,
+    account: p.account,
+    to_account: null,
+    description: p.description,
+    merchant: p.merchant,
+    date: p.date,
+    source: row.source === "ocr" ? "ocr" : "telegram",
+    items: p.items.length ? p.items : null,
+    notes: null,
+    raw: { via: p.via, draft_id: row.id },
+    external_id: `draft:${row.id}`,
+    receipt_path: row.receipt_path,
+  });
+  await db()
+    .from("bot_drafts")
+    .update({ status: "saved", transaction_id: r.transaction.id })
+    .eq("id", row.id);
+  const acc = r.transaction.account_id
+    ? (await db().from("accounts").select("name").eq("id", r.transaction.account_id).maybeSingle())
+        .data?.name
+    : null;
+  return edit(`${r.message}${acc ? ` • ${acc}` : ""}`, undoKeyboard(r.transaction.id), "Tersimpan");
+}
+
+/* ---------------- Undo ---------------- */
+export async function undoTransaction(id: string): Promise<{ ok: boolean; message: string }> {
+  const tx = (
+    await db()
+      .from("transactions")
+      .select("id, source, description, amount, currency, receipt_path, created_at")
+      .eq("id", id)
+      .maybeSingle()
+  ).data as any;
+  if (!tx) return { ok: false, message: "⚠️ Transaksi tidak ditemukan (mungkin sudah dihapus)." };
+  if (!BOT_SOURCES.includes(tx.source))
+    return {
+      ok: false,
+      message: "⚠️ Hanya transaksi dari bot yang bisa di-undo. Hapus lewat web.",
+    };
+  if (Date.parse(tx.created_at) < Date.now() - 7 * 86400000)
+    return { ok: false, message: "⚠️ Undo hanya untuk transaksi ≤ 7 hari. Hapus lewat web." };
+  await db().from("transactions").delete().like("notes", `[fee:${tx.id}]`);
+  const del = await db().from("transactions").delete().eq("id", tx.id);
+  if (del.error) return { ok: false, message: `⚠️ Gagal undo: ${del.error.message}` };
+  if (tx.receipt_path) await (await import("./receipt.server")).removeReceipt(tx.receipt_path);
+  await db().from("bot_drafts").update({ status: "undone" }).eq("transaction_id", tx.id);
+  const f = await fin();
+  await f.logActivity("transaction.delete", "transactions", {
+    amount: Number(tx.amount),
+    currency: tx.currency,
+    description: tx.description,
+    source: "bot-undo",
+  });
+  return {
+    ok: true,
+    message: `↩️ Dihapus: ${tx.description ?? "transaksi"} ${money(Number(tx.amount), tx.currency)}`,
+  };
+}
+
+export async function undoLast(): Promise<{ ok: boolean; message: string }> {
+  const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const r = await db()
+    .from("transactions")
+    .select("id")
+    .in("source", BOT_SOURCES)
+    .gte("created_at", since)
+    .not("notes", "like", "[fee:%")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!r.data) return { ok: false, message: "Tidak ada transaksi dari bot dalam 24 jam terakhir." };
+  return undoTransaction(r.data.id as string);
+}
+
+/* ---------------- Reports & lists ---------------- */
+type TxLite = {
+  kind: string;
+  amount_idr: number;
+  occurred_at: string;
+  description: string | null;
+  merchant: string | null;
+  category: { name: string } | null;
+};
+
+async function txIn(start: string, end: string, kind?: string): Promise<TxLite[]> {
+  let q = db()
+    .from("transactions")
+    .select("kind, amount_idr, occurred_at, description, merchant, category:categories(name)")
+    .gte("occurred_at", start)
+    .lt("occurred_at", end)
+    .neq("kind", "transfer");
+  if (kind) q = q.eq("kind", kind);
+  const r = await q.order("occurred_at", { ascending: false }).limit(5000);
+  if (r.error) throw new Error(r.error.message);
+  return ((r.data ?? []) as any[]).map((t) => ({ ...t, amount_idr: Number(t.amount_idr) }));
+}
+
+const idr = (n: number) => money(n, "IDR");
+const shortDay = (d: string) =>
+  new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", timeZone: "UTC" }).format(
+    new Date(d + "T00:00:00Z"),
+  );
+
+export async function reportData(spec: string) {
+  const f = await fin();
+  const today = f.today();
+  const p = resolvePeriod(spec, today);
+  if (!p) return null;
+  await f.applyMonthlyFees();
+  const prev = previousRange(p);
+  const [rows, prevRows] = await Promise.all([
+    txIn(p.start, p.end),
+    txIn(prev.start, prev.end, "expense"),
+  ]);
+  const income = rows.filter((t) => t.kind === "income").reduce((a, t) => a + t.amount_idr, 0);
+  const expenses = rows.filter((t) => t.kind === "expense");
+  const expense = expenses.reduce((a, t) => a + t.amount_idr, 0);
+  const prevExpense = prevRows.reduce((a, t) => a + t.amount_idr, 0);
+  const byCat = new Map<string, number>();
+  for (const t of expenses)
+    byCat.set(
+      t.category?.name ?? "Tanpa kategori",
+      (byCat.get(t.category?.name ?? "Tanpa kategori") ?? 0) + t.amount_idr,
+    );
+  const lastDay = p.end > addDays(today, 1) ? addDays(today, 1) : p.end;
+  const days = Math.max(1, Math.round((Date.parse(lastDay) - Date.parse(p.start)) / 86400000));
+  return {
+    period: p,
+    income,
+    expense,
+    net: income - expense,
+    count: rows.length,
+    prev_expense: prevExpense,
+    change_pct: prevExpense > 0 ? ((expense - prevExpense) / prevExpense) * 100 : null,
+    avg_per_day: expense / days,
+    by_category: [...byCat.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value]) => ({ name, value })),
+    top: [...expenses].sort((a, b) => b.amount_idr - a.amount_idr).slice(0, 3),
+  };
+}
+
+export async function reportText(spec: string): Promise<string> {
+  const d = await reportData(spec);
+  if (!d) return "❓ Periode tidak dikenali. Contoh: /bulan 2026-05, atau /pengeluaran minggu.";
+  const lines = [`📊 Laporan ${d.period.label}`, "", `💰 Pemasukan: ${idr(d.income)}`];
+  const chg =
+    d.change_pct == null
+      ? ""
+      : ` (${d.change_pct >= 0 ? "▲" : "▼"}${Math.abs(Math.round(d.change_pct))}% vs periode sebelumnya)`;
+  lines.push(
+    `💸 Pengeluaran: ${idr(d.expense)}${chg}`,
+    `${d.net >= 0 ? "📈" : "📉"} Selisih: ${idr(d.net)}`,
+    `🧾 ${d.count} transaksi${d.period.key !== "today" && d.period.key !== "yesterday" ? ` • rata-rata ${idr(d.avg_per_day)}/hari` : ""}`,
+  );
+  if (d.by_category.length) {
+    lines.push("", "Pengeluaran per kategori:");
+    for (const c of d.by_category.slice(0, 6))
+      lines.push(
+        `• ${c.name}: ${idr(c.value)} (${d.expense ? Math.round((c.value / d.expense) * 100) : 0}%)`,
+      );
+  }
+  if (d.top.length) {
+    lines.push("", "Terbesar:");
+    for (const t of d.top)
+      lines.push(
+        `• ${shortDay(t.occurred_at)} — ${t.description ?? t.merchant ?? t.category?.name ?? "-"}: ${idr(t.amount_idr)}`,
+      );
+  }
+  if (!d.count) lines.push("", "Belum ada transaksi di periode ini.");
+  if (
+    d.period.key === "month" ||
+    /^\d{4}-\d{2}$/.test(d.period.key) ||
+    d.period.key === "lastmonth"
+  ) {
+    const bal = await balanceRows();
+    lines.push("", `🏦 Total saldo saat ini: ${idr(bal.total)}`);
+  }
+  return lines.join("\n");
+}
+
+export async function listText(kind: "income" | "expense", spec: string): Promise<string> {
+  const f = await fin();
+  const p = resolvePeriod(spec, f.today());
+  if (!p)
+    return "❓ Periode tidak dikenali. Pakai: hariini, kemarin, minggu, bulan, bulanlalu, atau YYYY-MM.";
+  const rows = await txIn(p.start, p.end, kind);
+  const total = rows.reduce((a, t) => a + t.amount_idr, 0);
+  const title = kind === "income" ? "💰 Pemasukan" : "💸 Pengeluaran";
+  if (!rows.length) return `${title} ${p.label}\nBelum ada data.`;
+  const lines = [`${title} ${p.label}`, `Total: ${idr(total)} (${rows.length} transaksi)`, ""];
+  for (const t of rows.slice(0, 20))
+    lines.push(
+      `• ${shortDay(t.occurred_at)} ${t.description ?? t.merchant ?? "-"} — ${idr(t.amount_idr)}${t.category ? ` [${t.category.name}]` : ""}`,
+    );
+  if (rows.length > 20) lines.push(`… dan ${rows.length - 20} lainnya (lihat di web)`);
+  return lines.join("\n");
+}
+
+async function balanceRows() {
+  const f = await fin();
+  const rows = ((
+    await db().from("account_balances").select("*").eq("archived", false).order("name")
+  ).data ?? []) as any[];
+  const rate = rows.some((a) => a.currency === "USD") ? await f.getUsdIdr() : 1;
+  const total = rows.reduce((a, r) => a + Number(r.balance) * (r.currency === "USD" ? rate : 1), 0);
+  return { rows, total };
+}
+
+export async function balancesText(): Promise<string> {
+  const { rows, total } = await balanceRows();
+  if (!rows.length) return "Belum ada akun terdaftar. Tambahkan di web → Akun.";
+  const icon: Record<string, string> = {
+    bank: "🏦",
+    ewallet: "📱",
+    cash: "💵",
+    credit_card: "💳",
+    investment: "📈",
+    other: "•",
+  };
+  return [
+    `💰 Saldo akun`,
+    "",
+    ...rows.map((a) => `${icon[a.type] ?? "•"} ${a.name}: ${money(Number(a.balance), a.currency)}`),
+    "",
+    `Total (IDR): ${idr(total)}`,
+  ].join("\n");
+}
+
+export async function debtsText(): Promise<string> {
+  const f = await fin();
+  const debts = (await f.computeDebts()).filter(
+    (d: any) => d.status === "active" && d.remaining_count > 0,
+  );
+  if (!debts.length) return "🎉 Tidak ada paylater/cicilan aktif.";
+  const label: Record<string, string> = {
+    paylater: "Paylater",
+    loan: "Pinjaman",
+    credit_card: "Kartu kredit",
+    personal: "Pribadi",
+    other: "Lainnya",
+  };
+  const rate = debts.some((d: any) => d.currency === "USD") ? await f.getUsdIdr() : 1;
+  const total = debts.reduce(
+    (a: number, d: any) => a + d.remaining_amount * (d.currency === "USD" ? rate : 1),
+    0,
+  );
+  const monthly = debts.reduce(
+    (a: number, d: any) => a + d.installment_amount * (d.currency === "USD" ? rate : 1),
+    0,
+  );
+  const today = f.today();
+  const lines = ["💳 Paylater & cicilan aktif", ""];
+  for (const d of debts as any[]) {
+    const late = d.next_due && d.next_due < today ? " ⚠️ TERLAMBAT" : "";
+    lines.push(
+      `• ${d.name}${d.provider ? ` (${d.provider})` : ""} — ${label[d.kind] ?? d.kind}`,
+      `  ${money(d.installment_amount, d.currency)}/bln • sisa ${d.remaining_count}x = ${money(d.remaining_amount, d.currency)}`,
+      `  Jatuh tempo: ${d.next_due ?? "-"}${late}`,
+    );
+  }
+  lines.push(
+    "",
+    `Total sisa: ${idr(total)}`,
+    `Cicilan per bulan: ${idr(monthly)}`,
+    "Catat bayar: /bayar <nama>",
+  );
+  return lines.join("\n");
+}
+
+export async function subscriptionsText(): Promise<string> {
+  const f = await fin();
+  const subs = ((await db().from("subscriptions").select("*").eq("active", true).order("next_due"))
+    .data ?? []) as any[];
+  if (!subs.length) return "Belum ada langganan aktif.";
+  const rate = subs.some((s) => s.currency === "USD") ? await f.getUsdIdr() : 1;
+  const today = f.today();
+  let monthlyIdr = 0;
+  const lines = ["🔁 Langganan aktif", ""];
+  for (const s of subs) {
+    const amt = withTax(Number(s.amount), s.tax_percent);
+    monthlyIdr += (s.cycle === "yearly" ? amt / 12 : amt) * (s.currency === "USD" ? rate : 1);
+    const late = s.next_due < today ? " ⚠️ lewat" : s.next_due === today ? " • HARI INI" : "";
+    lines.push(
+      `• ${s.name}: ${money(amt, s.currency)}/${s.cycle === "yearly" ? "thn" : "bln"} — ${s.next_due}${late}`,
+    );
+  }
+  lines.push(
+    "",
+    `Setara per bulan: ${idr(monthlyIdr)}`,
+    `Setara per tahun: ${idr(monthlyIdr * 12)}`,
+    "Catat bayar: /bayar <nama>",
+  );
+  return lines.join("\n");
+}
+
+export async function budgetText(): Promise<string> {
+  const f = await fin();
+  const month = f.today().slice(0, 7);
+  const list = await f.computeBudgets(month);
+  if (!list.length) return "Belum ada budget. Atur di web → Budget.";
+  const bar = (pct: number) => {
+    const n = Math.min(10, Math.round(pct / 10));
+    return "▓".repeat(n) + "░".repeat(10 - n);
+  };
+  const lines = [`🎯 Budget ${month}`, ""];
+  for (const b of list.sort((a, b) => b.percent - a.percent)) {
+    const flag = b.percent >= 100 ? " 🔴" : b.percent >= b.alert_percent ? " 🟠" : "";
+    lines.push(
+      `• ${b.category}${flag}`,
+      `  ${bar(b.percent)} ${Math.round(b.percent)}% — ${idr(b.spent)} / ${idr(b.amount)}`,
+    );
+  }
+  return lines.join("\n");
+}
+
+export async function receivablesText(): Promise<string> {
+  const f = await fin();
+  const r = await db()
+    .from("receivables")
+    .select("id, name, borrower, amount, currency, due_date")
+    .eq("status", "active")
+    .order("due_date", { ascending: true, nullsFirst: false });
+  if (r.error)
+    return f.isMissingTable(r.error)
+      ? "Fitur piutang belum aktif (jalankan skema v3)."
+      : `⚠️ ${r.error.message}`;
+  const rows = (r.data ?? []) as any[];
+  if (!rows.length) return "🎉 Tidak ada piutang aktif.";
+  const pays = ((
+    await db()
+      .from("receivable_payments")
+      .select("receivable_id, amount")
+      .in(
+        "receivable_id",
+        rows.map((x) => x.id),
+      )
+  ).data ?? []) as any[];
+  const lines = ["🤝 Piutang aktif", ""];
+  for (const x of rows) {
+    const paid = pays
+      .filter((p) => p.receivable_id === x.id)
+      .reduce((a, p) => a + Number(p.amount), 0);
+    lines.push(
+      `• ${x.name}${x.borrower ? ` (${x.borrower})` : ""}: sisa ${money(Number(x.amount) - paid, x.currency)}${x.due_date ? ` — jatuh tempo ${x.due_date}` : ""}`,
+    );
+  }
+  return lines.join("\n");
+}
