@@ -294,3 +294,59 @@ alter table public.bot_drafts enable row level security;
 -- ============ v8: target tabungan tertaut ke akun tabungan (aman dijalankan ulang) ============
 -- Setor/tarik dana target dicatat sebagai transfer antar akun (bukan pengeluaran).
 alter table public.goals add column if not exists account_id uuid references public.accounts(id) on delete set null;
+
+-- ============ v9: agregasi laporan di Postgres (aman dijalankan ulang) ============
+-- Fungsi ringkasan agar dashboard/laporan tidak perlu mengunduh semua transaksi. Opsional:
+-- tanpa bagian ini aplikasi otomatis memakai perhitungan lama (hasil identik).
+-- Bulan = to_char(occurred_at,'YYYY-MM') (occurred_at bertipe date, tanpa zona waktu).
+create or replace function public.dk_month_totals(p_start date, p_end date)
+returns table (month text, kind text, total numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month, t.kind, sum(t.amount_idr) as total
+  from public.transactions t
+  where t.occurred_at >= p_start and t.occurred_at < p_end and t.kind <> 'transfer'
+  group by 1, 2;
+$$;
+
+create or replace function public.dk_category_totals(p_start date, p_end date, p_kind text)
+returns table (category_id uuid, name text, color text, total numeric)
+language sql stable security invoker set search_path = public as $$
+  select t.category_id, c.name, c.color, sum(t.amount_idr) as total
+  from public.transactions t
+  left join public.categories c on c.id = t.category_id
+  where t.occurred_at >= p_start and t.occurred_at < p_end and t.kind = p_kind
+  group by t.category_id, c.name, c.color;
+$$;
+
+create or replace function public.dk_month_category_totals(p_start date, p_end date)
+returns table (month text, category_id uuid, name text, color text, total numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month, t.category_id, c.name, c.color,
+    sum(t.amount_idr) as total
+  from public.transactions t
+  left join public.categories c on c.id = t.category_id
+  where t.occurred_at >= p_start and t.occurred_at < p_end and t.kind = 'expense'
+  group by 1, t.category_id, c.name, c.color;
+$$;
+
+create or replace function public.dk_monthly_net(p_end date)
+returns table (month text, net numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month,
+    sum(case when t.kind = 'income' then t.amount_idr else -t.amount_idr end) as net
+  from public.transactions t
+  where t.occurred_at < p_end and t.kind <> 'transfer'
+  group by 1;
+$$;
+
+-- Hanya server (service_role) yang boleh memanggil.
+revoke all on function public.dk_month_totals(date, date) from public, anon, authenticated;
+revoke all on function public.dk_category_totals(date, date, text) from public, anon, authenticated;
+revoke all on function public.dk_month_category_totals(date, date) from public, anon, authenticated;
+revoke all on function public.dk_monthly_net(date) from public, anon, authenticated;
+grant execute on function public.dk_month_totals(date, date) to service_role;
+grant execute on function public.dk_category_totals(date, date, text) to service_role;
+grant execute on function public.dk_month_category_totals(date, date) to service_role;
+grant execute on function public.dk_monthly_net(date) to service_role;
+-- Muat ulang cache skema PostgREST agar fungsi baru langsung terlihat.
+notify pgrst, 'reload schema';

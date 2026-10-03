@@ -6,6 +6,27 @@ import { dupKey } from "./csv";
 import { fetchAll } from "./paginate";
 import { planGoalFunds } from "./goals";
 import type { Json, Tables, TablesInsert } from "./database.types";
+import {
+  categoriesByName,
+  categorySlices,
+  categoryTrendSeries,
+  kindTotal,
+  monthSeries,
+  normalizeNet,
+  normalizeTotals,
+  once,
+  spentByCategory,
+  sqlOrFallback,
+  sumCategories,
+  sumMonthCategories,
+  sumMonthKind,
+  sumMonthlyNet,
+  topCategoryTrend,
+  type CategoryTotal,
+  type MonthCategoryTotal,
+  type MonthKindTotal,
+  type MonthNet,
+} from "./aggregate";
 
 type TxRow = Tables<"transactions">;
 type TxInsert = TablesInsert<"transactions">;
@@ -474,28 +495,85 @@ export async function exportCsv(month?: string) {
   return [head.map(esc).join(","), ...lines].join("\n");
 }
 
+/* ---------------- Aggregation (v9 SQL functions, JS fallback) ---------------- */
+type AggTx = Pick<TxRow, "kind" | "amount_idr" | "occurred_at" | "category_id"> & {
+  category: CatRef;
+};
+
+/** Non-transfer transactions in [start, end) for the JS fallback (start null = from the beginning). */
+async function fetchAggTx(
+  start: string | null,
+  end: string,
+  opts: { kind?: "income" | "expense"; hardCap?: number } = {},
+): Promise<AggTx[]> {
+  return must<AggTx[]>(
+    await fetchAll(
+      (from, to) => {
+        let q = db()
+          .from("transactions")
+          .select("kind, amount_idr, occurred_at, category_id, category:categories(name,color)")
+          .lt("occurred_at", end)
+          .neq("kind", "transfer");
+        if (start) q = q.gte("occurred_at", start);
+        if (opts.kind) q = q.eq("kind", opts.kind);
+        return q.order("id").range(from, to);
+      },
+      opts.hardCap ? { hardCap: opts.hardCap } : {},
+    ),
+  );
+}
+type AggSource = () => Promise<AggTx[]>;
+
+async function monthTotals(start: string, end: string, fb: AggSource): Promise<MonthKindTotal[]> {
+  const r = await sqlOrFallback(
+    () => db().rpc("dk_month_totals", { p_start: start, p_end: end }),
+    async () => sumMonthKind(await fb()),
+  );
+  return normalizeTotals(r.rows);
+}
+
+async function categoryTotals(
+  start: string,
+  end: string,
+  kind: "income" | "expense",
+  fb: AggSource,
+): Promise<CategoryTotal[]> {
+  const r = await sqlOrFallback(
+    () => db().rpc("dk_category_totals", { p_start: start, p_end: end, p_kind: kind }),
+    async () => sumCategories((await fb()).filter((t) => t.kind === kind)),
+  );
+  return normalizeTotals(r.rows);
+}
+
+async function monthCategoryTotals(
+  start: string,
+  end: string,
+  fb: AggSource,
+): Promise<MonthCategoryTotal[]> {
+  const r = await sqlOrFallback(
+    () => db().rpc("dk_month_category_totals", { p_start: start, p_end: end }),
+    async () => sumMonthCategories((await fb()).filter((t) => t.kind === "expense")),
+  );
+  return normalizeTotals(r.rows);
+}
+
+async function monthlyNetBefore(end: string, fb: AggSource): Promise<MonthNet[]> {
+  const r = await sqlOrFallback(
+    () => db().rpc("dk_monthly_net", { p_end: end }),
+    async () => sumMonthlyNet(await fb()),
+  );
+  return normalizeNet(r.rows);
+}
+
 /* ---------------- Budgets ---------------- */
 export async function computeBudgets(month: string) {
   const { start, end } = monthRange(month);
-  const [budgetsRes, txRes] = await Promise.all([
+  const [budgetsRes, cats] = await Promise.all([
     db().from("budgets").select("*, category:categories(id,name,color)"),
-    fetchAll((from, to) =>
-      db()
-        .from("transactions")
-        .select("category_id, amount_idr")
-        .eq("kind", "expense")
-        .gte("occurred_at", start)
-        .lt("occurred_at", end)
-        .order("id")
-        .range(from, to),
-    ),
+    categoryTotals(start, end, "expense", () => fetchAggTx(start, end, { kind: "expense" })),
   ]);
   const budgets = must(budgetsRes);
-  const tx = must<Pick<TxRow, "category_id" | "amount_idr">[]>(txRes);
-  const spent = new Map<string, number>();
-  for (const t of tx)
-    if (t.category_id)
-      spent.set(t.category_id, (spent.get(t.category_id) ?? 0) + Number(t.amount_idr));
+  const spent = spentByCategory(cats);
   return budgets.map((b) => {
     const amount = Number(b.amount);
     const s = spent.get(b.category_id) ?? 0;
@@ -889,96 +967,46 @@ export async function computeDashboard(month: string) {
     debts: debtsP,
     budgets: curBudgetsP,
   });
-  const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes, rate, debts, budgets, reminders] =
-    await Promise.all([
-      fetchAll((from, to) =>
-        db()
-          .from("transactions")
-          .select("kind, amount_idr, category_id, category:categories(name,color)")
-          .gte("occurred_at", start)
-          .lt("occurred_at", end)
-          .order("id")
-          .range(from, to),
-      ),
-      fetchAll((from, to) =>
-        db()
-          .from("transactions")
-          .select("kind, amount_idr, occurred_at, category:categories(name)")
-          .gte("occurred_at", trendStart)
-          .lt("occurred_at", end)
-          .neq("kind", "transfer")
-          .order("id")
-          .range(from, to),
-      ),
-      db().from("account_balances").select("*").eq("archived", false),
-      db().from("goals").select("*").order("created_at"),
-      db().from("subscriptions").select("*").eq("active", true),
-      db()
-        .from("transactions")
-        .select(
-          "*, category:categories(name,color), account:accounts!transactions_account_id_fkey(name)",
-        )
-        .order("occurred_at", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(8),
-      rateP,
-      debtsP,
-      budgetsP,
-      remindersP,
-    ]);
-  const tx =
-    must<(Pick<TxRow, "kind" | "amount_idr" | "category_id"> & { category: CatRef })[]>(txRes);
-  let income = 0;
-  let expense = 0;
-  const byCat = new Map<string, { name: string; color: string | null; value: number }>();
-  for (const t of tx) {
-    const v = Number(t.amount_idr);
-    if (t.kind === "income") income += v;
-    if (t.kind === "expense") {
-      expense += v;
-      const key = t.category_id ?? "none";
-      const cur = byCat.get(key) ?? {
-        name: t.category?.name ?? "Tanpa kategori",
-        color: t.category?.color ?? null,
-        value: 0,
-      };
-      cur.value += v;
-      byCat.set(key, cur);
-    }
-  }
-  const trendMap = new Map<string, { month: string; income: number; expense: number }>();
-  for (let i = 5; i >= 0; i--) {
-    const m = shiftMonth(month, -i);
-    trendMap.set(m, { month: m, income: 0, expense: 0 });
-  }
-  const catTotals = new Map<string, number>();
-  const catByMonth = new Map<string, Map<string, number>>();
-  for (const t of must<(AmountRow & { category: NamedRef })[]>(trendRes)) {
-    const m = String(t.occurred_at).slice(0, 7);
-    const row = trendMap.get(m);
-    if (!row) continue;
-    const v = Number(t.amount_idr);
-    if (t.kind === "income") {
-      row.income += v;
-    } else {
-      row.expense += v;
-      const name = (t.category?.name ?? "Tanpa kategori") as string;
-      catTotals.set(name, (catTotals.get(name) ?? 0) + v);
-      const mm = catByMonth.get(m) ?? new Map<string, number>();
-      mm.set(name, (mm.get(name) ?? 0) + v);
-      catByMonth.set(m, mm);
-    }
-  }
-  const topCats = [...catTotals.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name]) => name);
-  const categoryTrend = [...trendMap.keys()].map((m) => {
-    const row: Record<string, number | string> = { month: m };
-    const mm = catByMonth.get(m);
-    for (const c of topCats) row[c] = mm?.get(c) ?? 0;
-    return row;
-  });
+  // One shared JS fallback fetch (6 months, no transfers) when the v9 SQL functions are missing.
+  const fb = once(() => fetchAggTx(trendStart, end));
+  const [
+    totals,
+    monthCats,
+    trendCats,
+    balRes,
+    goalsRes,
+    subsRes,
+    recentRes,
+    rate,
+    debts,
+    budgets,
+    reminders,
+  ] = await Promise.all([
+    monthTotals(trendStart, end, fb),
+    categoryTotals(start, end, "expense", async () =>
+      (await fb()).filter((t) => String(t.occurred_at) >= start),
+    ),
+    monthCategoryTotals(trendStart, end, fb),
+    db().from("account_balances").select("*").eq("archived", false),
+    db().from("goals").select("*").order("created_at"),
+    db().from("subscriptions").select("*").eq("active", true),
+    db()
+      .from("transactions")
+      .select(
+        "*, category:categories(name,color), account:accounts!transactions_account_id_fkey(name)",
+      )
+      .order("occurred_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(8),
+    rateP,
+    debtsP,
+    budgetsP,
+    remindersP,
+  ]);
+  const income = kindTotal(totals, "income", month);
+  const expense = kindTotal(totals, "expense", month);
+  const trendMonths = Array.from({ length: 6 }, (_, i) => shiftMonth(month, i - 5));
+  const categoryTrend = topCategoryTrend(trendMonths, trendCats);
   const balances = must(balRes).map((b) => ({
     ...b,
     balance: Number(b.balance),
@@ -994,9 +1022,7 @@ export async function computeDashboard(month: string) {
     const v = withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? rate : 1);
     return a + (s.cycle === "yearly" ? v / 12 : v);
   }, 0);
-  const feesIdr = tx
-    .filter((t) => t.kind === "expense" && t.category?.name === FEE_CATEGORY)
-    .reduce((a, t) => a + Number(t.amount_idr), 0);
+  const feesIdr = monthCats.filter((c) => c.name === FEE_CATEGORY).reduce((a, c) => a + c.total, 0);
   return {
     month,
     feesIdr,
@@ -1004,9 +1030,9 @@ export async function computeDashboard(month: string) {
     income,
     expense,
     net: income - expense,
-    byCategory: [...byCat.values()].sort((a, b) => b.value - a.value),
-    trend: [...trendMap.values()],
-    categoryTrend: { categories: topCats, rows: categoryTrend },
+    byCategory: categorySlices(monthCats),
+    trend: monthSeries(trendMonths, totals),
+    categoryTrend,
     balances,
     totalBalanceIdr: balances.reduce((a, b) => a + b.balance_idr, 0),
     debtOutstandingIdr,
@@ -1055,47 +1081,14 @@ export async function parseContext(): Promise<import("./ocr.server").ParseContex
 export async function computeYearly(year: string) {
   const start = `${year}-01-01`;
   const end = `${Number(year) + 1}-01-01`;
-  const rows = must<(AmountRow & { category: CatRef })[]>(
-    await fetchAll((from, to) =>
-      db()
-        .from("transactions")
-        .select("kind, amount_idr, occurred_at, category:categories(name,color)")
-        .gte("occurred_at", start)
-        .lt("occurred_at", end)
-        .neq("kind", "transfer")
-        .order("id")
-        .range(from, to),
-    ),
-  );
-  const months = new Map<string, { month: string; income: number; expense: number }>();
-  for (let i = 1; i <= 12; i++)
-    months.set(`${year}-${String(i).padStart(2, "0")}`, {
-      month: `${year}-${String(i).padStart(2, "0")}`,
-      income: 0,
-      expense: 0,
-    });
-  const byCat = new Map<string, { name: string; color: string | null; value: number }>();
-  let income = 0;
-  let expense = 0;
-  for (const t of rows) {
-    const v = Number(t.amount_idr);
-    const row = months.get(String(t.occurred_at).slice(0, 7));
-    if (t.kind === "income") {
-      income += v;
-      if (row) row.income += v;
-    } else if (t.kind === "expense") {
-      expense += v;
-      if (row) row.expense += v;
-      const name = (t.category?.name ?? "Tanpa kategori") as string;
-      const cur = byCat.get(name) ?? {
-        name,
-        color: (t.category?.color ?? null) as string | null,
-        value: 0,
-      };
-      cur.value += v;
-      byCat.set(name, cur);
-    }
-  }
+  const fb = once(() => fetchAggTx(start, end));
+  const [totals, cats] = await Promise.all([
+    monthTotals(start, end, fb),
+    categoryTotals(start, end, "expense", fb),
+  ]);
+  const months = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+  const income = kindTotal(totals, "income");
+  const expense = kindTotal(totals, "expense");
   return {
     year,
     income,
@@ -1103,8 +1096,8 @@ export async function computeYearly(year: string) {
     net: income - expense,
     avgIncome: income / 12,
     avgExpense: expense / 12,
-    months: [...months.values()],
-    byCategory: [...byCat.values()].sort((a, b) => b.value - a.value),
+    months: monthSeries(months, totals),
+    byCategory: categoriesByName(cats),
   };
 }
 
@@ -1317,78 +1310,21 @@ export async function categoryTrend(months: number, endMonth: string) {
   const first = shiftMonth(endMonth, -(months - 1));
   const { start } = monthRange(first);
   const { end } = monthRange(endMonth);
-  const rows = must<
-    (Pick<TxRow, "amount_idr" | "occurred_at" | "category_id"> & {
-      category: { id: string; name: string; color: string | null } | null;
-    })[]
-  >(
-    await fetchAll(
-      (from, to) =>
-        db()
-          .from("transactions")
-          .select("amount_idr, occurred_at, category_id, category:categories(id,name,color)")
-          .eq("kind", "expense")
-          .gte("occurred_at", start)
-          .lt("occurred_at", end)
-          .order("id")
-          .range(from, to),
-      { hardCap: 50000 },
-    ),
+  const rows = await monthCategoryTotals(start, end, () =>
+    fetchAggTx(start, end, { kind: "expense", hardCap: 50000 }),
   );
   const list = Array.from({ length: months }, (_, i) => shiftMonth(first, i));
-  const cats = new Map<string, { id: string; name: string; color: string | null; total: number }>();
-  const series = new Map<string, Record<string, number | string>>(
-    list.map((m) => [m, { month: m }]),
-  );
-  for (const t of rows) {
-    const id = (t.category_id as string) ?? "none";
-    const c = cats.get(id) ?? {
-      id,
-      name: t.category?.name ?? "Tanpa kategori",
-      color: t.category?.color ?? null,
-      total: 0,
-    };
-    const v = Number(t.amount_idr);
-    c.total += v;
-    cats.set(id, c);
-    const row = series.get(String(t.occurred_at).slice(0, 7));
-    if (row) row[id] = Number(row[id] ?? 0) + v;
-  }
-  return {
-    months: list,
-    categories: [...cats.values()].sort((a, b) => b.total - a.total),
-    series: [...series.values()],
-  };
+  return { months: list, ...categoryTrendSeries(list, rows) };
 }
 
 export async function yearlySummary(year: number) {
-  const rows = must<AmountRow[]>(
-    await fetchAll(
-      (from, to) =>
-        db()
-          .from("transactions")
-          .select("kind, amount_idr, occurred_at")
-          .neq("kind", "transfer")
-          .gte("occurred_at", `${year}-01-01`)
-          .lt("occurred_at", `${year + 1}-01-01`)
-          .order("id")
-          .range(from, to),
-      { hardCap: 100000 },
-    ),
-  );
-  const months = Array.from({ length: 12 }, (_, i) => ({
-    month: `${year}-${String(i + 1).padStart(2, "0")}`,
-    income: 0,
-    expense: 0,
-    net: 0,
-  }));
-  for (const t of rows) {
-    const m = months[Number(String(t.occurred_at).slice(5, 7)) - 1];
-    if (!m) continue;
-    if (t.kind === "income") m.income += Number(t.amount_idr);
-    else m.expense += Number(t.amount_idr);
-  }
-  for (const m of months) m.net = m.income - m.expense;
+  const start = `${year}-01-01`;
+  const end = `${year + 1}-01-01`;
+  const totals = await monthTotals(start, end, () => fetchAggTx(start, end, { hardCap: 100000 }));
+  const months = monthSeries(
+    Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`),
+    totals,
+  ).map((m) => ({ ...m, net: m.income - m.expense }));
   const income = months.reduce((a, m) => a + m.income, 0);
   const expense = months.reduce((a, m) => a + m.expense, 0);
   const t = today();
@@ -1566,36 +1502,21 @@ export async function netWorthSeries(months = 12, endMonth: string) {
   const { end } = monthRange(endMonth);
   const assets = await import("./assets.server");
   const rateP = getUsdIdr();
-  const [rate, accRes, txRes, goldRows, prices, recv] = await Promise.all([
+  const [rate, accRes, nets, goldRows, prices, recv] = await Promise.all([
     rateP,
     db().from("accounts").select("initial_balance, currency"),
-    fetchAll(
-      (from, to) =>
-        db()
-          .from("transactions")
-          .select("occurred_at, kind, amount_idr")
-          .neq("kind", "transfer")
-          .lt("occurred_at", end)
-          .order("id")
-          .range(from, to),
-      { hardCap: 200000 },
-    ),
+    monthlyNetBefore(end, () => fetchAggTx(null, end, { hardCap: 200000 })),
     assets.goldGramsByMonth(),
     assets.getGoldPrices().catch(() => ({ world: null, antam: null })),
     rateP.then((r) => assets.receivableDeltasByMonth(r)),
   ]);
   const accs = must(accRes);
-  const rows = must<Pick<TxRow, "occurred_at" | "kind" | "amount_idr">[]>(txRes);
   let initial = 0;
   for (const a of accs) initial += Number(a.initial_balance) * (a.currency === "USD" ? rate : 1);
   const first = shiftMonth(endMonth, -(months - 1));
   const monthlyNet = new Map<string, number>();
   const add = (m: string, v: number) => monthlyNet.set(m, (monthlyNet.get(m) ?? 0) + v);
-  for (const t of rows)
-    add(
-      String(t.occurred_at).slice(0, 7),
-      t.kind === "income" ? Number(t.amount_idr) : -Number(t.amount_idr),
-    );
+  for (const n of nets) add(n.month, n.net);
   for (const r of recv) add(r.month, r.delta);
   const gramsDelta = new Map<string, number>();
   for (const g of goldRows) gramsDelta.set(g.month, (gramsDelta.get(g.month) ?? 0) + g.grams);

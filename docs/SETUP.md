@@ -149,3 +149,7 @@ Catatan: toleransi jam ±30 detik; kode yang sudah dipakai ditolak (per instance
 ## Tipe database (TypeScript)
 `src/lib/database.types.ts` berisi tipe `Database` (format `supabase gen types`) yang dipakai `db()` sehingga nama kolom yang salah tertangkap saat `npm run typecheck`. File ini ditulis manual dari `supabase/schema.sql`; kolom dari bagian skema opsional ditandai opsional.
 Untuk membuat ulang dari project Supabase Anda: login Supabase CLI (`npx supabase login`), lalu `SUPABASE_PROJECT_ID=<ref> npm run gen:types` (perlu CLI `supabase` di PATH, mis. `npm i -g supabase`). Setelah regenerate, jalankan `npm run typecheck`. Bila mengubah tabel di `schema.sql`, perbarui juga file tipe ini.
+
+## v9 — Agregasi laporan di Postgres (opsional)
+Jalankan bagian **v9** di `supabase/schema.sql`. Bagian ini menambah fungsi `dk_month_totals`, `dk_category_totals`, `dk_month_category_totals`, dan `dk_monthly_net` (hanya bisa dipanggil service_role) sehingga dashboard, laporan, rekap tahunan, budget, dan kekayaan bersih dihitung di database, bukan dengan mengunduh semua transaksi.
+Tanpa v9 aplikasi tetap berjalan dengan perhitungan lama (hasil sama). Bila fungsi belum terlihat setelah dijalankan, tunggu sebentar atau jalankan `notify pgrst, 'reload schema';`.

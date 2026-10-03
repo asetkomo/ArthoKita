@@ -2,7 +2,7 @@
  * Supabase `Database` types for the public schema, in the format produced by
  * `supabase gen types typescript` (Tables: Row/Insert/Update/Relationships, Views, Functions).
  *
- * Hand-written from supabase/schema.sql (base + v2–v8). Columns added by an optional schema
+ * Hand-written from supabase/schema.sql (base + v2–v9). Columns added by an optional schema
  * section (v2+) are optional in `Row` because the user's database may not have them yet; the
  * server code drops & retries them when PostgREST rejects them.
  *
@@ -750,7 +750,37 @@ export type Database = {
       };
     };
     Functions: {
-      [_ in never]: never;
+      /** v9: totals (IDR) per month and kind in [p_start, p_end), transfers excluded. */
+      dk_month_totals: {
+        Args: { p_start: string; p_end: string };
+        Returns: { month: string; kind: string; total: number }[];
+      };
+      /** v9: totals (IDR) per category of one kind in [p_start, p_end); null id = uncategorised. */
+      dk_category_totals: {
+        Args: { p_start: string; p_end: string; p_kind: string };
+        Returns: {
+          category_id: string | null;
+          name: string | null;
+          color: string | null;
+          total: number;
+        }[];
+      };
+      /** v9: expense totals (IDR) per month and category in [p_start, p_end). */
+      dk_month_category_totals: {
+        Args: { p_start: string; p_end: string };
+        Returns: {
+          month: string;
+          category_id: string | null;
+          name: string | null;
+          color: string | null;
+          total: number;
+        }[];
+      };
+      /** v9: net (income − expense, IDR) per month for every month before p_end. */
+      dk_monthly_net: {
+        Args: { p_end: string };
+        Returns: { month: string; net: number }[];
+      };
     };
     Enums: {
       [_ in never]: never;
