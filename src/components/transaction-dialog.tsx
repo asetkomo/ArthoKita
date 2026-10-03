@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Paperclip } from "lucide-react";
 import { CURRENCY_OPTIONS, EntityDialog, type FieldDef } from "./entity-dialog";
+import { Button } from "@/components/ui/button";
 import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
@@ -60,11 +61,11 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
               <div className="flex flex-wrap gap-1.5">
                 <span className="w-full text-xs text-muted-foreground">{t("Preset biaya:")}</span>
                 {opts.map((o, i) => (
-                  <button key={i} type="button" onClick={() => set("fee", o.amount)} className={`rounded-full border px-2.5 py-1 text-xs transition-colors hover:bg-muted ${Number(v["fee"]) === o.amount ? "border-primary bg-primary/10" : ""}`}>
+                  <Button key={i} type="button" size="sm" variant={Number(v["fee"]) === o.amount ? "secondary" : "outline"} onClick={() => set("fee", o.amount)} className="h-7 rounded-full px-2.5 text-xs">
                     {o.label} · {money(o.amount, String(v["currency"] ?? "IDR"))}
-                  </button>
+                  </Button>
                 ))}
-                {Number(v["fee"]) > 0 ? <button type="button" onClick={() => set("fee", "")} className="rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">{t("Tanpa biaya")}</button> : null}
+                {Number(v["fee"]) > 0 ? <Button type="button" size="sm" variant="ghost" onClick={() => set("fee", "")} className="h-7 rounded-full px-2.5 text-xs text-muted-foreground">{t("Tanpa biaya")}</Button> : null}
               </div>
             ) : null;
           })() : null}
@@ -122,7 +123,7 @@ function ReceiptField({ path, onChange }: { path: string | null; onChange: (p: s
         <p className="flex items-center gap-1.5 font-medium"><Paperclip className="size-3.5" /> {t("Foto nota")}</p>
         <div className="flex items-center gap-2">
           {path ? (
-            <button type="button" className="text-xs text-expense hover:underline" onClick={() => onChange(null)}>{t("Hapus")}</button>
+            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs text-expense" onClick={() => onChange(null)}>{t("Hapus")}</Button>
           ) : null}
           <label className="cursor-pointer text-xs text-primary hover:underline">
             {busy ? t("Mengunggah…") : path ? t("Ganti") : t("Unggah")}

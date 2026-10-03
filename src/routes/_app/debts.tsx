@@ -67,8 +67,8 @@ function DebtsPage() {
             return (
               <Card key={d.id} className="p-5">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-display text-lg font-semibold">{d.name}</p>
+                   <div className="min-w-0 flex-1">
+                     <p className="truncate font-display text-lg font-semibold">{d.name}</p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       <Badge variant="secondary">{KINDS.find((k) => k.value === d.kind)?.label}</Badge>
                       {d.provider ? <Badge variant="outline">{d.provider}</Badge> : null}
@@ -77,7 +77,7 @@ function DebtsPage() {
                   </div>
                   <RowActions onEdit={() => crud.openEdit({ id: d.id, name: d.name, provider: d.provider, kind: d.kind, currency: d.currency, total_amount: d.total_amount, installment_amount: d.installment_amount, total_installments: d.total_installments, start_date: d.start_date, due_day: d.due_day, interest_rate: d.interest_rate, account_id: d.account_id, notes: d.notes, status: d.status })} onDelete={() => crud.remove(d.id, d.name)} />
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                 <div className="mt-4 grid grid-cols-1 gap-2 text-sm min-[430px]:grid-cols-3">
                   <div><p className="text-xs text-muted-foreground">{t("Per cicilan")}</p><p className="num font-semibold">{money(d.installment_amount, d.currency)}</p></div>
                   <div><p className="text-xs text-muted-foreground">{t("Sisa")}</p><p className="num font-semibold text-expense">{money(d.remaining_amount, d.currency)}</p></div>
                   <div><p className="text-xs text-muted-foreground">{t("Jatuh tempo")}</p><p className="font-semibold">{d.next_due ? dateLabel(d.next_due, lang === "en" ? "en-US" : "id-ID") : "-"}</p></div>
@@ -94,9 +94,9 @@ function DebtsPage() {
                       <CollapsibleContent>
                         <ul className="mt-2 divide-y rounded-lg border text-sm">
                           {d.payments.map((p: any) => (
-                            <li key={p.id} className="flex items-center justify-between px-3 py-1.5">
-                              <span>#{p.installment_no} · {dateLabel(p.paid_at, lang === "en" ? "en-US" : "id-ID")}</span>
-                              <span className="flex items-center gap-2"><span className="num">{money(p.amount, d.currency)}</span><Button size="icon" variant="ghost" className="size-7" aria-label={t("Batalkan")} onClick={() => undo(p.id)}><Undo2 className="size-3.5" /></Button></span>
+                             <li key={p.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-1.5">
+                               <span className="truncate">#{p.installment_no} · {dateLabel(p.paid_at, lang === "en" ? "en-US" : "id-ID")}</span>
+                               <span className="flex shrink-0 items-center gap-2"><span className="num">{money(p.amount, d.currency)}</span><Button size="icon" variant="ghost" className="size-7" aria-label={t("Batalkan")} onClick={() => undo(p.id)}><Undo2 className="size-3.5" /></Button></span>
                             </li>
                           ))}
                         </ul>

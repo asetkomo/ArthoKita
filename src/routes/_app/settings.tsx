@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Download, History, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ import type { Category } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => pageHead("Pengaturan", "Kategori, kurs, cadangan data, dan integrasi bot n8n."),
-  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery()), context.queryClient.ensureQueryData(activityQuery(30))]),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery())]),
   errorComponent: RouteError,
   component: SettingsPage,
 });
@@ -40,7 +40,7 @@ function SettingsPage() {
   const { t, lang } = useI18n();
   const categories = useSuspenseQuery(rowsQuery("categories")).data as Category[];
   const { usdIdr } = useSuspenseQuery(fxQuery()).data;
-  const activity = useSuspenseQuery(activityQuery(30)).data as any[];
+  const activity = (useQuery(activityQuery(30)).data ?? []) as any[];
   const crud = useCrudDialog("categories", { kind: "expense", color: "#d0703c" });
   const backup = useServerFn(exportBackupJson);
   const [origin, setOrigin] = useState("");
@@ -72,8 +72,8 @@ function SettingsPage() {
             </div>
             <ul className="divide-y">
               {categories.filter((c) => c.kind === kind).map((c) => (
-                <li key={c.id} className="flex items-center justify-between py-1.5 text-sm">
-                  <span className="flex items-center gap-2"><span className="size-3 rounded-full" style={{ background: c.color ?? "var(--muted-foreground)" }} />{c.name}</span>
+                 <li key={c.id} className="flex min-w-0 items-center justify-between gap-2 py-1.5 text-sm">
+                   <span className="flex min-w-0 flex-1 items-center gap-2"><span className="size-3 shrink-0 rounded-full" style={{ background: c.color ?? "var(--muted-foreground)" }} /><span className="truncate">{c.name}</span></span>
                   <RowActions onEdit={() => crud.openEdit({ ...c })} onDelete={() => crud.remove(c.id, `kategori ${c.name}`)} />
                 </li>
               ))}
@@ -90,12 +90,12 @@ function SettingsPage() {
           <p className="mt-1 text-sm text-muted-foreground">{t("Diperbarui otomatis sekali sehari. Saat ini ")}<span className="num font-semibold text-foreground">1 USD = {money(usdIdr)}</span>.</p>
         </Card>
         <Card className="p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
+           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+             <div className="min-w-0">
               <h2 className="text-lg font-semibold">{t("Cadangan data")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{t("Unduh seluruh data (akun, kategori, transaksi, hutang, langganan, budget, target, kurs) sebagai satu berkas JSON.")}</p>
             </div>
-            <Button size="sm" variant="outline" disabled={busy} onClick={downloadBackup}><Download className="size-4" /> {t("Unduh cadangan (JSON)")}</Button>
+             <Button className="justify-self-start sm:justify-self-end" size="sm" variant="outline" disabled={busy} onClick={downloadBackup}><Download className="size-4" /> {t("Unduh cadangan (JSON)")}</Button>
           </div>
         </Card>
       </div>
@@ -106,7 +106,7 @@ function SettingsPage() {
         {activity.length ? (
           <ul className="mt-3 max-h-72 space-y-1 overflow-auto text-sm">
             {activity.map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 odd:bg-muted/50">
+               <li key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-1.5 odd:bg-muted/50">
                 <span className="min-w-0 truncate">
                   <span className={String(a.action) === "auth.login_failed" ? "font-medium text-expense" : "font-medium"}>{activityLabel(String(a.action), t)}</span>
                   {activityDetail(a.detail, (n, c) => money(n, c)) ? <span className="ml-2 text-muted-foreground">{activityDetail(a.detail, (n, c) => money(n, c))}</span> : null}

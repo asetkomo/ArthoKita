@@ -35,3 +35,10 @@
 - [x] Biaya transfer/top-up: kolom biaya opsional + preset per akun (transfer & top-up)
 - [x] Biaya bulanan rekening otomatis per akun + pengingat
 - [x] Langganan: pajak opsional (%), total = harga + pajak
+
+## v5
+- [x] Audit responsif semua halaman, header mobile, sidebar tetap, dan modal CRUD dengan header/footer tetap
+- [x] Pagination server-side serta sorting untuk riwayat besar; sorting tabel laporan dan pratinjau CSV
+- [x] Metadata opsional tipe emas dan nomor produk dengan fallback database lama
+- [x] Indeks query transaksi, langganan, emas, dan piutang
+- [x] Cache baca terarah dan activity log opsional tidak lagi memblokir halaman Pengaturan

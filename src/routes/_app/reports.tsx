@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { SortButton, type SortDirection } from "@/components/sort-button";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { Button } from "@/components/ui/button";
@@ -69,10 +70,10 @@ function CategoryTrend() {
             {cats.map((c, i) => {
               const on = sel.includes(c.id);
               return (
-                <button key={c.id} onClick={() => toggle(c.id)} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${on ? "border-primary bg-primary/10 font-semibold text-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                <Button key={c.id} size="sm" variant={on ? "secondary" : "outline"} aria-pressed={on} onClick={() => toggle(c.id)} className="h-7 rounded-full px-3 text-xs">
                   <span className="size-2.5 rounded-full" style={{ background: c.color ?? FALLBACK[i % FALLBACK.length] }} />
                   {c.name} <span className="num opacity-70">{compact(c.total)}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -100,7 +101,14 @@ function YearlyRecap() {
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [year, setYear] = useState(Number(currentMonth().slice(0, 4)));
+  const [sort, setSort] = useState<"month" | "income" | "expense" | "net">("month");
+  const [direction, setDirection] = useState<SortDirection>("asc");
   const { data: y, isFetching } = useQuery({ ...yearlySummaryQuery(year), placeholderData: (p) => p });
+  const sortedMonths = useMemo(() => [...(y?.months ?? [])].sort((a, b) => {
+    const av = a[sort]; const bv = b[sort];
+    return (typeof av === "string" ? av.localeCompare(String(bv)) : Number(av) - Number(bv)) * (direction === "asc" ? 1 : -1);
+  }), [y, sort, direction]);
+  const sortBy = (column: typeof sort) => { setDirection((d) => sort === column ? (d === "asc" ? "desc" : "asc") : "asc"); setSort(column); };
 
   function exportCsv() {
     if (!y) return;
@@ -139,10 +147,10 @@ function YearlyRecap() {
           <div className="mt-4 overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted text-left text-xs text-muted-foreground">
-                <tr><th className="px-3 py-2">{t("Bulan")}</th><th className="px-3 py-2 text-right">{t("Pemasukan")}</th><th className="px-3 py-2 text-right">{t("Pengeluaran")}</th><th className="px-3 py-2 text-right">{t("Selisih")}</th></tr>
+                 <tr><th className="px-3 py-1"><SortButton label={t("Bulan")} active={sort === "month"} direction={direction} onClick={() => sortBy("month")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Pemasukan")} active={sort === "income"} direction={direction} onClick={() => sortBy("income")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Pengeluaran")} active={sort === "expense"} direction={direction} onClick={() => sortBy("expense")} /></th><th className="px-3 py-1 text-right"><SortButton label={t("Selisih")} active={sort === "net"} direction={direction} onClick={() => sortBy("net")} /></th></tr>
               </thead>
               <tbody className="divide-y">
-                {y.months.map((m) => (
+                 {sortedMonths.map((m) => (
                   <tr key={m.month}>
                     <td className="px-3 py-2 capitalize">{monthLabel(m.month, locale)}</td>
                     <td className="num px-3 py-2 text-right text-income">{money(m.income)}</td>

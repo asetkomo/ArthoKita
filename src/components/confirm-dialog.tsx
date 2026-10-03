@@ -44,7 +44,7 @@ export function useConfirm() {
 
   const element = (
     <AlertDialog open={!!pending} onOpenChange={(o) => { if (!o) settle(false); }}>
-      <AlertDialogContent>
+      <AlertDialogContent className="w-[calc(100vw-1.5rem)] max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{pending?.title}</AlertDialogTitle>
           {pending?.description ? <AlertDialogDescription>{pending.description}</AlertDialogDescription> : null}

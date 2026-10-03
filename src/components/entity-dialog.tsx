@@ -62,12 +62,13 @@ export function EntityDialog(props: {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto overflow-x-hidden">
-        <DialogHeader>
+      <DialogContent className="max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-lg grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0">
+        <DialogHeader className="border-b bg-background px-5 py-4 pr-12 sm:px-6">
           <DialogTitle className="font-display">{props.title}</DialogTitle>
           {props.description ? <DialogDescription>{props.description}</DialogDescription> : null}
         </DialogHeader>
-        <form onSubmit={submit} className="grid grid-cols-2 gap-4">
+        <form onSubmit={submit} className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
+          <div className="grid min-h-0 grid-cols-2 gap-4 overflow-y-auto overflow-x-hidden px-5 py-4 sm:px-6">
           {fields.map((f) => {
             const v = values[f.name];
             return (
@@ -114,7 +115,8 @@ export function EntityDialog(props: {
             );
           })}
           {props.extra ? <div className="col-span-2">{props.extra(values, set)}</div> : null}
-          <DialogFooter className="col-span-2">
+          </div>
+          <DialogFooter className="border-t bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6">
             <Button type="button" variant="ghost" onClick={() => props.onOpenChange(false)}>
               {t("Batal")}
             </Button>

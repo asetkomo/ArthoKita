@@ -48,27 +48,29 @@ function SubsPage() {
   return (
     <>
       <PageHeader title={t("Langganan")} subtitle={`1 USD = ${money(usdIdr)} (${t("kurs otomatis harian")})`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Langganan")}</Button>} />
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <Card className="bg-ink p-5 text-ink-foreground"><p className="text-xs uppercase tracking-wider text-ink-muted">{t("Per bulan (setara)")}</p><p className="num mt-1 text-2xl font-semibold">{money(monthly)}</p></Card>
-        <Card className="p-5"><p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Per tahun (setara)")}</p><p className="num mt-1 text-2xl font-semibold">{money(monthly * 12)}</p></Card>
+       <div className="mb-4 grid gap-3 sm:grid-cols-2">
+         <Card className="min-w-0 bg-ink p-5 text-ink-foreground"><p className="text-xs uppercase tracking-wider text-ink-muted">{t("Per bulan (setara)")}</p><p className="num mt-1 truncate text-xl font-semibold sm:text-2xl">{money(monthly)}</p></Card>
+         <Card className="min-w-0 p-5"><p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Per tahun (setara)")}</p><p className="num mt-1 truncate text-xl font-semibold sm:text-2xl">{money(monthly * 12)}</p></Card>
       </div>
       {subs.length === 0 ? <Empty text={t("Belum ada langganan. Tambahkan Netflix, Spotify, iCloud, ChatGPT…")} /> : (
         <Card className="divide-y">
           {subs.map((s) => {
             const left = diffDays(today, s.next_due);
             return (
-              <div key={s.id} className={`flex flex-wrap items-center gap-3 px-4 py-3 ${s.active ? "" : "opacity-50"}`}>
+               <div key={s.id} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:flex sm:flex-wrap ${s.active ? "" : "opacity-50"}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{s.name} <Badge variant="outline" className="ml-1">{s.cycle === "yearly" ? t("Tahunan") : t("Bulanan")}</Badge></p>
+                   <p className="min-w-0 truncate font-medium">{s.name}</p><Badge variant="outline" className="mt-1">{s.cycle === "yearly" ? t("Tahunan") : t("Bulanan")}</Badge>
                   <p className={`text-xs ${left < 0 ? "text-expense" : left <= 3 ? "text-warning" : "text-muted-foreground"}`}>{t("Jatuh tempo")} {dateLabel(s.next_due, locale)} {left < 0 ? `(${t("terlambat")} ${-left} ${t("hari")})` : left === 0 ? `(${t("hari ini")})` : `(${left} ${t("hari lagi")})`}</p>
                 </div>
-                <div className="text-right">
+                 <div className="shrink-0 text-right">
                   <p className="num font-semibold">{money(withTax(Number(s.amount), s.tax_percent), s.currency)}</p>
                   {Number(s.tax_percent) > 0 ? <p className="num text-xs text-muted-foreground">{money(s.amount, s.currency)} + {t("pajak")} {s.tax_percent}%</p> : null}
                   {s.currency === "USD" ? <p className="num text-xs text-muted-foreground">≈ {money(toIdr(s))}</p> : null}
                 </div>
-                {s.active ? <Button size="sm" variant="outline" onClick={() => doPay(s)}><CheckCircle2 className="size-4" /> {t("Sudah bayar")}</Button> : null}
-                <RowActions onEdit={() => crud.openEdit({ ...s })} onDelete={() => crud.remove(s.id, s.name)} />
+                 <div className="col-span-2 flex flex-wrap items-center justify-end gap-1 sm:ml-auto">
+                   {s.active ? <Button size="sm" variant="outline" onClick={() => doPay(s)}><CheckCircle2 className="size-4" /> {t("Sudah bayar")}</Button> : null}
+                   <RowActions onEdit={() => crud.openEdit({ ...s })} onDelete={() => crud.remove(s.id, s.name)} />
+                 </div>
               </div>
             );
           })}

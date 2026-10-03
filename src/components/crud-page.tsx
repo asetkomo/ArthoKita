@@ -44,7 +44,7 @@ export function useCrudDialog(table: CrudTable, defaults: Values) {
 export function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="flex">
+    <div className="flex shrink-0">
       <Button size="icon" variant="ghost" aria-label={t("Ubah")} onClick={onEdit}><Pencil className="size-4" /></Button>
       <Button size="icon" variant="ghost" aria-label={t("Hapus")} onClick={onDelete}><Trash2 className="size-4" /></Button>
     </div>

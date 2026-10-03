@@ -43,10 +43,10 @@ function AccountsPage() {
           {(balances as any[]).map((b) => ({ ...(rows.find((r) => r.id === b.id) ?? {}), ...b })).map((a: any) => (
             <Card key={a.id} className={`relative overflow-hidden p-5 ${a.archived ? "opacity-60" : ""}`}>
               <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: a.color ?? "var(--primary)" }} />
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-display text-lg font-semibold">{a.name}</p>
-                  <div className="mt-1 flex gap-1.5"><Badge variant="secondary">{TYPES.find((ty) => ty.value === a.type)?.label}</Badge><Badge variant="outline">{a.currency}</Badge>{a.archived ? <Badge variant="outline">{t("Arsip")}</Badge> : null}</div>
+               <div className="flex items-start justify-between gap-2">
+                 <div className="min-w-0 flex-1">
+                   <p className="truncate font-display text-lg font-semibold">{a.name}</p>
+                   <div className="mt-1 flex flex-wrap gap-1.5"><Badge variant="secondary">{TYPES.find((ty) => ty.value === a.type)?.label}</Badge><Badge variant="outline">{a.currency}</Badge>{a.archived ? <Badge variant="outline">{t("Arsip")}</Badge> : null}</div>
                 </div>
                 <RowActions onEdit={() => crud.openEdit({ id: a.id, name: a.name, type: a.type, currency: a.currency, initial_balance: a.initial_balance, color: a.color, archived: a.archived, transfer_fees: formatPresets(a.transfer_fees), topup_fees: formatPresets(a.topup_fees), monthly_fee: a.monthly_fee, monthly_fee_day: a.monthly_fee_day })} onDelete={() => crud.remove(a.id, `${t("akun")} ${a.name}`)} />
               </div>

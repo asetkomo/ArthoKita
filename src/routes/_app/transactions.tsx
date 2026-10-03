@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Banknote, ChevronLeft, ChevronRight, Download, Paperclip, Pencil, Plus, Printer, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
+import { Pagination } from "@/components/pagination";
+import { SortButton, type SortDirection } from "@/components/sort-button";
 import { RouteError } from "@/components/route-error";
 import { TransactionDialog, newTxDraft, type TxDraft } from "@/components/transaction-dialog";
 import { ReceiptScanner } from "@/components/receipt-scanner";
@@ -42,9 +44,11 @@ function TransactionsPage() {
   const [categoryId, setCategoryId] = useState("");
   const [accountId, setAccountId] = useState("");
   const [offset, setOffset] = useState(0);
+  const [sort, setSort] = useState<"occurred_at" | "amount" | "description">("occurred_at");
+  const [direction, setDirection] = useState<SortDirection>("desc");
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
-  const filter: TxFilter = { month, ...(kind !== "all" ? { kind } : {}), ...(search.trim() ? { search: search.trim() } : {}), ...(categoryId ? { category_id: categoryId } : {}), ...(accountId ? { account_id: accountId } : {}), offset };
+  const filter: TxFilter = { month, ...(kind !== "all" ? { kind } : {}), ...(search.trim() ? { search: search.trim() } : {}), ...(categoryId ? { category_id: categoryId } : {}), ...(accountId ? { account_id: accountId } : {}), offset, sort, direction };
   const { offset: _skip, ...baseFilter } = filter;
   const { data: rows = [], isFetching } = useQuery({ ...txQuery(filter), placeholderData: (p) => p });
   const { data: total = 0 } = useQuery({ ...txCountQuery(baseFilter), placeholderData: (p) => p });
@@ -108,9 +112,12 @@ function TransactionsPage() {
     setDlg({ open: true, id: null, draft: { ...newTxDraft("transfer"), account_id: bank?.id ?? null, to_account_id: cash?.id ?? null, description: t("Tarik tunai") } });
   }
 
-  const page = Math.floor(offset / PAGE_SIZE) + 1;
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const list = rows as any[];
+  function sortBy(column: typeof sort) {
+    setDirection((current) => sort === column ? (current === "asc" ? "desc" : "asc") : column === "occurred_at" ? "desc" : "asc");
+    setSort(column);
+    setOffset(0);
+  }
 
   return (
     <>
@@ -169,13 +176,18 @@ function TransactionsPage() {
         <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Pengeluaran")}</p><p className="num text-lg font-semibold text-expense">{money(totals.exp)}</p></Card>
         <Card className="p-4"><p className="text-xs text-muted-foreground">{t("Selisih")}</p><p className="num text-lg font-semibold">{money(totals.inc - totals.exp)}</p></Card>
       </div>
+      <div className="no-print mb-2 flex max-w-full flex-wrap items-center gap-1" aria-label={t("Urutkan")}>
+        <SortButton label={t("Tanggal transaksi")} active={sort === "occurred_at"} direction={direction} onClick={() => sortBy("occurred_at")} />
+        <SortButton label={t("Jumlah")} active={sort === "amount"} direction={direction} onClick={() => sortBy("amount")} />
+        <SortButton label={t("Deskripsi")} active={sort === "description"} direction={direction} onClick={() => sortBy("description")} />
+      </div>
       <Card className="overflow-hidden">
         {list.length === 0 ? (
           <p className="p-10 text-center text-sm text-muted-foreground">{t("Belum ada transaksi di bulan ini.")}</p>
         ) : (
           <ul className="divide-y">
             {list.map((tx) => (
-              <li key={tx.id} className="flex min-w-0 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+              <li key={tx.id} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 sm:flex sm:gap-3 sm:px-4">
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: tx.category?.color ?? "var(--muted-foreground)" }} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{tx.description || tx.merchant || tx.category?.name || KIND_LABEL[tx.kind]}</p>
@@ -191,7 +203,7 @@ function TransactionsPage() {
                   <p className={`num text-sm font-semibold ${tx.kind === "income" ? "text-income" : tx.kind === "expense" ? "text-expense" : ""}`}>{tx.kind === "income" ? "+" : tx.kind === "expense" ? "−" : ""}{money(tx.amount, tx.currency)}</p>
                   {tx.currency === "USD" ? <p className="num text-xs text-muted-foreground">{money(tx.amount_idr)}</p> : null}
                 </div>
-                <div className="no-print flex shrink-0 flex-col sm:flex-row">
+                <div className="no-print col-start-2 col-end-4 flex shrink-0 justify-self-end sm:col-auto sm:flex-row">
                   <Button size="icon" variant="ghost" aria-label={t("Ubah")} onClick={() => setDlg({ open: true, id: tx.id, draft: { kind: tx.kind, amount: tx.amount, currency: tx.currency, occurred_at: tx.occurred_at, account_id: tx.account_id, to_account_id: tx.to_account_id, category_id: tx.category_id, description: tx.description, merchant: tx.merchant, notes: tx.notes, source: tx.source, items: tx.items, receipt_path: tx.receipt_path } })}><Pencil className="size-4" /></Button>
                   <Button size="icon" variant="ghost" aria-label={t("Hapus")} onClick={() => remove(tx.id)}><Trash2 className="size-4" /></Button>
                 </div>
@@ -200,16 +212,7 @@ function TransactionsPage() {
           </ul>
         )}
       </Card>
-      {total > PAGE_SIZE ? (
-        <div className="no-print mt-3 flex items-center justify-between text-sm">
-          <p className="text-muted-foreground">{offset + 1}–{offset + list.length} {t("dari")} {total}</p>
-          <div className="flex items-center gap-1">
-            <Button size="icon" variant="outline" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} aria-label={t("Sebelumnya")}><ChevronLeft className="size-4" /></Button>
-            <span className="px-2">{page} / {pages}</span>
-            <Button size="icon" variant="outline" disabled={offset + list.length >= total} onClick={() => setOffset(offset + PAGE_SIZE)} aria-label={t("Berikutnya")}><ChevronRight className="size-4" /></Button>
-          </div>
-        </div>
-      ) : null}
+       <Pagination offset={offset} pageSize={PAGE_SIZE} total={total} visible={list.length} onChange={setOffset} />
       <TransactionDialog open={dlg.open} onOpenChange={(o) => setDlg((s) => ({ ...s, open: o }))} initial={dlg.draft} id={dlg.id} />
       {ask.element}
     </>
