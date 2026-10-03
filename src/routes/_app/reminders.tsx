@@ -1,0 +1,70 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank } from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/app-shell";
+import { RouteError } from "@/components/route-error";
+import { Empty } from "@/components/crud-page";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { errMsg, remindersQuery } from "@/lib/queries";
+import { payDebt, paySubscription } from "@/lib/finance.functions";
+import { dateLabel } from "@/lib/dates";
+import { money } from "@/lib/format";
+import { pageHead } from "@/lib/head";
+
+export const Route = createFileRoute("/_app/reminders")({
+  head: () => pageHead("Pengingat", "Daftar cicilan, langganan, dan budget yang perlu diperhatikan."),
+  loader: ({ context }) => context.queryClient.ensureQueryData(remindersQuery(30)),
+  errorComponent: RouteError,
+  component: RemindersPage,
+});
+
+function RemindersPage() {
+  const [days, setDays] = useState(30);
+  const { data: list } = useSuspenseQuery(remindersQuery(days));
+  const pd = useServerFn(payDebt);
+  const ps = useServerFn(paySubscription);
+  const qc = useQueryClient();
+  const total = list.filter((r) => r.type !== "budget").reduce((a, r) => a + r.amount_idr, 0);
+
+  async function pay(r: (typeof list)[number]) {
+    try {
+      if (r.type === "debt") await pd({ data: { debt_id: r.id } });
+      else await ps({ data: { id: r.id } });
+      await qc.invalidateQueries();
+      toast.success("Pembayaran tercatat");
+    } catch (e) { toast.error(errMsg(e)); }
+  }
+
+  return (
+    <>
+      <PageHeader title="Pengingat" subtitle={`Total tagihan: ${money(total)}`} actions={
+        <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+          <TabsList><TabsTrigger value="7">7 hari</TabsTrigger><TabsTrigger value="30">30 hari</TabsTrigger><TabsTrigger value="90">90 hari</TabsTrigger></TabsList>
+        </Tabs>
+      } />
+      <p className="mb-4 text-sm text-muted-foreground">Pengingat juga bisa dikirim otomatis ke Telegram/WhatsApp/email lewat n8n — lihat <Link to="/settings" className="text-primary underline">Pengaturan</Link>.</p>
+      {list.length === 0 ? <Empty text="Aman! Tidak ada tagihan dalam periode ini." /> : (
+        <Card className="divide-y">
+          {list.map((r) => (
+            <div key={r.type + r.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <span className={`flex size-9 items-center justify-center rounded-full ${r.overdue ? "bg-destructive/10 text-expense" : "bg-secondary text-secondary-foreground"}`}>
+                {r.type === "budget" ? <PiggyBank className="size-4" /> : r.overdue ? <AlertTriangle className="size-4" /> : <CalendarClock className="size-4" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{r.title}</p>
+                <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? "Peringatan budget bulan ini" : `${dateLabel(r.due_date)} · ${r.overdue ? `terlambat ${-r.days_left} hari` : r.days_left === 0 ? "hari ini" : `${r.days_left} hari lagi`}`}</p>
+              </div>
+              <p className="num font-semibold">{money(r.amount, r.currency)}</p>
+              {r.type !== "budget" ? <Button size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> Bayar</Button> : null}
+            </div>
+          ))}
+        </Card>
+      )}
+    </>
+  );
+}

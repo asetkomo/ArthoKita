@@ -10,33 +10,232 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
+import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppDebtsRouteImport } from './routes/_app/debts'
+import { Route as AppGoalsRouteImport } from './routes/_app/goals'
+import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppSubscriptionsRouteImport } from './routes/_app/subscriptions'
+import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
+import { Route as ApiPublicN8nMessageRouteImport } from './routes/api/public/n8n/message'
+import { Route as ApiPublicN8nOcrRouteImport } from './routes/api/public/n8n/ocr'
+import { Route as ApiPublicN8nRemindersRouteImport } from './routes/api/public/n8n/reminders'
+import { Route as ApiPublicN8nSummaryRouteImport } from './routes/api/public/n8n/summary'
+import { Route as ApiPublicN8nTransactionsRouteImport } from './routes/api/public/n8n/transactions'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAccountsRoute = AppAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBudgetsRoute = AppBudgetsRouteImport.update({
+  id: '/budgets',
+  path: '/budgets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDebtsRoute = AppDebtsRouteImport.update({
+  id: '/debts',
+  path: '/debts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGoalsRoute = AppGoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRemindersRoute = AppRemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubscriptionsRoute = AppSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTransactionsRoute = AppTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => AppRoute,
+} as any)
+const ApiPublicN8nMessageRoute = ApiPublicN8nMessageRouteImport.update({
+  id: '/api/public/n8n/message',
+  path: '/api/public/n8n/message',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nOcrRoute = ApiPublicN8nOcrRouteImport.update({
+  id: '/api/public/n8n/ocr',
+  path: '/api/public/n8n/ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nRemindersRoute = ApiPublicN8nRemindersRouteImport.update({
+  id: '/api/public/n8n/reminders',
+  path: '/api/public/n8n/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nSummaryRoute = ApiPublicN8nSummaryRouteImport.update({
+  id: '/api/public/n8n/summary',
+  path: '/api/public/n8n/summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicN8nTransactionsRoute =
+  ApiPublicN8nTransactionsRouteImport.update({
+    id: '/api/public/n8n/transactions',
+    path: '/api/public/n8n/transactions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/accounts': typeof AppAccountsRoute
+  '/budgets': typeof AppBudgetsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/debts': typeof AppDebtsRoute
+  '/goals': typeof AppGoalsRoute
+  '/reminders': typeof AppRemindersRoute
+  '/settings': typeof AppSettingsRoute
+  '/subscriptions': typeof AppSubscriptionsRoute
+  '/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
+  '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
+  '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
+  '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/accounts': typeof AppAccountsRoute
+  '/budgets': typeof AppBudgetsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/debts': typeof AppDebtsRoute
+  '/goals': typeof AppGoalsRoute
+  '/reminders': typeof AppRemindersRoute
+  '/settings': typeof AppSettingsRoute
+  '/subscriptions': typeof AppSubscriptionsRoute
+  '/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
+  '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
+  '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
+  '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/accounts': typeof AppAccountsRoute
+  '/_app/budgets': typeof AppBudgetsRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/debts': typeof AppDebtsRoute
+  '/_app/goals': typeof AppGoalsRoute
+  '/_app/reminders': typeof AppRemindersRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/subscriptions': typeof AppSubscriptionsRoute
+  '/_app/transactions': typeof AppTransactionsRoute
+  '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
+  '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
+  '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
+  '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/accounts'
+    | '/budgets'
+    | '/dashboard'
+    | '/debts'
+    | '/goals'
+    | '/reminders'
+    | '/settings'
+    | '/subscriptions'
+    | '/transactions'
+    | '/api/public/n8n/message'
+    | '/api/public/n8n/ocr'
+    | '/api/public/n8n/reminders'
+    | '/api/public/n8n/summary'
+    | '/api/public/n8n/transactions'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/accounts'
+    | '/budgets'
+    | '/dashboard'
+    | '/debts'
+    | '/goals'
+    | '/reminders'
+    | '/settings'
+    | '/subscriptions'
+    | '/transactions'
+    | '/api/public/n8n/message'
+    | '/api/public/n8n/ocr'
+    | '/api/public/n8n/reminders'
+    | '/api/public/n8n/summary'
+    | '/api/public/n8n/transactions'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/accounts'
+    | '/_app/budgets'
+    | '/_app/dashboard'
+    | '/_app/debts'
+    | '/_app/goals'
+    | '/_app/reminders'
+    | '/_app/settings'
+    | '/_app/subscriptions'
+    | '/_app/transactions'
+    | '/api/public/n8n/message'
+    | '/api/public/n8n/ocr'
+    | '/api/public/n8n/reminders'
+    | '/api/public/n8n/summary'
+    | '/api/public/n8n/transactions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  ApiPublicN8nMessageRoute: typeof ApiPublicN8nMessageRoute
+  ApiPublicN8nOcrRoute: typeof ApiPublicN8nOcrRoute
+  ApiPublicN8nRemindersRoute: typeof ApiPublicN8nRemindersRoute
+  ApiPublicN8nSummaryRoute: typeof ApiPublicN8nSummaryRoute
+  ApiPublicN8nTransactionsRoute: typeof ApiPublicN8nTransactionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +247,156 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/accounts': {
+      id: '/_app/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/budgets': {
+      id: '/_app/budgets'
+      path: '/budgets'
+      fullPath: '/budgets'
+      preLoaderRoute: typeof AppBudgetsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/debts': {
+      id: '/_app/debts'
+      path: '/debts'
+      fullPath: '/debts'
+      preLoaderRoute: typeof AppDebtsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/goals': {
+      id: '/_app/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof AppGoalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reminders': {
+      id: '/_app/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof AppRemindersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/subscriptions': {
+      id: '/_app/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof AppSubscriptionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/transactions': {
+      id: '/_app/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof AppTransactionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/api/public/n8n/message': {
+      id: '/api/public/n8n/message'
+      path: '/api/public/n8n/message'
+      fullPath: '/api/public/n8n/message'
+      preLoaderRoute: typeof ApiPublicN8nMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/ocr': {
+      id: '/api/public/n8n/ocr'
+      path: '/api/public/n8n/ocr'
+      fullPath: '/api/public/n8n/ocr'
+      preLoaderRoute: typeof ApiPublicN8nOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/reminders': {
+      id: '/api/public/n8n/reminders'
+      path: '/api/public/n8n/reminders'
+      fullPath: '/api/public/n8n/reminders'
+      preLoaderRoute: typeof ApiPublicN8nRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/summary': {
+      id: '/api/public/n8n/summary'
+      path: '/api/public/n8n/summary'
+      fullPath: '/api/public/n8n/summary'
+      preLoaderRoute: typeof ApiPublicN8nSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/transactions': {
+      id: '/api/public/n8n/transactions'
+      path: '/api/public/n8n/transactions'
+      fullPath: '/api/public/n8n/transactions'
+      preLoaderRoute: typeof ApiPublicN8nTransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAccountsRoute: typeof AppAccountsRoute
+  AppBudgetsRoute: typeof AppBudgetsRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppDebtsRoute: typeof AppDebtsRoute
+  AppGoalsRoute: typeof AppGoalsRoute
+  AppRemindersRoute: typeof AppRemindersRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppSubscriptionsRoute: typeof AppSubscriptionsRoute
+  AppTransactionsRoute: typeof AppTransactionsRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAccountsRoute: AppAccountsRoute,
+  AppBudgetsRoute: AppBudgetsRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppDebtsRoute: AppDebtsRoute,
+  AppGoalsRoute: AppGoalsRoute,
+  AppRemindersRoute: AppRemindersRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppSubscriptionsRoute: AppSubscriptionsRoute,
+  AppTransactionsRoute: AppTransactionsRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  ApiPublicN8nMessageRoute: ApiPublicN8nMessageRoute,
+  ApiPublicN8nOcrRoute: ApiPublicN8nOcrRoute,
+  ApiPublicN8nRemindersRoute: ApiPublicN8nRemindersRoute,
+  ApiPublicN8nSummaryRoute: ApiPublicN8nSummaryRoute,
+  ApiPublicN8nTransactionsRoute: ApiPublicN8nTransactionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
