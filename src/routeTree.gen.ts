@@ -19,12 +19,15 @@ import { Route as AppDebtsRouteImport } from './routes/_app/debts'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppRekapRouteImport } from './routes/_app/rekap'
 import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
+import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubscriptionsRouteImport } from './routes/_app/subscriptions'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as ApiPublicN8nMessageRouteImport } from './routes/api/public/n8n/message'
 import { Route as ApiPublicN8nOcrRouteImport } from './routes/api/public/n8n/ocr'
 import { Route as ApiPublicN8nRemindersRouteImport } from './routes/api/public/n8n/reminders'
+import { Route as ApiPublicN8nRemindersEmailRouteImport } from './routes/api/public/n8n/reminders-email'
+import { Route as ApiPublicN8nRemindersSendEmailRouteImport } from './routes/api/public/n8n/reminders-send-email'
 import { Route as ApiPublicN8nSummaryRouteImport } from './routes/api/public/n8n/summary'
 import { Route as ApiPublicN8nTransactionsRouteImport } from './routes/api/public/n8n/transactions'
 
@@ -77,6 +80,11 @@ const AppRemindersRoute = AppRemindersRouteImport.update({
   path: '/reminders',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -107,6 +115,18 @@ const ApiPublicN8nRemindersRoute = ApiPublicN8nRemindersRouteImport.update({
   path: '/api/public/n8n/reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicN8nRemindersEmailRoute =
+  ApiPublicN8nRemindersEmailRouteImport.update({
+    id: '/api/public/n8n/reminders-email',
+    path: '/api/public/n8n/reminders-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicN8nRemindersSendEmailRoute =
+  ApiPublicN8nRemindersSendEmailRouteImport.update({
+    id: '/api/public/n8n/reminders-send-email',
+    path: '/api/public/n8n/reminders-send-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicN8nSummaryRoute = ApiPublicN8nSummaryRouteImport.update({
   id: '/api/public/n8n/summary',
   path: '/api/public/n8n/summary',
@@ -129,12 +149,15 @@ export interface FileRoutesByFullPath {
   '/goals': typeof AppGoalsRoute
   '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
+  '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/reminders-email': typeof ApiPublicN8nRemindersEmailRoute
+  '/api/public/n8n/reminders-send-email': typeof ApiPublicN8nRemindersSendEmailRoute
   '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
   '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
@@ -148,12 +171,15 @@ export interface FileRoutesByTo {
   '/goals': typeof AppGoalsRoute
   '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
+  '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRoute
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/reminders-email': typeof ApiPublicN8nRemindersEmailRoute
+  '/api/public/n8n/reminders-send-email': typeof ApiPublicN8nRemindersSendEmailRoute
   '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
   '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
@@ -169,12 +195,15 @@ export interface FileRoutesById {
   '/_app/goals': typeof AppGoalsRoute
   '/_app/rekap': typeof AppRekapRoute
   '/_app/reminders': typeof AppRemindersRoute
+  '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subscriptions': typeof AppSubscriptionsRoute
   '/_app/transactions': typeof AppTransactionsRoute
   '/api/public/n8n/message': typeof ApiPublicN8nMessageRoute
   '/api/public/n8n/ocr': typeof ApiPublicN8nOcrRoute
   '/api/public/n8n/reminders': typeof ApiPublicN8nRemindersRoute
+  '/api/public/n8n/reminders-email': typeof ApiPublicN8nRemindersEmailRoute
+  '/api/public/n8n/reminders-send-email': typeof ApiPublicN8nRemindersSendEmailRoute
   '/api/public/n8n/summary': typeof ApiPublicN8nSummaryRoute
   '/api/public/n8n/transactions': typeof ApiPublicN8nTransactionsRoute
 }
@@ -190,12 +219,15 @@ export interface FileRouteTypes {
     | '/goals'
     | '/rekap'
     | '/reminders'
+    | '/reports'
     | '/settings'
     | '/subscriptions'
     | '/transactions'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
+    | '/api/public/n8n/reminders-email'
+    | '/api/public/n8n/reminders-send-email'
     | '/api/public/n8n/summary'
     | '/api/public/n8n/transactions'
   fileRoutesByTo: FileRoutesByTo
@@ -209,12 +241,15 @@ export interface FileRouteTypes {
     | '/goals'
     | '/rekap'
     | '/reminders'
+    | '/reports'
     | '/settings'
     | '/subscriptions'
     | '/transactions'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
+    | '/api/public/n8n/reminders-email'
+    | '/api/public/n8n/reminders-send-email'
     | '/api/public/n8n/summary'
     | '/api/public/n8n/transactions'
   id:
@@ -229,12 +264,15 @@ export interface FileRouteTypes {
     | '/_app/goals'
     | '/_app/rekap'
     | '/_app/reminders'
+    | '/_app/reports'
     | '/_app/settings'
     | '/_app/subscriptions'
     | '/_app/transactions'
     | '/api/public/n8n/message'
     | '/api/public/n8n/ocr'
     | '/api/public/n8n/reminders'
+    | '/api/public/n8n/reminders-email'
+    | '/api/public/n8n/reminders-send-email'
     | '/api/public/n8n/summary'
     | '/api/public/n8n/transactions'
   fileRoutesById: FileRoutesById
@@ -246,6 +284,8 @@ export interface RootRouteChildren {
   ApiPublicN8nMessageRoute: typeof ApiPublicN8nMessageRoute
   ApiPublicN8nOcrRoute: typeof ApiPublicN8nOcrRoute
   ApiPublicN8nRemindersRoute: typeof ApiPublicN8nRemindersRoute
+  ApiPublicN8nRemindersEmailRoute: typeof ApiPublicN8nRemindersEmailRoute
+  ApiPublicN8nRemindersSendEmailRoute: typeof ApiPublicN8nRemindersSendEmailRoute
   ApiPublicN8nSummaryRoute: typeof ApiPublicN8nSummaryRoute
   ApiPublicN8nTransactionsRoute: typeof ApiPublicN8nTransactionsRoute
 }
@@ -322,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRemindersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -364,6 +411,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicN8nRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/n8n/reminders-email': {
+      id: '/api/public/n8n/reminders-email'
+      path: '/api/public/n8n/reminders-email'
+      fullPath: '/api/public/n8n/reminders-email'
+      preLoaderRoute: typeof ApiPublicN8nRemindersEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/n8n/reminders-send-email': {
+      id: '/api/public/n8n/reminders-send-email'
+      path: '/api/public/n8n/reminders-send-email'
+      fullPath: '/api/public/n8n/reminders-send-email'
+      preLoaderRoute: typeof ApiPublicN8nRemindersSendEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/n8n/summary': {
       id: '/api/public/n8n/summary'
       path: '/api/public/n8n/summary'
@@ -389,6 +450,7 @@ interface AppRouteChildren {
   AppGoalsRoute: typeof AppGoalsRoute
   AppRekapRoute: typeof AppRekapRoute
   AppRemindersRoute: typeof AppRemindersRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionsRoute: typeof AppSubscriptionsRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
@@ -402,6 +464,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGoalsRoute: AppGoalsRoute,
   AppRekapRoute: AppRekapRoute,
   AppRemindersRoute: AppRemindersRoute,
+  AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionsRoute: AppSubscriptionsRoute,
   AppTransactionsRoute: AppTransactionsRoute,
@@ -416,6 +479,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicN8nMessageRoute: ApiPublicN8nMessageRoute,
   ApiPublicN8nOcrRoute: ApiPublicN8nOcrRoute,
   ApiPublicN8nRemindersRoute: ApiPublicN8nRemindersRoute,
+  ApiPublicN8nRemindersEmailRoute: ApiPublicN8nRemindersEmailRoute,
+  ApiPublicN8nRemindersSendEmailRoute: ApiPublicN8nRemindersSendEmailRoute,
   ApiPublicN8nSummaryRoute: ApiPublicN8nSummaryRoute,
   ApiPublicN8nTransactionsRoute: ApiPublicN8nTransactionsRoute,
 }
