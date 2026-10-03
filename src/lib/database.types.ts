@@ -114,6 +114,12 @@ export type Database = {
           receipt_path?: string | null;
           /** v7 */
           external_id?: string | null;
+          /** v12 */
+          split_group?: string | null;
+          /** v12 */
+          receipt_paths?: string[] | null;
+          /** v12 (generated) */
+          items_search?: string | null;
         };
         Insert: {
           id?: string;
@@ -134,6 +140,8 @@ export type Database = {
           receipt_path?: string | null;
           created_at?: string;
           external_id?: string | null;
+          split_group?: string | null;
+          receipt_paths?: string[] | null;
         };
         Update: {
           id?: string;
@@ -154,6 +162,8 @@ export type Database = {
           receipt_path?: string | null;
           created_at?: string;
           external_id?: string | null;
+          split_group?: string | null;
+          receipt_paths?: string[] | null;
         };
         Relationships: [
           {

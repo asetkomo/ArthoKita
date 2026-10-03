@@ -157,3 +157,10 @@ Tanpa v9 aplikasi tetap berjalan dengan perhitungan lama (hasil sama). Bila fung
 ## v10 — Transaksi berulang (opsional)
 Jalankan bagian **v10** di `supabase/schema.sql` (tabel `recurring_transactions`). Setelah itu menu **Transaksi Berulang** bisa dipakai untuk gaji, sewa, atau transfer rutin (mingguan/bulanan/tahunan, dengan interval dan tanggal tetap; tanggal 31 otomatis menjadi akhir bulan pada bulan pendek).
 Item dengan "Catat otomatis" dicatat sendiri saat dashboard/pengingat dibuka (maks. 12 kejadian terlewat per item, idempoten). Item tanpa "Catat otomatis" muncul di Pengingat (juga teks bot/n8n) dengan tombol **Catat**. Sebelum v10 dijalankan, halaman menampilkan petunjuk dan fitur lain tetap berjalan.
+
+## v12 — Split transaksi, banyak foto nota & cari item (opsional)
+Jalankan bagian **v12** di `supabase/schema.sql` (kolom `transactions.split_group`, `receipt_paths`, dan kolom hasil `items_search`).
+- **Split**: di dialog Catat (pengeluaran baru) aktifkan "Bagi ke beberapa kategori". Tiap baris menjadi transaksi pengeluaran terpisah dengan `split_group` yang sama, sehingga budget, laporan, dan agregasi tetap benar. Biaya admin hanya dicatat sekali. Mengubah satu baris split hanya mengubah baris itu; saat menghapus Anda bisa memilih menghapus seluruh grup.
+- **Banyak foto**: hingga 5 foto nota per transaksi; `receipt_path` tetap berisi foto pertama.
+- **Cari item**: pencarian transaksi juga mencocokkan nama item dari nota.
+Sebelum v12 dijalankan: split tetap tersimpan sebagai transaksi terpisah (tanpa penanda grup), hanya foto pertama yang disimpan, dan pencarian item dilewati.

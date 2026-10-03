@@ -397,3 +397,16 @@ revoke all on public.budget_alerts from anon, authenticated;
 grant all on public.budget_alerts to service_role;
 alter table public.budget_alerts enable row level security;
 notify pgrst, 'reload schema';
+
+-- ============ v12: split transaksi, banyak foto nota & cari item nota (aman dijalankan ulang) ============
+-- Split: satu nota dibagi ke beberapa kategori = beberapa transaksi pengeluaran biasa dengan
+-- split_group yang sama (budget/laporan/agregasi tetap benar tanpa perubahan).
+alter table public.transactions add column if not exists split_group uuid;
+create index if not exists transactions_split_group_idx on public.transactions (split_group)
+  where split_group is not null;
+-- Banyak foto per transaksi (receipt_path tetap = foto pertama untuk kompatibilitas).
+alter table public.transactions add column if not exists receipt_paths text[];
+-- Teks item nota (huruf kecil) agar pencarian transaksi juga mencocokkan nama item.
+alter table public.transactions add column if not exists items_search text
+  generated always as (lower(coalesce(items::text, ''))) stored;
+notify pgrst, 'reload schema';
