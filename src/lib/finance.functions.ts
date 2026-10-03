@@ -73,7 +73,9 @@ export const saveRow = createServerFn({ method: "POST" })
           ? ["tax_percent"]
           : data.table === "goals"
             ? ["account_id"]
-            : [];
+            : data.table === "budgets"
+              ? ["rollover"]
+              : [];
     if (res.error && optional.some((c) => res.error!.message.includes(c))) {
       const v: any = { ...(values as any) };
       for (const c of optional) delete v[c];
@@ -134,9 +136,11 @@ export const saveTransaction = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { insertTransaction, updateTransaction } = await import("./finance.server");
-    return (
-      data.id ? await updateTransaction(data.id, data.values) : await insertTransaction(data.values)
-    ) as any;
+    if (data.id) return (await updateTransaction(data.id, data.values)) as any;
+    const tx = await insertTransaction(data.values);
+    // v11: instant budget alerts (never throws; [] on any failure).
+    const { budgetAlertsFor } = await import("./budget.server");
+    return { ...tx, budgetAlerts: await budgetAlertsFor(tx) } as any;
   });
 
 const txFilterSchema = z.object({

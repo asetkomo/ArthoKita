@@ -119,6 +119,8 @@ export const budgetSchema = z.object({
   category_id: z.string().uuid("Pilih kategori"),
   amount: money,
   alert_percent: z.coerce.number().int().min(1).max(100).default(80),
+  /** v11: carry last month's remainder (or overspend) into this month. */
+  rollover: z.boolean().default(false),
 });
 
 export const goalSchema = z.object({
