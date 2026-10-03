@@ -258,3 +258,49 @@ export const getActivity = createServerFn({ method: "GET" })
     return listActivity(data.limit ?? 30);
   });
 
+
+/* ---------------- Gold & receivables & cash ---------------- */
+const recvSchema = () => import("./schemas").then((m) => m.receivableSchema);
+
+export const getGold = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { goldSummary } = await import("./assets.server");
+    return goldSummary() as Promise<any>;
+  });
+
+export const getReceivables = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { listReceivables } = await import("./assets.server");
+    return listReceivables() as Promise<any>;
+  });
+
+export const saveReceivableFn = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid().nullable().optional(), values: z.unknown() }).parse(d))
+  .handler(async ({ data }) => {
+    const values = (await recvSchema()).parse(data.values);
+    const { saveReceivable } = await import("./assets.server");
+    return (await saveReceivable(data.id ?? null, values)) as any;
+  });
+
+export const payReceivableFn = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), amount: z.number().positive(), account_id: optUuid, date: optDate }).parse(d))
+  .handler(async ({ data }) => {
+    const { payReceivable } = await import("./assets.server");
+    return payReceivable(data.id, data.amount, data.account_id ?? null, data.date ?? null);
+  });
+
+export const receivableActionFn = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), action: z.enum(["settle", "reopen", "delete", "delete_payment"]) }).parse(d))
+  .handler(async ({ data }) => {
+    const a = await import("./assets.server");
+    if (data.action === "settle") await a.setReceivableStatus(data.id, "paid");
+    else if (data.action === "reopen") await a.setReceivableStatus(data.id, "active");
+    else if (data.action === "delete") await a.deleteReceivable(data.id);
+    else await a.deleteReceivablePayment(data.id);
+    return { ok: true };
+  });
