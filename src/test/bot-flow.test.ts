@@ -6,6 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 type Row = any;
 const tables: Record<string, Row[]> = {};
 const dbCalls: string[] = [];
+/** Force every query on a table to fail with this PostgREST-style error. */
+const failing: Record<string, { message: string; code?: string }> = {};
 function like(v: unknown, pattern: string, ci: boolean) {
   const re = new RegExp("^" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*") + "$", ci ? "i" : "");
   return re.test(String(v ?? ""));
@@ -39,6 +41,7 @@ function q(table: string) {
     then: (res: (v: any) => void) => res(run()),
   };
   function run() {
+    if (failing[table]) return { data: null, error: failing[table] };
     const t = (tables[table] ??= []);
     if (op === "insert") {
       const rows = (Array.isArray(payload) ? payload : [payload]).map((r: Row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...r }));
@@ -62,6 +65,7 @@ import { draftKey, handleBotUpdate, isBotTransaction, listText, reportText, TX_H
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
   dbCalls.length = 0;
+  for (const k of Object.keys(failing)) delete failing[k];
   tables["categories"] = [
     { id: "c1", name: "Makanan & Minuman", kind: "expense" }, { id: "c2", name: "Transportasi", kind: "expense" },
     { id: "c3", name: "Lainnya", kind: "expense" }, { id: "c4", name: "Gaji", kind: "income" }, { id: "c5", name: "Lainnya", kind: "income" },
@@ -237,5 +241,30 @@ describe("laporan tidak terpotong diam-diam", () => {
     expect(list).toContain(`${TX_HARD_CAP} transaksi`);
     expect(list).toContain("(data terpotong)");
     expect(await reportText("bulan")).toContain("(data terpotong)");
+  });
+});
+
+describe("bot_drafts belum ada vs error DB lain", () => {
+  const missing = { code: "PGRST205", message: "Could not find the table 'public.bot_drafts' in the schema cache" };
+
+  it("tabel hilang → pesan ramah 'jalankan v7', bukan crash", async () => {
+    failing["bot_drafts"] = missing;
+    await expect(handleBotUpdate({ update_id: 50, chat_id: "111", text: "kopi 25rb" })).rejects.toThrow(
+      /bot_drafts belum ada.*v7/,
+    );
+    const r = await handleBotUpdate({ update_id: 51, chat_id: "111", callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e" });
+    expect(r.text).toMatch(/v7/);
+  });
+
+  it("error lain tidak ditelan (tidak dianggap draft kosong)", async () => {
+    failing["bot_drafts"] = { code: "57014", message: "canceling statement due to statement timeout" };
+    await expect(handleBotUpdate({ update_id: 52, chat_id: "111", text: "kopi 25rb" })).rejects.toThrow(/statement timeout/);
+    await expect(
+      handleBotUpdate({ update_id: 53, chat_id: "111", callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e" }),
+    ).rejects.toThrow(/statement timeout/);
+    await expect(
+      handleBotUpdate({ update_id: 54, chat_id: "111", callback_data: "u:0f8fad5b-d9cb-469f-a165-70867728950e" }),
+    ).rejects.toThrow(/statement timeout/);
+    expect(tables["transactions"] ?? []).toHaveLength(0);
   });
 });

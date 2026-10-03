@@ -118,8 +118,15 @@ async function defaultAccountName(): Promise<string | null> {
   );
 }
 
+const DRAFTS_MISSING = "Tabel bot_drafts belum ada. Jalankan bagian v7 di supabase/schema.sql.";
+
+/** A missing bot_drafts table (schema v7 not run) reads as "no draft"; other errors surface. */
 async function existingDraft(externalId: string): Promise<DraftRow | null> {
   const r = await db().from("bot_drafts").select("*").eq("external_id", externalId).maybeSingle();
+  if (r.error) {
+    if ((await fin()).isMissingTable(r.error)) return null;
+    throw new Error(r.error.message);
+  }
   return (r.data as DraftRow) ?? null;
 }
 
@@ -147,8 +154,7 @@ async function storeDraft(
       const again = await existingDraft(externalId);
       if (again) return again;
     }
-    if (/bot_drafts/.test(res.error.message))
-      throw new Error("Tabel bot_drafts belum ada. Jalankan bagian v7 di supabase/schema.sql.");
+    if ((await fin()).isMissingTable(res.error)) throw new Error(DRAFTS_MISSING);
     throw new Error(res.error.message);
   }
   // Opportunistic cleanup of old drafts (cheap, indexed). Keep them longer than the 7-day undo
@@ -285,13 +291,18 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
       .eq("chat_id", chatId)
       .limit(1)
       .maybeSingle();
+    if (link.error && !(await fin()).isMissingTable(link.error)) throw new Error(link.error.message);
     if (!link.data)
       return edit("⚠️ Hanya transaksi yang disimpan lewat bot yang bisa di-undo.", null, "Gagal");
     const r = await undoTransaction(cb.id);
     return edit(r.message, null, r.ok ? "Dibatalkan" : "Gagal");
   }
-  const row = (await db().from("bot_drafts").select("*").eq("id", cb.id).maybeSingle())
-    .data as DraftRow | null;
+  const found = await db().from("bot_drafts").select("*").eq("id", cb.id).maybeSingle();
+  if (found.error) {
+    if ((await fin()).isMissingTable(found.error)) return edit(`⚠️ ${DRAFTS_MISSING}`, null);
+    throw new Error(found.error.message);
+  }
+  const row = found.data as DraftRow | null;
   // A draft belongs to the chat it was created in; never act on another chat's draft.
   if (!row || String(row.chat_id) !== chatId)
     return edit("⚠️ Pratinjau tidak ditemukan.", null);
