@@ -139,10 +139,12 @@ function Dashboard() {
 
       {nw?.length ? (
         <Card className="mt-4 p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">{t("Kekayaan bersih (12 bulan)")}</h2>
-            <p className="num text-lg font-semibold">{money(nw[nw.length - 1]!.netWorth)}</p>
-            {nw[nw.length - 1]!.gold > 0 ? <p className="num text-xs text-muted-foreground">{t("termasuk emas")} {money(nw[nw.length - 1]!.gold)}</p> : null}
+            <div className="text-right">
+              <p className="num text-lg font-semibold">{money(nw[nw.length - 1]!.netWorth)}</p>
+              {nw[nw.length - 1]!.gold > 0 ? <p className="num text-xs text-muted-foreground">{t("termasuk emas")} {money(nw[nw.length - 1]!.gold)}</p> : null}
+            </div>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
