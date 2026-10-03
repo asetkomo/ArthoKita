@@ -6,7 +6,7 @@ export function RouteError({ error, reset }: ErrorComponentProps) {
   return (
     <div className="mx-auto max-w-lg rounded-2xl border bg-card p-8 text-center">
       <h2 className="text-xl font-semibold">Data gagal dimuat</h2>
-      <p className="mt-2 text-sm text-muted-foreground break-words">{error.message}</p>
+      <p className="mt-2 text-sm text-muted-foreground break-words">{error instanceof Error ? error.message : String(error)}</p>
       <p className="mt-2 text-xs text-muted-foreground">
         Pastikan environment Supabase sudah diatur dan schema SQL sudah dijalankan.
       </p>
