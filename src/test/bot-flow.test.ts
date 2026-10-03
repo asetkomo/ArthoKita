@@ -55,7 +55,7 @@ function q(table: string) {
 }
 vi.mock("../lib/db.server", () => ({ db: () => ({ from: q, storage: { from: () => ({ remove: async () => ({}) }) } }) }));
 
-import { handleBotUpdate, isBotTransaction } from "../lib/bot.server";
+import { draftKey, handleBotUpdate, isBotTransaction } from "../lib/bot.server";
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
@@ -165,6 +165,25 @@ describe("alur bot end-to-end (tanpa AI)", () => {
     expect(tables["transactions"]!.map((t) => t.id)).toEqual(["1f8fad5b-d9cb-469f-a165-70867728950e"]);
   });
 
+  it("kunci idempotensi draft memuat chat_id: update_id sama di chat lain tidak bentrok", async () => {
+    process.env["BOT_ALLOWED_CHAT_IDS"] = "111,222";
+    const a = await handleBotUpdate({ update_id: 42, chat_id: "111", text: "kopi 25rb" });
+    const b = await handleBotUpdate({ update_id: 42, chat_id: "222", text: "gaji 8jt" });
+    expect(tables["bot_drafts"]!.map((d) => d.external_id)).toEqual(["tg:111:42", "tg:222:42"]);
+    expect(a.text).toContain("Makanan");
+    expect(b.text).toContain("Gaji"); // bukan pratinjau milik chat 111
+    // retry di chat yang sama tetap idempoten
+    await handleBotUpdate({ update_id: 42, chat_id: "222", text: "gaji 8jt" });
+    expect(tables["bot_drafts"]).toHaveLength(2);
+    // simpan + undo tetap jalan dengan kunci baru
+    const id = tables["bot_drafts"]![1]!.id;
+    await handleBotUpdate({ update_id: 43, chat_id: "222", callback_data: `d:s:${id}` });
+    expect(tables["transactions"]![0]!.external_id).toBe(`draft:${id}`);
+    const txId = tables["transactions"]![0]!.id;
+    const u = await handleBotUpdate({ update_id: 44, chat_id: "222", callback_data: `u:${txId}` });
+    expect(u.text).toContain("Dihapus");
+  });
+
   it("pratinjau milik chat lain tidak bisa disimpan", async () => {
     process.env["BOT_ALLOWED_CHAT_IDS"] = "111,222";
     await handleBotUpdate({ update_id: 7, chat_id: "111", text: "kopi 25rb" });
@@ -183,5 +202,8 @@ describe("undo hanya untuk transaksi bot", () => {
     expect(isBotTransaction({ source: "telegram" })).toBe(true);
     expect(isBotTransaction({ source: "web" })).toBe(false);
     expect(isBotTransaction({ source: "telegram", notes: "[fee:x]" })).toBe(false);
+  });
+  it("format kunci draft", () => {
+    expect(draftKey("-100123", 7)).toBe("tg:-100123:7");
   });
 });

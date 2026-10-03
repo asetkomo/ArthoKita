@@ -275,7 +275,7 @@ create index if not exists transactions_source_created_idx on public.transaction
 -- Pratinjau transaksi dari bot (chat / foto nota) yang menunggu tombol ✅/❌.
 create table if not exists public.bot_drafts (
   id uuid primary key default gen_random_uuid(),
-  external_id text not null unique,           -- "tg:<update_id>"
+  external_id text not null unique,           -- "tg:<chat_id>:<update_id>"
   chat_id text not null,
   source text not null default 'telegram' check (source in ('telegram','whatsapp','ocr')),
   payload jsonb not null,

@@ -92,6 +92,12 @@ export async function handleBotUpdate(u: BotUpdate): Promise<BotReply> {
 }
 
 /* ---------------- Drafts ---------------- */
+/**
+ * Idempotency key of a bot_drafts row. update_id is only unique per bot, so the chat is part of
+ * the key: two chats can never collide on (or read back) each other's draft.
+ */
+export const draftKey = (chatId: string, updateId: number) => `tg:${chatId}:${updateId}`;
+
 type DraftRow = {
   id: string;
   chat_id: string;
@@ -176,7 +182,7 @@ async function historyCategory(description: string, kind: string): Promise<strin
 }
 
 async function draftFromText(u: BotUpdate, text: string): Promise<BotReply> {
-  const externalId = `tg:${u.update_id}`;
+  const externalId = draftKey(u.chat_id, u.update_id);
   const prev = await existingDraft(externalId);
   if (prev) return previewReply(prev);
   const f = await fin();
@@ -228,7 +234,7 @@ async function draftFromText(u: BotUpdate, text: string): Promise<BotReply> {
 }
 
 async function draftFromImage(u: BotUpdate): Promise<BotReply> {
-  const externalId = `tg:${u.update_id}`;
+  const externalId = draftKey(u.chat_id, u.update_id);
   const prev = await existingDraft(externalId);
   if (prev) return previewReply(prev);
   const mime = /^image\/(jpeg|png|webp)$/.test(u.mime_type ?? "") ? u.mime_type! : "image/jpeg";

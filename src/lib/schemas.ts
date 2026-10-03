@@ -151,7 +151,7 @@ export const externalTxSchema = z.object({
   items: z.array(itemSchema).max(200).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
   raw: z.unknown().optional(),
-  /** Idempotency key, e.g. "tg:<update_id>". A repeated key returns the existing transaction. */
+  /** Idempotency key, e.g. "draft:<bot_drafts.id>". A repeated key returns the existing transaction. */
   external_id: z.string().max(120).nullable().optional(),
   receipt_path: z.string().max(500).nullable().optional(),
 });
