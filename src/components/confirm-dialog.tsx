@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type Pending = { title: string; description?: string; confirmLabel: string; destructive: boolean; resolve: (ok: boolean) => void };
+type Pending = { title: string; description?: string | undefined; confirmLabel: string; destructive: boolean; resolve: (ok: boolean) => void };
 
 /** Promise-based confirm dialog matching the app design (replaces window.confirm). */
 export function useConfirm() {
