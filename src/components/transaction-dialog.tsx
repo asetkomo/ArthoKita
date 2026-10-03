@@ -8,6 +8,7 @@ import { errMsg, rowsQuery } from "@/lib/queries";
 import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { useI18n } from "@/lib/i18n";
 import type { Account, Category } from "@/lib/schemas";
 
 export type TxDraft = Record<string, unknown>;
@@ -17,31 +18,32 @@ export function newTxDraft(kind: "income" | "expense" | "transfer" = "expense"):
 }
 
 export function TransactionDialog({ open, onOpenChange, initial, id }: { open: boolean; onOpenChange: (o: boolean) => void; initial: TxDraft; id?: string | null }) {
+  const { t } = useI18n();
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
   const save = useServerFn(saveTransaction);
   const qc = useQueryClient();
-  const accOpts = [{ value: "", label: "— Tanpa akun —" }, ...accounts.filter((a) => !a.archived).map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))];
+  const accOpts = [{ value: "", label: t("— Tanpa akun —") }, ...accounts.filter((a) => !a.archived).map((a) => ({ value: a.id, label: `${a.name} (${a.currency})` }))];
 
   const fields = (v: Record<string, unknown>): FieldDef[] => [
-    { name: "kind", label: "Jenis", type: "select", half: true, options: [ { value: "expense", label: "Pengeluaran" }, { value: "income", label: "Pemasukan" }, { value: "transfer", label: "Transfer antar akun" } ] },
-    { name: "occurred_at", label: "Tanggal", type: "date", half: true },
-    { name: "amount", label: "Jumlah", type: "number", half: true, placeholder: "50000" },
-    { name: "currency", label: "Mata uang", type: "select", half: true, options: CURRENCY_OPTIONS },
-    { name: "account_id", label: v["kind"] === "transfer" ? "Dari akun" : "Akun / dompet", type: "select", half: true, options: accOpts },
+    { name: "kind", label: t("Jenis"), type: "select", half: true, options: [ { value: "expense", label: t("Pengeluaran") }, { value: "income", label: t("Pemasukan") }, { value: "transfer", label: t("Transfer antar akun") } ] },
+    { name: "occurred_at", label: t("Tanggal"), type: "date", half: true },
+    { name: "amount", label: t("Jumlah"), type: "number", half: true, placeholder: "50000" },
+    { name: "currency", label: t("Mata uang"), type: "select", half: true, options: CURRENCY_OPTIONS },
+    { name: "account_id", label: v["kind"] === "transfer" ? t("Dari akun") : t("Akun / dompet"), type: "select", half: true, options: accOpts },
     v["kind"] === "transfer"
-      ? { name: "to_account_id", label: "Ke akun", type: "select", half: true, options: accOpts }
-      : { name: "category_id", label: "Kategori", type: "select", half: true, options: [{ value: "", label: "— Tanpa kategori —" }, ...categories.filter((c) => c.kind === v["kind"]).map((c) => ({ value: c.id, label: c.name }))] },
-    { name: "description", label: "Deskripsi", type: "text", placeholder: "Makan siang, gaji Oktober…" },
-    { name: "merchant", label: "Merchant / sumber", type: "text", half: true },
-    { name: "notes", label: "Catatan", type: "text", half: true },
+      ? { name: "to_account_id", label: t("Ke akun"), type: "select", half: true, options: accOpts }
+      : { name: "category_id", label: t("Kategori"), type: "select", half: true, options: [{ value: "", label: t("— Tanpa kategori —") }, ...categories.filter((c) => c.kind === v["kind"]).map((c) => ({ value: c.id, label: c.name }))] },
+    { name: "description", label: t("Deskripsi"), type: "text", placeholder: "Makan siang, gaji Oktober…" },
+    { name: "merchant", label: t("Merchant / sumber"), type: "text", half: true },
+    { name: "notes", label: t("Catatan"), type: "text", half: true },
   ];
 
   return (
     <EntityDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={id ? "Ubah transaksi" : "Catat transaksi"}
+      title={id ? t("Ubah transaksi") : t("Catat transaksi")}
       fields={fields}
       initial={initial}
       onSubmit={async (v) => {
@@ -52,7 +54,7 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
         <div className="space-y-3">
           {(v["items"] as { name: string; qty?: number | null; price?: number | null }[] | null)?.length ? (
             <div className="rounded-lg border bg-muted/50 p-3 text-sm">
-              <p className="mb-2 font-medium">Rincian item dari nota</p>
+              <p className="mb-2 font-medium">{t("Rincian item dari nota")}</p>
               <ul className="space-y-1">
                 {(v["items"] as { name: string; qty?: number | null; price?: number | null }[]).map((it, i) => (
                   <li key={i} className="flex justify-between gap-2">
@@ -71,6 +73,7 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
 }
 
 function ReceiptField({ path, onChange }: { path: string | null; onChange: (p: string | null) => void }) {
+  const { t } = useI18n();
   const upload = useServerFn(uploadReceiptImage);
   const [busy, setBusy] = useState(false);
 
@@ -78,20 +81,20 @@ function ReceiptField({ path, onChange }: { path: string | null; onChange: (p: s
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > 5_000_000) { toast.error("Gambar maksimal 5 MB"); return; }
+    if (file.size > 5_000_000) { toast.error(t("Gambar maksimal 5 MB")); return; }
     setBusy(true);
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(String(r.result));
-        r.onerror = () => reject(new Error("Gagal membaca file"));
+        r.onerror = () => reject(new Error(t("Gagal membaca file")));
         r.readAsDataURL(file);
       });
       const { path } = await upload({ data: { image: dataUrl } });
       onChange(path);
-      toast.success("Foto nota terlampir");
+      toast.success(t("Foto nota terlampir"));
     } catch (err) {
-      toast.error("Gagal mengunggah nota", { description: errMsg(err) });
+      toast.error(t("Gagal mengunggah nota"), { description: errMsg(err) });
     } finally {
       setBusy(false);
     }
@@ -100,18 +103,18 @@ function ReceiptField({ path, onChange }: { path: string | null; onChange: (p: s
   return (
     <div className="rounded-lg border bg-muted/50 p-3 text-sm">
       <div className="flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 font-medium"><Paperclip className="size-3.5" /> Foto nota</p>
+        <p className="flex items-center gap-1.5 font-medium"><Paperclip className="size-3.5" /> {t("Foto nota")}</p>
         <div className="flex items-center gap-2">
           {path ? (
-            <button type="button" className="text-xs text-expense hover:underline" onClick={() => onChange(null)}>Hapus</button>
+            <button type="button" className="text-xs text-expense hover:underline" onClick={() => onChange(null)}>{t("Hapus")}</button>
           ) : null}
           <label className="cursor-pointer text-xs text-primary hover:underline">
-            {busy ? "Mengunggah…" : path ? "Ganti" : "Unggah"}
+            {busy ? t("Mengunggah…") : path ? t("Ganti") : t("Unggah")}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={pick} />
           </label>
         </div>
       </div>
-      {path ? <p className="mt-1.5 truncate text-xs text-muted-foreground">Terlampir — akan tersimpan bersama transaksi.</p> : <p className="mt-1.5 text-xs text-muted-foreground">Opsional. JPEG/PNG/WebP, maks 5 MB.</p>}
+      {path ? <p className="mt-1.5 truncate text-xs text-muted-foreground">{t("Terlampir — akan tersimpan bersama transaksi.")}</p> : <p className="mt-1.5 text-xs text-muted-foreground">{t("Opsional. JPEG/PNG/WebP, maks 5 MB.")}</p>}
     </div>
   );
 }
