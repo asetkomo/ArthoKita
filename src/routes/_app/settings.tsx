@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Download, History } from "lucide-react";
+import { Download, History, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/app-shell";
@@ -67,7 +67,7 @@ function SettingsPage() {
           <Card key={kind} className="p-5">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-semibold">{kind === "expense" ? t("Kategori pengeluaran") : t("Kategori pemasukan")}</h2>
-              <Button size="sm" variant="outline" onClick={() => crud.openNew({ kind })}><PlusIcon /> {t("Tambah")}</Button>
+              <Button size="sm" variant="outline" onClick={() => crud.openNew({ kind })}><Plus className="size-4" /> {t("Tambah")}</Button>
             </div>
             <ul className="divide-y">
               {categories.filter((c) => c.kind === kind).map((c) => (
@@ -139,6 +139,3 @@ function SettingsPage() {
   );
 }
 
-function PlusIcon() {
-  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4"><path d="M5 12h14" /><path d="M12 5v14" /></svg>;
-}
