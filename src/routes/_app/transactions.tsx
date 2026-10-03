@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Pencil, Plus, Printer, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Paperclip, Pencil, Plus, Printer, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errMsg, txQuery, type TxFilter } from "@/lib/queries";
-import { deleteRow, exportTransactionsCsv } from "@/lib/finance.functions";
+import { deleteRow, exportTransactionsCsv, getReceiptUrl, importTransactionsCsv } from "@/lib/finance.functions";
 import { currentMonth, dateLabel, monthLabel, shiftMonth } from "@/lib/dates";
 import { KIND_LABEL, money } from "@/lib/format";
 import { pageHead } from "@/lib/head";
@@ -36,7 +36,34 @@ function TransactionsPage() {
   const [dlg, setDlg] = useState<{ open: boolean; draft: TxDraft; id: string | null }>({ open: false, draft: newTxDraft(), id: null });
   const del = useServerFn(deleteRow);
   const exp = useServerFn(exportTransactionsCsv);
+  const imp = useServerFn(importTransactionsCsv);
+  const receipt = useServerFn(getReceiptUrl);
+  const [importing, setImporting] = useState(false);
   const qc = useQueryClient();
+
+  async function openReceipt(path: string) {
+    try {
+      const { url } = await receipt({ data: { path } });
+      window.open(url, "_blank", "noopener");
+    } catch (e) { toast.error(errMsg(e)); }
+  }
+
+  async function pickCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").filter((l) => l.trim()).length - 1;
+      if (!confirm(`Impor ${Math.max(0, lines)} baris dari "${file.name}"?`)) return;
+      const res = await imp({ data: { csv: text } });
+      await qc.invalidateQueries();
+      if (res.failed) toast.warning(res.message, { description: res.errors.join("\n") });
+      else toast.success(res.message);
+    } catch (err) { toast.error("Impor gagal", { description: errMsg(err) }); }
+    finally { setImporting(false); }
+  }
 
   const totals = (rows as any[]).reduce((a, t) => {
     if (t.kind === "income") a.inc += Number(t.amount_idr);
@@ -67,6 +94,12 @@ function TransactionsPage() {
           <>
             <ReceiptScanner onDraft={(draft) => setDlg({ open: true, draft, id: null })} />
             <Button variant="outline" onClick={download}><Download className="size-4" /> Excel (CSV)</Button>
+            <Button variant="outline" disabled={importing} asChild>
+              <label className="cursor-pointer">
+                <Upload className="size-4" /> {importing ? "Mengimpor…" : "Impor CSV"}
+                <input type="file" accept=".csv,text/csv" className="hidden" disabled={importing} onChange={pickCsv} />
+              </label>
+            </Button>
             <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> PDF</Button>
             <Button onClick={() => setDlg({ open: true, draft: newTxDraft(), id: null })}><Plus className="size-4" /> Catat</Button>
           </>
@@ -109,12 +142,15 @@ function TransactionsPage() {
                   </p>
                 </div>
                 {t.source !== "web" ? <Badge variant="secondary" className="hidden sm:inline-flex">{t.source}</Badge> : null}
+                {t.receipt_path ? (
+                  <Button size="icon" variant="ghost" aria-label="Lihat nota" onClick={() => openReceipt(t.receipt_path)}><Paperclip className="size-4" /></Button>
+                ) : null}
                 <div className="text-right">
                   <p className={`num text-sm font-semibold ${t.kind === "income" ? "text-income" : t.kind === "expense" ? "text-expense" : ""}`}>{t.kind === "income" ? "+" : t.kind === "expense" ? "−" : ""}{money(t.amount, t.currency)}</p>
                   {t.currency === "USD" ? <p className="num text-xs text-muted-foreground">{money(t.amount_idr)}</p> : null}
                 </div>
                 <div className="no-print flex">
-                  <Button size="icon" variant="ghost" aria-label="Ubah" onClick={() => setDlg({ open: true, id: t.id, draft: { kind: t.kind, amount: t.amount, currency: t.currency, occurred_at: t.occurred_at, account_id: t.account_id, to_account_id: t.to_account_id, category_id: t.category_id, description: t.description, merchant: t.merchant, notes: t.notes, source: t.source, items: t.items } })}><Pencil className="size-4" /></Button>
+                  <Button size="icon" variant="ghost" aria-label="Ubah" onClick={() => setDlg({ open: true, id: t.id, draft: { kind: t.kind, amount: t.amount, currency: t.currency, occurred_at: t.occurred_at, account_id: t.account_id, to_account_id: t.to_account_id, category_id: t.category_id, description: t.description, merchant: t.merchant, notes: t.notes, source: t.source, items: t.items, receipt_path: t.receipt_path } })}><Pencil className="size-4" /></Button>
                   <Button size="icon" variant="ghost" aria-label="Hapus" onClick={() => remove(t.id)}><Trash2 className="size-4" /></Button>
                 </div>
               </li>
