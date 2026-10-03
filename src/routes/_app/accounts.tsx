@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_app/accounts")({
 function AccountsPage() {
   const { t } = useI18n();
   const { data: balances } = useSuspenseQuery(balancesQuery());
+  const rows = useSuspenseQuery(rowsQuery("accounts")).data as any[];
   const crud = useCrudDialog("accounts", { type: "bank", currency: "IDR", initial_balance: 0, archived: false, color: "#2f7d5b" });
   const TYPES = [
     { value: "bank", label: t("Bank") },
@@ -39,7 +40,7 @@ function AccountsPage() {
       <PageHeader title={t("Akun & Dompet")} subtitle={t("Saldo dihitung otomatis dari saldo awal + semua transaksi.")} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Akun baru")}</Button>} />
       {balances.length === 0 ? <Empty text={t("Belum ada akun. Tambahkan BCA, GoPay, tunai, dll.")} /> : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(balances as any[]).map((a) => (
+          {(balances as any[]).map((b) => ({ ...(rows.find((r) => r.id === b.id) ?? {}), ...b })).map((a: any) => (
             <Card key={a.id} className={`relative overflow-hidden p-5 ${a.archived ? "opacity-60" : ""}`}>
               <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: a.color ?? "var(--primary)" }} />
               <div className="flex items-start justify-between">

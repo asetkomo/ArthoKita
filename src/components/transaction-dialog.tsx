@@ -8,6 +8,7 @@ import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { feeOptions } from "@/lib/fees";
 import { useI18n } from "@/lib/i18n";
 import type { Account, Category } from "@/lib/schemas";
 
@@ -34,6 +35,7 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
     v["kind"] === "transfer"
       ? { name: "to_account_id", label: t("Ke akun"), type: "select", half: true, options: accOpts }
       : { name: "category_id", label: t("Kategori"), type: "select", half: true, options: [{ value: "", label: t("— Tanpa kategori —") }, ...categories.filter((c) => c.kind === v["kind"]).map((c) => ({ value: c.id, label: c.name }))] },
+    ...(!id && v["kind"] !== "income" ? [{ name: "fee", label: v["kind"] === "transfer" ? t("Biaya transfer / admin (opsional)") : t("Biaya admin (opsional)"), type: "number" as const, half: true, placeholder: "2500" }] : []),
     { name: "description", label: t("Deskripsi"), type: "text", placeholder: "Makan siang, gaji Oktober…" },
     { name: "merchant", label: t("Merchant / sumber"), type: "text", half: true },
     { name: "notes", label: t("Catatan"), type: "text", half: true },
@@ -52,6 +54,20 @@ export function TransactionDialog({ open, onOpenChange, initial, id }: { open: b
       }}
       extra={(v, set) => (
         <div className="space-y-3">
+          {!id && v["kind"] === "transfer" ? (() => {
+            const opts = feeOptions(accounts.find((a) => a.id === v["account_id"]) as never, accounts.find((a) => a.id === v["to_account_id"]) as never);
+            return opts.length ? (
+              <div className="flex flex-wrap gap-1.5">
+                <span className="w-full text-xs text-muted-foreground">{t("Preset biaya:")}</span>
+                {opts.map((o, i) => (
+                  <button key={i} type="button" onClick={() => set("fee", o.amount)} className={`rounded-full border px-2.5 py-1 text-xs transition-colors hover:bg-muted ${Number(v["fee"]) === o.amount ? "border-primary bg-primary/10" : ""}`}>
+                    {o.label} · {money(o.amount, String(v["currency"] ?? "IDR"))}
+                  </button>
+                ))}
+                {Number(v["fee"]) > 0 ? <button type="button" onClick={() => set("fee", "")} className="rounded-full px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted">{t("Tanpa biaya")}</button> : null}
+              </div>
+            ) : null;
+          })() : null}
           {(v["items"] as { name: string; qty?: number | null; price?: number | null }[] | null)?.length ? (
             <div className="rounded-lg border bg-muted/50 p-3 text-sm">
               <p className="mb-2 font-medium">{t("Rincian item dari nota")}</p>

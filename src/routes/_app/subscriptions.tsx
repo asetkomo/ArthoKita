@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { errMsg, fxQuery, rowsQuery, invalidateFor } from "@/lib/queries";
 import { paySubscription } from "@/lib/finance.functions";
 import { dateLabel, diffDays, todayStr } from "@/lib/dates";
+import { withTax } from "@/lib/fees";
 import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
@@ -35,7 +36,7 @@ function SubsPage() {
   const pay = useServerFn(paySubscription);
   const qc = useQueryClient();
   const crud = useCrudDialog("subscriptions", { currency: "IDR", cycle: "monthly", next_due: todayStr(), active: true });
-  const toIdr = (s: Subscription) => Number(s.amount) * (s.currency === "USD" ? usdIdr : 1);
+  const toIdr = (s: Subscription) => withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? usdIdr : 1);
   const active = subs.filter((s) => s.active);
   const monthly = active.reduce((a, s) => a + (s.cycle === "yearly" ? toIdr(s) / 12 : toIdr(s)), 0);
   const today = todayStr();
@@ -62,7 +63,8 @@ function SubsPage() {
                   <p className={`text-xs ${left < 0 ? "text-expense" : left <= 3 ? "text-warning" : "text-muted-foreground"}`}>{t("Jatuh tempo")} {dateLabel(s.next_due, locale)} {left < 0 ? `(${t("terlambat")} ${-left} ${t("hari")})` : left === 0 ? `(${t("hari ini")})` : `(${left} ${t("hari lagi")})`}</p>
                 </div>
                 <div className="text-right">
-                  <p className="num font-semibold">{money(s.amount, s.currency)}</p>
+                  <p className="num font-semibold">{money(withTax(Number(s.amount), s.tax_percent), s.currency)}</p>
+                  {Number(s.tax_percent) > 0 ? <p className="num text-xs text-muted-foreground">{money(s.amount, s.currency)} + {t("pajak")} {s.tax_percent}%</p> : null}
                   {s.currency === "USD" ? <p className="num text-xs text-muted-foreground">≈ {money(toIdr(s))}</p> : null}
                 </div>
                 {s.active ? <Button size="sm" variant="outline" onClick={() => doPay(s)}><CheckCircle2 className="size-4" /> {t("Sudah bayar")}</Button> : null}
@@ -74,7 +76,8 @@ function SubsPage() {
       )}
       {crud.dialog(t("langganan"), [
         { name: "name", label: t("Nama layanan"), type: "text", placeholder: "Netflix, ChatGPT Plus…" },
-        { name: "amount", label: t("Harga"), type: "number", half: true },
+        { name: "amount", label: t("Harga (sebelum pajak, atau sudah termasuk)"), type: "number", half: true },
+        { name: "tax_percent", label: t("Pajak % (opsional, kosongkan jika sudah termasuk)"), type: "number", half: true, placeholder: "11" },
         { name: "currency", label: t("Mata uang"), type: "select", half: true, options: CURRENCY_OPTIONS },
         { name: "cycle", label: t("Siklus"), type: "select", half: true, options: [{ value: "monthly", label: t("Bulanan") }, { value: "yearly", label: t("Tahunan") }] },
         { name: "next_due", label: t("Tagihan berikutnya"), type: "date", half: true },
