@@ -85,6 +85,7 @@ export async function createFromExternal(t: ExternalTx) {
     source: t.source,
     items: t.items ?? null,
     notes: t.notes ?? null,
+    receipt_path: null,
   };
   const tx = await insertTransaction(input, t.raw);
   const label = t.kind === "income" ? "Pemasukan" : t.kind === "expense" ? "Pengeluaran" : "Transfer";
@@ -187,6 +188,7 @@ export async function payDebt(debtId: string, accountId: string | null, date: st
     source: "web",
     items: null,
     notes: null,
+    receipt_path: null,
   });
   must(await db().from("debt_payments").insert({ debt_id: debtId, installment_no: paid + 1, amount: d.installment_amount, paid_at: date ?? today(), transaction_id: tx.id }));
   if (paid + 1 >= d.total_installments) await db().from("debts").update({ status: "paid_off" }).eq("id", debtId);
@@ -217,6 +219,7 @@ export async function paySubscription(id: string, accountId: string | null, date
     source: "web",
     items: null,
     notes: null,
+    receipt_path: null,
   });
   const next = addMonthsKeepDay(s.next_due, s.cycle === "yearly" ? 12 : 1);
   must(await db().from("subscriptions").update({ next_due: next }).eq("id", id));
