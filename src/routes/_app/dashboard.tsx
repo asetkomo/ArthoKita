@@ -96,7 +96,7 @@ function Dashboard() {
                     <Pie data={d.byCategory} dataKey="value" nameKey="name" innerRadius={42} outerRadius={70} paddingAngle={2}>
                       {d.byCategory.map((c: any, i: number) => <Cell key={i} fill={c.color ?? PIE[i % PIE.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number) => money(v)} />
+                    <Tooltip formatter={(v: number) => money(v)} contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--foreground)" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

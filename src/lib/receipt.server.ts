@@ -27,3 +27,9 @@ export async function receiptUrl(path: string): Promise<string> {
   if (error) throw new Error(error.message);
   return data.signedUrl;
 }
+
+export async function removeReceipt(path: string | null | undefined) {
+  if (!path) return;
+  const { error } = await db().storage.from(BUCKET).remove([path]);
+  if (error) console.error("remove receipt failed", error.message);
+}

@@ -8,7 +8,7 @@ import { RouteError } from "@/components/route-error";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { trendQuery, yearlyQuery } from "@/lib/queries";
+import { trendQuery, yearlySummaryQuery } from "@/lib/queries";
 import { currentMonth, monthLabel, shortMonth } from "@/lib/dates";
 import { compact, money } from "@/lib/format";
 import { pageHead } from "@/lib/head";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_app/reports")({
   head: () => pageHead("Laporan", "Tren pengeluaran per kategori dan rekap tahunan."),
   loader: ({ context }) => Promise.all([
     context.queryClient.ensureQueryData(trendQuery(6, currentMonth())),
-    context.queryClient.ensureQueryData(yearlyQuery(Number(currentMonth().slice(0, 4)))),
+    context.queryClient.ensureQueryData(yearlySummaryQuery(Number(currentMonth().slice(0, 4)))),
   ]),
   errorComponent: RouteError,
   component: ReportsPage,
@@ -91,7 +91,7 @@ function CategoryTrend() {
 
 function YearlyRecap() {
   const [year, setYear] = useState(Number(currentMonth().slice(0, 4)));
-  const { data: y, isFetching } = useQuery({ ...yearlyQuery(year), placeholderData: (p) => p });
+  const { data: y, isFetching } = useQuery({ ...yearlySummaryQuery(year), placeholderData: (p) => p });
 
   function exportCsv() {
     if (!y) return;

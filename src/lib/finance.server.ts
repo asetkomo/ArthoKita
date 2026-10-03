@@ -500,3 +500,103 @@ export async function importCsv(text: string) {
   const message = `${imported} transaksi berhasil diimpor${errors.length ? `, ${errors.length} gagal` : ""}.`;
   return { imported, failed: errors.length, errors: errors.slice(0, 10), message };
 }
+/* ---------------- Reports ---------------- */
+export async function categoryTrend(months: number, endMonth: string) {
+  const first = shiftMonth(endMonth, -(months - 1));
+  const { start } = monthRange(first);
+  const { end } = monthRange(endMonth);
+  const rows = must<any[]>(await db().from("transactions").select("amount_idr, occurred_at, category_id, category:categories(id,name,color)").eq("kind", "expense").gte("occurred_at", start).lt("occurred_at", end).limit(50000));
+  const list = Array.from({ length: months }, (_, i) => shiftMonth(first, i));
+  const cats = new Map<string, { id: string; name: string; color: string | null; total: number }>();
+  const series = new Map<string, Record<string, number | string>>(list.map((m) => [m, { month: m }]));
+  for (const t of rows) {
+    const id = (t.category_id as string) ?? "none";
+    const c = cats.get(id) ?? { id, name: t.category?.name ?? "Tanpa kategori", color: t.category?.color ?? null, total: 0 };
+    const v = Number(t.amount_idr);
+    c.total += v;
+    cats.set(id, c);
+    const row = series.get(String(t.occurred_at).slice(0, 7));
+    if (row) row[id] = Number(row[id] ?? 0) + v;
+  }
+  return { months: list, categories: [...cats.values()].sort((a, b) => b.total - a.total), series: [...series.values()] };
+}
+
+export async function yearlySummary(year: number) {
+  const rows = must<any[]>(await db().from("transactions").select("kind, amount_idr, occurred_at").neq("kind", "transfer").gte("occurred_at", `${year}-01-01`).lt("occurred_at", `${year + 1}-01-01`).limit(100000));
+  const months = Array.from({ length: 12 }, (_, i) => ({ month: `${year}-${String(i + 1).padStart(2, "0")}`, income: 0, expense: 0, net: 0 }));
+  for (const t of rows) {
+    const m = months[Number(String(t.occurred_at).slice(5, 7)) - 1];
+    if (!m) continue;
+    if (t.kind === "income") m.income += Number(t.amount_idr);
+    else m.expense += Number(t.amount_idr);
+  }
+  for (const m of months) m.net = m.income - m.expense;
+  const income = months.reduce((a, m) => a + m.income, 0);
+  const expense = months.reduce((a, m) => a + m.expense, 0);
+  const t = today();
+  const activeMonths = Number(t.slice(0, 4)) === year ? Number(t.slice(5, 7)) : Number(t.slice(0, 4)) > year ? 12 : 0;
+  const div = Math.max(1, activeMonths);
+  return { year, income, expense, net: income - expense, avgIncome: income / div, avgExpense: expense / div, months };
+}
+
+/* ---------------- CSV import ---------------- */
+export async function importTransactions(rows: import("./schemas").ImportRowInput[], createMissing: boolean) {
+  const cats = must<any[]>(await db().from("categories").select("id, name, kind"));
+  const accs = must<any[]>(await db().from("accounts").select("id, name"));
+  const catMap = new Map(cats.map((c) => [`${c.kind}:${String(c.name).toLowerCase()}`, c.id as string]));
+  const accMap = new Map(accs.map((a) => [String(a.name).toLowerCase(), a.id as string]));
+  const rate = await getUsdIdr();
+  const out: any[] = [];
+  let createdCategories = 0;
+  let createdAccounts = 0;
+  for (const r of rows) {
+    let category_id: string | null = null;
+    if (r.category) {
+      const key = `${r.kind}:${r.category.toLowerCase()}`;
+      category_id = catMap.get(key) ?? null;
+      if (!category_id && createMissing) {
+        category_id = must<any>(await db().from("categories").insert({ name: r.category, kind: r.kind }).select("id").single()).id;
+        catMap.set(key, category_id!);
+        createdCategories++;
+      }
+    }
+    let account_id: string | null = null;
+    if (r.account) {
+      const key = r.account.toLowerCase();
+      account_id = accMap.get(key) ?? null;
+      if (!account_id && createMissing) {
+        account_id = must<any>(await db().from("accounts").insert({ name: r.account, type: "other", currency: r.currency }).select("id").single()).id;
+        accMap.set(key, account_id!);
+        createdAccounts++;
+      }
+    }
+    out.push({ kind: r.kind, amount: r.amount, currency: r.currency, amount_idr: await toIdr(r.amount, r.currency, rate), category_id, account_id, description: r.notes, occurred_at: r.date, source: "import" });
+  }
+  for (let i = 0; i < out.length; i += 500) must(await db().from("transactions").insert(out.slice(i, i + 500)));
+  return { inserted: out.length, createdCategories, createdAccounts };
+}
+
+/* ---------------- Email ---------------- */
+export async function reminderEmail(days: number) {
+  const { buildReminderEmail } = await import("./email");
+  const list = await computeReminders(days);
+  return { count: list.length, reminders: list, ...buildReminderEmail(list) };
+}
+
+export async function sendReminderEmail(days: number, to?: string) {
+  const key = process.env["RESEND_API_KEY"];
+  const from = process.env["EMAIL_FROM"];
+  const recipient = to || process.env["EMAIL_TO"];
+  if (!key || !from || !recipient) return { sent: false, reason: "Email langsung belum dikonfigurasi (RESEND_API_KEY, EMAIL_FROM, EMAIL_TO)." };
+  const mail = await reminderEmail(days);
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to: recipient.split(",").map((s) => s.trim()), subject: mail.subject, html: mail.html, text: mail.text }),
+  });
+  if (!res.ok) {
+    console.error("Resend error", res.status, await res.text());
+    return { sent: false, reason: `Gagal mengirim email (status ${res.status}).`, count: mail.count };
+  }
+  return { sent: true, count: mail.count, subject: mail.subject };
+}

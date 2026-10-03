@@ -18,3 +18,5 @@
 - AI (OCR/text parsing) uses an OpenAI-compatible endpoint configured by AI_API_URL/AI_API_KEY/AI_MODEL for portability.
 - Receipt photos live in a private Supabase Storage bucket `receipts`, lazy-created by `src/lib/receipt.server.ts`; transactions store only `receipt_path`, and viewing goes through short-lived signed URLs.
 - Dark mode is a `.dark` class on `<html>` set by an inline script in `__root.tsx` (localStorage `dk-theme`); all colors must stay semantic tokens so both themes work.
+- Pure, client-safe parsing/formatting (CSV import preview, reminder email builder) lives in `src/lib/csv.ts` / `src/lib/email.ts` so it is unit-testable and shared.
+- Direct reminder email uses Resend over fetch (RESEND_API_KEY/EMAIL_FROM/EMAIL_TO, optional); n8n can instead consume the ready-made email payload endpoints.
