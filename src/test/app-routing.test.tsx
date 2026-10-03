@@ -5,6 +5,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { routeTree } from "@/routeTree.gen";
 
+// Server functions can't run in jsdom; fake the session check as signed-out.
+vi.mock("@/lib/auth.functions", () => ({
+  getSession: vi.fn(async () => ({ authenticated: false, user: null })),
+  login: vi.fn(),
+  logout: vi.fn(),
+}));
+
 function renderAt(path: string) {
   const queryClient = new QueryClient();
   const router = createRouter({
