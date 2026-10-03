@@ -270,9 +270,11 @@ export async function payDebt(debtId: string, accountId: string | null, date: st
 
 export async function deleteDebtPayment(id: string) {
   const p = must<any>(await db().from("debt_payments").select("*").eq("id", id).single());
+  const d = await db().from("debts").select("name, currency").eq("id", p.debt_id).maybeSingle();
   must(await db().from("debt_payments").delete().eq("id", id));
   if (p.transaction_id) await db().from("transactions").delete().eq("id", p.transaction_id);
   await db().from("debts").update({ status: "active" }).eq("id", p.debt_id);
+  return { name: (d.data as any)?.name ?? null, amount: Number(p.amount), currency: (d.data as any)?.currency ?? "IDR", installment: p.installment_no };
 }
 
 /* ---------------- Subscriptions ---------------- */

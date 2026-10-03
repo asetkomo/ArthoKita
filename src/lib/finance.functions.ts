@@ -29,7 +29,7 @@ export const saveRow = createServerFn({ method: "POST" })
     const res = await q.select().single();
     if (res.error) throw new Error(res.error.message);
     const { logActivity } = await import("./finance.server");
-    await logActivity(`${data.table}.${data.id ? "update" : "create"}`, data.table, { name: (values as any).name ?? null });
+    await logActivity(`${data.table}.${data.id ? "update" : "create"}`, data.table, { name: (values as any).name ?? (values as any).place ?? null, amount: (values as any).amount ?? (values as any).target_amount ?? (values as any).grams ?? null, currency: (values as any).currency ?? null });
     return res.data as any;
   });
 
@@ -39,8 +39,8 @@ export const deleteRow = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.table === "debt_payments") {
       const { deleteDebtPayment, logActivity } = await import("./finance.server");
-      await deleteDebtPayment(data.id);
-      await logActivity("debt_payment.delete", "debt_payments", { id: data.id });
+      const info = await deleteDebtPayment(data.id);
+      await logActivity("debt_payment.delete", "debt_payments", info);
       return { ok: true };
     }
     const { db } = await import("./db.server");
@@ -49,10 +49,12 @@ export const deleteRow = createServerFn({ method: "POST" })
       const { removeReceipt } = await import("./receipt.server");
       await removeReceipt((old.data as any)?.receipt_path);
     }
+    const prev = await db().from(data.table).select("*").eq("id", data.id).maybeSingle();
     const res = await db().from(data.table).delete().eq("id", data.id);
     if (res.error) throw new Error(res.error.message);
     const { logActivity } = await import("./finance.server");
-    await logActivity(`${data.table}.delete`, data.table, { id: data.id });
+    const p = (prev.data ?? {}) as any;
+    await logActivity(`${data.table}.delete`, data.table, { name: p.name ?? p.description ?? null, amount: p.amount ?? p.grams ?? null, currency: p.currency ?? null });
     return { ok: true };
   });
 
