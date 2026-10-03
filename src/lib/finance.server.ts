@@ -363,3 +363,137 @@ export async function categoryNames(): Promise<string[]> {
   const rows = must<any[]>(await db().from("categories").select("name, kind"));
   return rows.map((r) => `${r.name} (${r.kind})`);
 }
+
+/* ---------------- Yearly recap ---------------- */
+export async function computeYearly(year: string) {
+  const start = `${year}-01-01`;
+  const end = `${Number(year) + 1}-01-01`;
+  const rows = must<any[]>(
+    await db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name,color)").gte("occurred_at", start).lt("occurred_at", end).neq("kind", "transfer"),
+  );
+  const months = new Map<string, { month: string; income: number; expense: number }>();
+  for (let i = 1; i <= 12; i++) months.set(`${year}-${String(i).padStart(2, "0")}`, { month: `${year}-${String(i).padStart(2, "0")}`, income: 0, expense: 0 });
+  const byCat = new Map<string, { name: string; color: string | null; value: number }>();
+  let income = 0;
+  let expense = 0;
+  for (const t of rows) {
+    const v = Number(t.amount_idr);
+    const row = months.get(String(t.occurred_at).slice(0, 7));
+    if (t.kind === "income") {
+      income += v;
+      if (row) row.income += v;
+    } else if (t.kind === "expense") {
+      expense += v;
+      if (row) row.expense += v;
+      const name = (t.category?.name ?? "Tanpa kategori") as string;
+      const cur = byCat.get(name) ?? { name, color: (t.category?.color ?? null) as string | null, value: 0 };
+      cur.value += v;
+      byCat.set(name, cur);
+    }
+  }
+  return {
+    year,
+    income,
+    expense,
+    net: income - expense,
+    avgIncome: income / 12,
+    avgExpense: expense / 12,
+    months: [...months.values()],
+    byCategory: [...byCat.values()].sort((a, b) => b.value - a.value),
+  };
+}
+
+/* ---------------- Email reminders (via n8n) ---------------- */
+const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+export function remindersEmail(list: Reminder[]): { subject: string; text: string; html: string } {
+  const t = today();
+  const subject = list.length ? `Pengingat Keuangan: ${list.length} tagihan (${t})` : `Tidak ada tagihan dekat (${t})`;
+  const text = remindersText(list);
+  const fmt = (n: number, c: string) => new Intl.NumberFormat("id-ID", { style: "currency", currency: c, maximumFractionDigits: c === "USD" ? 2 : 0 }).format(n);
+  const items = list
+    .map((r) => {
+      const when = r.type === "budget" ? "Peringatan budget" : r.overdue ? `Terlambat ${-r.days_left} hari` : r.days_left === 0 ? "Hari ini" : `${r.days_left} hari lagi (${r.due_date})`;
+      return `<tr><td style="padding:8px 12px;border-bottom:1px solid #eee">${escHtml(r.title)}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:right;font-family:monospace">${escHtml(fmt(r.amount, r.currency))}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;color:${r.overdue ? "#c0392b" : "#666"}">${escHtml(when)}</td></tr>`;
+    })
+    .join("");
+  const html = list.length
+    ? `<div style="font-family:sans-serif;max-width:560px;margin:auto"><h2 style="color:#1d3b2f">Pengingat Keuangan</h2><table style="width:100%;border-collapse:collapse;font-size:14px">${items}</table><p style="color:#999;font-size:12px">Dikirim otomatis oleh Dompetku via n8n.</p></div>`
+    : `<div style="font-family:sans-serif"><p>🎉 Tidak ada tagihan dalam waktu dekat.</p></div>`;
+  return { subject, text, html };
+}
+
+/* ---------------- CSV import ---------------- */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let cur: string[] = [];
+  let field = "";
+  let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]!;
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false;
+      } else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { cur.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      cur.push(field); field = "";
+      rows.push(cur); cur = [];
+    } else field += c;
+  }
+  if (field || cur.length) { cur.push(field); rows.push(cur); }
+  return rows;
+}
+
+function parseAmount(s: string): number {
+  const cleaned = s.replace(/[^\d.,-]/g, "");
+  // "1.234.567,89" (id) or "1234567.89" (raw export)
+  const n = cleaned.includes(",") ? Number(cleaned.replace(/\./g, "").replace(",", ".")) : Number(cleaned);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`jumlah "${s}" tidak valid`);
+  return n;
+}
+
+/** Import CSV dengan format hasil ekspor (Tanggal, Jenis, Kategori, Akun, ...). */
+export async function importCsv(text: string) {
+  const rows = parseCsv(text.replace(/^﻿/, ""));
+  const head = (rows[0] ?? []).map((h) => h.trim().toLowerCase());
+  const idx = (name: string) => head.indexOf(name);
+  if (idx("tanggal") < 0 || idx("jenis") < 0 || idx("jumlah") < 0) {
+    throw new Error("Format CSV tidak dikenali. Gunakan file hasil ekspor dengan kolom: Tanggal, Jenis, Kategori, Akun, Jumlah, Mata Uang, …");
+  }
+  let imported = 0;
+  const errors: string[] = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i]!;
+    if (r.every((c) => !c.trim())) continue;
+    try {
+      const kind = r[idx("jenis")]?.trim() ?? "";
+      if (kind !== "income" && kind !== "expense" && kind !== "transfer") throw new Error(`jenis "${kind}" tidak valid`);
+      const date = r[idx("tanggal")]?.trim() ?? "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`tanggal "${date}" tidak valid`);
+      const currency = (r[idx("mata uang")]?.trim().toUpperCase() || "IDR") as "IDR" | "USD";
+      if (currency !== "IDR" && currency !== "USD") throw new Error(`mata uang "${currency}" tidak valid`);
+      await createFromExternal({
+        kind,
+        amount: parseAmount(r[idx("jumlah")] ?? ""),
+        currency,
+        category: r[idx("kategori")]?.trim() || null,
+        account: r[idx("akun")]?.trim() || null,
+        to_account: kind === "transfer" ? r[idx("ke akun")]?.trim() || null : null,
+        description: r[idx("deskripsi")]?.trim() || null,
+        merchant: r[idx("merchant")]?.trim() || null,
+        date,
+        source: "web",
+        notes: r[idx("catatan")]?.trim() || null,
+        raw: null,
+      });
+      imported++;
+    } catch (e) {
+      errors.push(`Baris ${i + 1}: ${e instanceof Error ? e.message : "gagal"}`);
+    }
+  }
+  const message = `${imported} transaksi berhasil diimpor${errors.length ? `, ${errors.length} gagal` : ""}.`;
+  return { imported, failed: errors.length, errors: errors.slice(0, 10), message };
+}
