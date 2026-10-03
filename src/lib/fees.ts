@@ -12,7 +12,7 @@ export function parsePresets(v: unknown): FeePreset[] {
     .filter(Boolean)
     .map((s) => {
       const [l, a] = s.includes("=") ? s.split("=") : ["", s];
-      return { label: (l ?? "").trim().slice(0, 40) || "Biaya", amount: Number(String(a ?? "").replace(/[^\d.]/g, "")) };
+      return { label: (l ?? "").trim().slice(0, 40) || "Biaya", amount: Number(String(a ?? "").replace(/[^\d]/g, "")) };
     })
     .filter((p) => p.amount > 0)
     .slice(0, 20);
