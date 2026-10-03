@@ -733,6 +733,95 @@ export type Database = {
           },
         ];
       };
+      /** v10 (optional table): recurring income/expense/transfer. */
+      recurring_transactions: {
+        Row: {
+          id: string;
+          name: string;
+          kind: "income" | "expense" | "transfer";
+          amount: number;
+          currency: Currency;
+          account_id: string | null;
+          to_account_id: string | null;
+          category_id: string | null;
+          description: string | null;
+          merchant: string | null;
+          cycle: "weekly" | "monthly" | "yearly";
+          interval: number;
+          day_of_month: number | null;
+          start_date: string;
+          next_due: string;
+          end_date: string | null;
+          auto_post: boolean;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          kind: "income" | "expense" | "transfer";
+          amount: number;
+          currency?: Currency;
+          account_id?: string | null;
+          to_account_id?: string | null;
+          category_id?: string | null;
+          description?: string | null;
+          merchant?: string | null;
+          cycle?: "weekly" | "monthly" | "yearly";
+          interval?: number;
+          day_of_month?: number | null;
+          start_date: string;
+          next_due: string;
+          end_date?: string | null;
+          auto_post?: boolean;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          kind?: "income" | "expense" | "transfer";
+          amount?: number;
+          currency?: Currency;
+          account_id?: string | null;
+          to_account_id?: string | null;
+          category_id?: string | null;
+          description?: string | null;
+          merchant?: string | null;
+          cycle?: "weekly" | "monthly" | "yearly";
+          interval?: number;
+          day_of_month?: number | null;
+          start_date?: string;
+          next_due?: string;
+          end_date?: string | null;
+          auto_post?: boolean;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recurring_transactions_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recurring_transactions_to_account_id_fkey";
+            columns: ["to_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recurring_transactions_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       account_balances: {

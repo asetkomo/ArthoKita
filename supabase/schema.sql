@@ -350,3 +350,33 @@ grant execute on function public.dk_month_category_totals(date, date) to service
 grant execute on function public.dk_monthly_net(date) to service_role;
 -- Muat ulang cache skema PostgREST agar fungsi baru langsung terlihat.
 notify pgrst, 'reload schema';
+
+-- ============ v10: transaksi berulang — gaji, sewa, transfer rutin (aman dijalankan ulang) ============
+-- Item auto_post dicatat otomatis saat dashboard/pengingat dibuka (idempoten lewat penanda di notes
+-- "[auto:recurring:<id>:<tanggal>]" dan external_id "recurring:<id>:<tanggal>").
+create table if not exists public.recurring_transactions (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  kind text not null check (kind in ('income','expense','transfer')),
+  amount numeric(18,2) not null check (amount > 0),
+  currency text not null default 'IDR' check (currency in ('IDR','USD')),
+  account_id uuid references public.accounts(id) on delete set null,
+  to_account_id uuid references public.accounts(id) on delete set null,
+  category_id uuid references public.categories(id) on delete set null,
+  description text,
+  merchant text,
+  cycle text not null default 'monthly' check (cycle in ('weekly','monthly','yearly')),
+  "interval" int not null default 1 check ("interval" >= 1),
+  day_of_month int check (day_of_month between 1 and 31),
+  start_date date not null default current_date,
+  next_due date not null,
+  end_date date,
+  auto_post boolean not null default true,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists recurring_transactions_due_idx on public.recurring_transactions (active, next_due);
+revoke all on public.recurring_transactions from anon, authenticated;
+grant all on public.recurring_transactions to service_role;
+alter table public.recurring_transactions enable row level security;
+notify pgrst, 'reload schema';

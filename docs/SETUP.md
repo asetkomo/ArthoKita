@@ -153,3 +153,7 @@ Untuk membuat ulang dari project Supabase Anda: login Supabase CLI (`npx supabas
 ## v9 — Agregasi laporan di Postgres (opsional)
 Jalankan bagian **v9** di `supabase/schema.sql`. Bagian ini menambah fungsi `dk_month_totals`, `dk_category_totals`, `dk_month_category_totals`, dan `dk_monthly_net` (hanya bisa dipanggil service_role) sehingga dashboard, laporan, rekap tahunan, budget, dan kekayaan bersih dihitung di database, bukan dengan mengunduh semua transaksi.
 Tanpa v9 aplikasi tetap berjalan dengan perhitungan lama (hasil sama). Bila fungsi belum terlihat setelah dijalankan, tunggu sebentar atau jalankan `notify pgrst, 'reload schema';`.
+
+## v10 — Transaksi berulang (opsional)
+Jalankan bagian **v10** di `supabase/schema.sql` (tabel `recurring_transactions`). Setelah itu menu **Transaksi Berulang** bisa dipakai untuk gaji, sewa, atau transfer rutin (mingguan/bulanan/tahunan, dengan interval dan tanggal tetap; tanggal 31 otomatis menjadi akhir bulan pada bulan pendek).
+Item dengan "Catat otomatis" dicatat sendiri saat dashboard/pengingat dibuka (maks. 12 kejadian terlewat per item, idempoten). Item tanpa "Catat otomatis" muncul di Pengingat (juga teks bot/n8n) dengan tombol **Catat**. Sebelum v10 dijalankan, halaman menampilkan petunjuk dan fitur lain tetap berjalan.
