@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight,
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { TransactionDialog, newTxDraft, type TxDraft } from "@/components/transaction-dialog";
+import { AssetsOverview } from "@/components/assets-overview";
 import { ReceiptScanner } from "@/components/receipt-scanner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -67,8 +68,11 @@ function Dashboard() {
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("Selisih bulan ini")}</p>
           <p className={`num mt-2 text-2xl font-semibold ${d.net >= 0 ? "text-income" : "text-expense"}`}>{money(d.net)}</p>
           <p className="mt-1 text-xs text-muted-foreground">{t("Hutang")} {money(d.debtOutstandingIdr)} · {t("Langganan")} {money(d.subsMonthlyIdr)}/{t("bln")}</p>
+          {d.feesIdr > 0 ? <p className="num text-xs text-muted-foreground">{t("Biaya admin bulan ini")} {money(d.feesIdr)}</p> : null}
         </Card>
       </div>
+
+      <AssetsOverview />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">

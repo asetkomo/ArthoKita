@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { balancesQuery, rowsQuery } from "@/lib/queries";
 import { money } from "@/lib/format";
+import { formatPresets } from "@/lib/fees";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_app/accounts")({
 function AccountsPage() {
   const { t } = useI18n();
   const { data: balances } = useSuspenseQuery(balancesQuery());
+  const rows = useSuspenseQuery(rowsQuery("accounts")).data as any[];
   const crud = useCrudDialog("accounts", { type: "bank", currency: "IDR", initial_balance: 0, archived: false, color: "#2f7d5b" });
   const TYPES = [
     { value: "bank", label: t("Bank") },
@@ -38,7 +40,7 @@ function AccountsPage() {
       <PageHeader title={t("Akun & Dompet")} subtitle={t("Saldo dihitung otomatis dari saldo awal + semua transaksi.")} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Akun baru")}</Button>} />
       {balances.length === 0 ? <Empty text={t("Belum ada akun. Tambahkan BCA, GoPay, tunai, dll.")} /> : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(balances as any[]).map((a) => (
+          {(balances as any[]).map((b) => ({ ...(rows.find((r) => r.id === b.id) ?? {}), ...b })).map((a: any) => (
             <Card key={a.id} className={`relative overflow-hidden p-5 ${a.archived ? "opacity-60" : ""}`}>
               <span className="absolute inset-y-0 left-0 w-1.5" style={{ background: a.color ?? "var(--primary)" }} />
               <div className="flex items-start justify-between">
@@ -46,8 +48,9 @@ function AccountsPage() {
                   <p className="font-display text-lg font-semibold">{a.name}</p>
                   <div className="mt-1 flex gap-1.5"><Badge variant="secondary">{TYPES.find((ty) => ty.value === a.type)?.label}</Badge><Badge variant="outline">{a.currency}</Badge>{a.archived ? <Badge variant="outline">{t("Arsip")}</Badge> : null}</div>
                 </div>
-                <RowActions onEdit={() => crud.openEdit({ id: a.id, name: a.name, type: a.type, currency: a.currency, initial_balance: a.initial_balance, color: a.color, archived: a.archived })} onDelete={() => crud.remove(a.id, `${t("akun")} ${a.name}`)} />
+                <RowActions onEdit={() => crud.openEdit({ id: a.id, name: a.name, type: a.type, currency: a.currency, initial_balance: a.initial_balance, color: a.color, archived: a.archived, transfer_fees: formatPresets(a.transfer_fees), topup_fees: formatPresets(a.topup_fees), monthly_fee: a.monthly_fee, monthly_fee_day: a.monthly_fee_day })} onDelete={() => crud.remove(a.id, `${t("akun")} ${a.name}`)} />
               </div>
+              {Number(a.monthly_fee) > 0 ? <p className="num mt-2 text-xs text-muted-foreground">{t("Biaya bulanan")} {money(a.monthly_fee, a.currency)} · {t("tgl")} {a.monthly_fee_day ?? 1}</p> : null}
               <p className={`num mt-4 text-2xl font-semibold ${Number(a.balance) < 0 ? "text-expense" : ""}`}>{money(a.balance, a.currency)}</p>
             </Card>
           ))}
@@ -59,6 +62,10 @@ function AccountsPage() {
         { name: "currency", label: t("Mata uang"), type: "select", half: true, options: CURRENCY_OPTIONS },
         { name: "initial_balance", label: t("Saldo awal"), type: "number", half: true },
         { name: "color", label: t("Warna"), type: "color", half: true },
+        { name: "transfer_fees", label: t("Preset biaya transfer keluar (nama=biaya; …)"), type: "text", placeholder: "BI-FAST=2500; Online=6500" },
+        { name: "topup_fees", label: t("Preset biaya admin top-up ke akun ini"), type: "text", placeholder: "Top-up via BCA=1000; Alfamart=2500" },
+        { name: "monthly_fee", label: t("Biaya bulanan otomatis"), type: "number", half: true, placeholder: "15000" },
+        { name: "monthly_fee_day", label: t("Tanggal potong (1-31)"), type: "number", half: true, placeholder: "25" },
         { name: "archived", label: t("Arsipkan akun"), type: "switch" },
       ])}
     </>

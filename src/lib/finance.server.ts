@@ -1,4 +1,5 @@
 import { db } from "./db.server";
+import { dueMonthlyFees, feeDate, FEE_CATEGORY, withTax } from "./fees";
 import { addDays, addMonthsKeepDay, diffDays, monthRange, shiftMonth, todayStr } from "./dates";
 import type { ExternalTx, TransactionInput } from "./schemas";
 import { dupKey } from "./csv";
@@ -85,8 +86,9 @@ async function findAccount(name?: string | null): Promise<string | null> {
 
 /* ---------------- Transactions ---------------- */
 function normalizeTx(input: TransactionInput) {
+  const { fee: _fee, ...rest } = input;
   return {
-    ...input,
+    ...rest,
     category_id: input.kind === "transfer" ? null : input.category_id,
     to_account_id: input.kind === "transfer" ? input.to_account_id : null,
   };
@@ -109,6 +111,15 @@ async function insertTxRow(row: Record<string, unknown>) {
 
 export async function insertTransaction(input: TransactionInput, raw?: unknown) {
   const tx = await insertTxRow({ ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency), raw: raw ?? null });
+  const fee = Number(input.fee) || 0;
+  if (fee > 0 && input.kind !== "income") {
+    await insertTxRow({
+      kind: "expense", amount: fee, currency: input.currency, amount_idr: await toIdr(fee, input.currency),
+      account_id: input.account_id, to_account_id: null, category_id: await ensureCategory(FEE_CATEGORY, "expense"),
+      description: `${input.kind === "transfer" ? "Biaya transfer" : "Biaya admin"}${input.description ? `: ${input.description}` : ""}`,
+      merchant: null, occurred_at: input.occurred_at, source: input.source, items: null, notes: `[fee:${tx.id}]`, receipt_path: null, raw: null,
+    });
+  }
   await logActivity("transaction.create", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency, description: input.description ?? null, source: input.source });
   return tx;
 }
@@ -281,9 +292,10 @@ export async function deleteDebtPayment(id: string) {
 export async function paySubscription(id: string, accountId: string | null, date: string | null) {
   const s = must<any>(await db().from("subscriptions").select("*").eq("id", id).single());
   const cat = s.category_id ?? (await ensureCategory("Langganan", "expense"));
+  const total = withTax(Number(s.amount), s.tax_percent);
   await insertTransaction({
     kind: "expense",
-    amount: Number(s.amount),
+    amount: total,
     currency: s.currency,
     account_id: accountId ?? s.account_id ?? null,
     to_account_id: null,
@@ -298,14 +310,14 @@ export async function paySubscription(id: string, accountId: string | null, date
   });
   const next = addMonthsKeepDay(s.next_due, s.cycle === "yearly" ? 12 : 1);
   must(await db().from("subscriptions").update({ next_due: next }).eq("id", id));
-  await logActivity("subscription.pay", "subscriptions", { name: s.name, amount: Number(s.amount), currency: s.currency });
+  await logActivity("subscription.pay", "subscriptions", { name: s.name, amount: total, currency: s.currency });
   return { ok: true, next_due: next };
 }
 
 
 /* ---------------- Reminders ---------------- */
 export type Reminder = {
-  type: "debt" | "subscription" | "budget";
+  type: "debt" | "subscription" | "budget" | "fee";
   id: string;
   title: string;
   amount: number;
@@ -317,6 +329,7 @@ export type Reminder = {
 };
 
 export async function computeReminders(days = 30): Promise<Reminder[]> {
+  await applyMonthlyFees();
   const t = today();
   const limit = addDays(t, days);
   const rate = await getUsdIdr();
@@ -327,7 +340,16 @@ export async function computeReminders(days = 30): Promise<Reminder[]> {
   }
   const subs = must<any[]>(await db().from("subscriptions").select("*").eq("active", true).lte("next_due", limit));
   for (const s of subs) {
-    out.push({ type: "subscription", id: s.id, title: `Langganan ${s.name} (${s.cycle === "yearly" ? "tahunan" : "bulanan"})`, amount: Number(s.amount), currency: s.currency, amount_idr: await toIdr(Number(s.amount), s.currency, rate), due_date: s.next_due, days_left: diffDays(t, s.next_due), overdue: s.next_due < t });
+    const amt = withTax(Number(s.amount), s.tax_percent);
+    out.push({ type: "subscription", id: s.id, title: `Langganan ${s.name} (${s.cycle === "yearly" ? "tahunan" : "bulanan"})`, amount: amt, currency: s.currency, amount_idr: await toIdr(amt, s.currency, rate), due_date: s.next_due, days_left: diffDays(t, s.next_due), overdue: s.next_due < t });
+  }
+  for (const a of must<any[]>(await db().from("accounts").select("*").eq("archived", false))) {
+    if (!(Number(a.monthly_fee) > 0)) continue;
+    let due = feeDate(t.slice(0, 7), Number(a.monthly_fee_day) || 1);
+    if (due < t) due = feeDate(shiftMonth(t.slice(0, 7), 1), Number(a.monthly_fee_day) || 1);
+    if (due > limit) continue;
+    const amt = Number(a.monthly_fee);
+    out.push({ type: "fee", id: a.id, title: `Biaya bulanan ${a.name} (otomatis)`, amount: amt, currency: a.currency, amount_idr: await toIdr(amt, a.currency, rate), due_date: due, days_left: diffDays(t, due), overdue: false });
   }
   for (const b of await computeBudgets(t.slice(0, 7))) {
     if (b.percent >= b.alert_percent) {
@@ -348,7 +370,28 @@ export function remindersText(list: Reminder[]): string {
 }
 
 /* ---------------- Dashboard ---------------- */
+/** Record due monthly account fees once per month (idempotent via notes marker). */
+export async function applyMonthlyFees(): Promise<number> {
+  const t = today();
+  const accRes = await db().from("accounts").select("*");
+  if (accRes.error) return 0;
+  const candidates = (accRes.data ?? []).filter((a: any) => Number(a.monthly_fee) > 0);
+  if (!candidates.length) return 0;
+  const existing = await db().from("transactions").select("notes").like("notes", `[auto:monthly_fee:%:${t.slice(0, 7)}]`);
+  const recorded = new Set<string>((existing.data ?? []).map((r: any) => String(r.notes)));
+  const due = dueMonthlyFees(candidates as any[], t, recorded);
+  if (!due.length) return 0;
+  const cat = await ensureCategory(FEE_CATEGORY, "expense");
+  for (const d of due) {
+    const a: any = d.account;
+    await insertTxRow({ kind: "expense", amount: Number(a.monthly_fee), currency: a.currency, amount_idr: await toIdr(Number(a.monthly_fee), a.currency), account_id: a.id, to_account_id: null, category_id: cat, description: `Biaya bulanan ${a.name}`, merchant: a.name, occurred_at: d.date, source: "web", items: null, notes: d.marker, receipt_path: null, raw: null });
+    await logActivity("transaction.create", "transactions", { kind: "expense", amount: Number(a.monthly_fee), currency: a.currency, description: `Biaya bulanan ${a.name}`, source: "auto" });
+  }
+  return due.length;
+}
+
 export async function computeDashboard(month: string) {
+  await applyMonthlyFees();
   const { start, end } = monthRange(month);
   const trendStart = monthRange(shiftMonth(month, -5)).start;
   const [txRes, trendRes, balRes, goalsRes, subsRes, recentRes] = await Promise.all([
@@ -356,7 +399,7 @@ export async function computeDashboard(month: string) {
     db().from("transactions").select("kind, amount_idr, occurred_at, category:categories(name)").gte("occurred_at", trendStart).lt("occurred_at", end).neq("kind", "transfer"),
     db().from("account_balances").select("*").eq("archived", false),
     db().from("goals").select("*").order("created_at"),
-    db().from("subscriptions").select("amount, currency, cycle").eq("active", true),
+    db().from("subscriptions").select("*").eq("active", true),
     db().from("transactions").select("*, category:categories(name,color), account:accounts!transactions_account_id_fkey(name)").order("occurred_at", { ascending: false }).order("created_at", { ascending: false }).limit(8),
   ]);
   const tx = must<any[]>(txRes);
@@ -409,11 +452,13 @@ export async function computeDashboard(month: string) {
   const debts = await computeDebts();
   const debtOutstandingIdr = debts.filter((d) => d.status === "active").reduce((a, d) => a + (d.currency === "USD" ? d.remaining_amount * rate : d.remaining_amount), 0);
   const subsMonthlyIdr = must<any[]>(subsRes).reduce((a, s) => {
-    const v = Number(s.amount) * (s.currency === "USD" ? rate : 1);
+    const v = withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? rate : 1);
     return a + (s.cycle === "yearly" ? v / 12 : v);
   }, 0);
+  const feesIdr = tx.filter((t) => t.kind === "expense" && t.category?.name === FEE_CATEGORY).reduce((a, t) => a + Number(t.amount_idr), 0);
   return {
     month,
+    feesIdr,
     usdIdr: rate,
     income,
     expense,

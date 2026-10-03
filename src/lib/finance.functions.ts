@@ -25,8 +25,15 @@ export const saveRow = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const values = tableSchemas[data.table].parse(data.values);
     const { db } = await import("./db.server");
-    const q = data.id ? db().from(data.table).update(values).eq("id", data.id) : db().from(data.table).insert(values);
-    const res = await q.select().single();
+    const run = (v: any) => (data.id ? db().from(data.table).update(v).eq("id", data.id) : db().from(data.table).insert(v)).select().single();
+    let res = await run(values);
+    // Optional v4 columns may not exist yet in the user's database: retry without them.
+    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : [];
+    if (res.error && optional.some((c) => res.error!.message.includes(c))) {
+      const v: any = { ...(values as any) };
+      for (const c of optional) delete v[c];
+      res = await run(v);
+    }
     if (res.error) throw new Error(res.error.message);
     const { logActivity } = await import("./finance.server");
     await logActivity(`${data.table}.${data.id ? "update" : "create"}`, data.table, { name: (values as any).name ?? (values as any).place ?? null, amount: (values as any).amount ?? (values as any).target_amount ?? (values as any).grams ?? null, currency: (values as any).currency ?? null });
@@ -305,4 +312,11 @@ export const receivableActionFn = createServerFn({ method: "POST" })
     else if (data.action === "delete") await a.deleteReceivable(data.id);
     else await a.deleteReceivablePayment(data.id);
     return { ok: true };
+  });
+
+export const getAssets = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { assetsOverview } = await import("./assets.server");
+    return (await assetsOverview()) as any;
   });

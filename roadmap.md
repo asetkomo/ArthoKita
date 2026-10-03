@@ -29,3 +29,9 @@
 - [x] Tabungan Emas (/gold) dengan harga dunia & Antam
 - [x] Piutang (/receivables) dengan pembayaran bertahap
 - [x] Tarik tunai ATM (tombol + bot)
+
+## v4
+- [x] Dashboard: kartu Aset & Investasi, komposisi aset, harga emas hari ini, biaya admin bulan ini
+- [x] Biaya transfer/top-up: kolom biaya opsional + preset per akun (transfer & top-up)
+- [x] Biaya bulanan rekening otomatis per akun + pengingat
+- [x] Langganan: pajak opsional (%), total = harga + pajak
