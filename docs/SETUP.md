@@ -19,7 +19,7 @@
 | `AI_MODEL` | opsional, mis. `gpt-4o-mini` atau `google/gemini-2.5-flash` (dipakai OCR/vision) |
 | `AI_MODEL_TEXT` | opsional, model lebih murah untuk parsing chat (mis. `gemini-2.5-flash-lite`). Default = `AI_MODEL` |
 | `BOT_DEFAULT_ACCOUNT` | opsional, nama akun default untuk transaksi bot bila akun tidak disebut (mis. `BCA`) |
-| `BOT_ALLOWED_CHAT_IDS` | opsional tapi disarankan, daftar chat_id Telegram yang diizinkan (pisahkan koma) |
+| `BOT_ALLOWED_CHAT_IDS` | wajib untuk bot, daftar chat_id Telegram yang diizinkan (pisahkan koma). Kosong = semua chat ditolak; bot membalas dengan chat_id Anda agar mudah ditambahkan |
 | `BOT_TEXT_AI` | opsional: `auto` (default, AI hanya bila pesan ambigu), `always`, atau `never` (0 token untuk chat) |
 | `APP_TIMEZONE` | opsional, default `Asia/Jakarta` |
 | `FALLBACK_USD_IDR` | opsional, kurs cadangan bila API kurs gagal |
@@ -91,7 +91,7 @@ Jalankan bagian **v4** di `supabase/schema.sql` (aman dijalankan ulang). Sebelum
 
 ## v7 — Bot Telegram dengan pratinjau & tombol
 1. Jalankan bagian **v7** di `supabase/schema.sql` (kolom `transactions.external_id` + tabel `bot_drafts`).
-2. Set env `BOT_DEFAULT_ACCOUNT`, `BOT_ALLOWED_CHAT_IDS`, dan (opsional) `AI_MODEL_TEXT`.
+2. Set env `BOT_ALLOWED_CHAT_IDS` (wajib; kosong = semua chat ditolak), `BOT_DEFAULT_ACCOUNT`, dan (opsional) `AI_MODEL_TEXT`. Belum tahu chat_id? Kirim pesan ke bot: balasannya "Bot belum dikonfigurasi: tambahkan chat_id … ke BOT_ALLOWED_CHAT_IDS".
 3. Impor workflow n8n dari folder `n8n/` (lihat `n8n/README.md`).
 
 Alur: pesan/foto → `POST /api/public/n8n/bot` → pratinjau + tombol → tekan ✅ → tersimpan (idempoten; klik ganda atau retry tidak menggandakan) → tombol ↩️ Undo.

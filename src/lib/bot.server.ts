@@ -55,18 +55,27 @@ const edit = (
   ...(toast ? { toast } : {}),
 });
 
-/** Optional server-side allow-list (defense in depth on top of the n8n filter). */
+/**
+ * Required server-side allow-list (defense in depth on top of the n8n filter). Fails closed:
+ * an empty or unset BOT_ALLOWED_CHAT_IDS refuses every chat.
+ */
 export function chatAllowed(chatId: string): boolean {
   const list = (process.env["BOT_ALLOWED_CHAT_IDS"] ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  return list.length === 0 || list.includes(String(chatId));
+  return list.length > 0 && list.includes(String(chatId));
 }
 
 /* ---------------- Entry point ---------------- */
 export async function handleBotUpdate(u: BotUpdate): Promise<BotReply> {
-  if (!chatAllowed(u.chat_id)) return { method: "none", text: "", reply_markup: null };
+  if (!chatAllowed(u.chat_id)) {
+    // Refuse before any DB access; echo the chat_id so the owner can add it to the env.
+    console.warn(`bot: chat_id ${u.chat_id} ditolak (tidak ada di BOT_ALLOWED_CHAT_IDS)`);
+    return reply(
+      `⛔ Bot belum dikonfigurasi: tambahkan chat_id ${u.chat_id} ke BOT_ALLOWED_CHAT_IDS.`,
+    );
+  }
   if (u.callback_data) return handleCallback(u.callback_data, String(u.chat_id));
   if (u.image_base64) return draftFromImage(u);
   const text = (u.text ?? "").trim();

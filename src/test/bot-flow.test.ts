@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // (strict noPropertyAccessFromIndexSignature would reject Record<string, any>).
 type Row = any;
 const tables: Record<string, Row[]> = {};
+const dbCalls: string[] = [];
 function like(v: unknown, pattern: string, ci: boolean) {
   const re = new RegExp("^" + pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*") + "$", ci ? "i" : "");
   return re.test(String(v ?? ""));
 }
 function q(table: string) {
+  dbCalls.push(table);
   const filters: ((r: Row) => boolean)[] = [];
   let op: "select" | "insert" | "update" | "delete" = "select";
   let payload: any = null;
@@ -57,6 +59,7 @@ import { handleBotUpdate, isBotTransaction } from "../lib/bot.server";
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
+  dbCalls.length = 0;
   tables["categories"] = [
     { id: "c1", name: "Makanan & Minuman", kind: "expense" }, { id: "c2", name: "Transportasi", kind: "expense" },
     { id: "c3", name: "Lainnya", kind: "expense" }, { id: "c4", name: "Gaji", kind: "income" }, { id: "c5", name: "Lainnya", kind: "income" },
@@ -115,10 +118,33 @@ describe("alur bot end-to-end (tanpa AI)", () => {
     expect(tables["transactions"] ?? []).toHaveLength(0);
   });
 
-  it("chat asing diabaikan, perintah tidak memakai AI", async () => {
-    expect((await handleBotUpdate({ update_id: 3, chat_id: "999", text: "kopi 25rb" })).method).toBe("none");
+  it("chat asing ditolak tanpa menyentuh DB, perintah tidak memakai AI", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const r = await handleBotUpdate({ update_id: 3, chat_id: "999", text: "kopi 25rb" });
+    expect(r.method).toBe("send");
+    expect(r.text).toContain("chat_id 999");
+    expect(r.text).toContain("BOT_ALLOWED_CHAT_IDS");
+    expect(dbCalls).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
     const help = await handleBotUpdate({ update_id: 4, chat_id: "111", text: "/help" });
     expect(help.text).toContain("/paylater");
+  });
+
+  it("allow-list kosong menolak semua chat (fail-closed), termasuk tombol & foto", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const v of [undefined, "", " , "]) {
+      if (v === undefined) delete process.env["BOT_ALLOWED_CHAT_IDS"];
+      else process.env["BOT_ALLOWED_CHAT_IDS"] = v;
+      const t = await handleBotUpdate({ update_id: 9, chat_id: "111", text: "kopi 25rb" });
+      expect(t).toMatchObject({ method: "send", reply_markup: null });
+      expect(t.text).toContain("Bot belum dikonfigurasi: tambahkan chat_id 111 ke BOT_ALLOWED_CHAT_IDS");
+      await handleBotUpdate({ update_id: 10, chat_id: "111", callback_data: "d:s:0f8fad5b-d9cb-469f-a165-70867728950e" });
+      await handleBotUpdate({ update_id: 11, chat_id: "111", image_base64: "x".repeat(200), mime_type: "image/jpeg" });
+    }
+    expect(dbCalls).toEqual([]);
+    expect(tables["bot_drafts"]).toBeUndefined();
+    warn.mockRestore();
   });
 
   it("pesan ambigu tanpa AI key memberi error ramah (bukan crash diam)", async () => {

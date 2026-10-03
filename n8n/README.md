@@ -20,7 +20,7 @@ Endpoint yang dipanggil workflow (semua dengan header `x-api-key`; daftar lengka
 ## 1. Siapkan web (Vercel)
 1. Merge branch `feat/telegram-bot-v2`, lalu jalankan bagian **v7** di `supabase/schema.sql`.
 2. Pastikan `N8N_API_KEY` sudah diisi (string acak **≥ 24 karakter**; bila kosong/lebih pendek semua endpoint n8n membalas 503).
-   Env Vercel baru: `BOT_DEFAULT_ACCOUNT` (mis. `BCA`), `BOT_ALLOWED_CHAT_IDS` (chat_id Anda), opsional `AI_MODEL_TEXT`, `BOT_TEXT_AI=auto` (`auto` | `always` | `never`), `APP_TIMEZONE` (default `Asia/Jakarta`; samakan dengan zona waktu workflow agar `period=today` tepat).
+   Env Vercel baru: `BOT_DEFAULT_ACCOUNT` (mis. `BCA`), `BOT_ALLOWED_CHAT_IDS` (wajib, chat_id Anda; kosong = semua chat ditolak dan bot membalas dengan chat_id yang perlu ditambahkan), opsional `AI_MODEL_TEXT`, `BOT_TEXT_AI=auto` (`auto` | `always` | `never`), `APP_TIMEZONE` (default `Asia/Jakarta`; samakan dengan zona waktu workflow agar `period=today` tepat).
 3. AI (rekomendasi Gemini via endpoint OpenAI-compatible):
    ```
    AI_API_URL=https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
@@ -92,7 +92,7 @@ Telegram Trigger butuh URL **HTTPS publik**. Jangan expose port 5678 langsung ta
 - Tidak ada AI Agent/memori percakapan di n8n, sehingga tidak ada token sistem prompt berulang.
 
 ## Keamanan
-- Allow-list berlapis: filter `chatIds` di trigger → `Normalize & Guard` (fail-closed) → `BOT_ALLOWED_CHAT_IDS` di server.
+- Allow-list berlapis: filter `chatIds` di trigger → `Normalize & Guard` (fail-closed) → `BOT_ALLOWED_CHAT_IDS` di server (wajib, juga fail-closed: kosong = tolak semua, tanpa menyentuh DB).
 - API key tersimpan terenkripsi sebagai credential n8n; perbandingan timing-safe di server.
 - Data eksekusi sukses tidak disimpan (`saveDataSuccessExecution: none`) agar foto struk & data keuangan tidak menumpuk di DB n8n.
 - Undo dibatasi untuk transaksi dari bot berumur ≤ 7 hari.
