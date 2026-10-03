@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { scanReceipt, uploadReceiptImage } from "@/lib/finance.functions";
 import { errMsg, rowsQuery } from "@/lib/queries";
 import { todayStr } from "@/lib/dates";
+import { useI18n } from "@/lib/i18n";
 import type { Category } from "@/lib/schemas";
 import type { TxDraft } from "./transaction-dialog";
+
 
 export async function resize(file: File, max = 1600): Promise<string> {
   const bmp = await createImageBitmap(file);
@@ -21,6 +23,7 @@ export async function resize(file: File, max = 1600): Promise<string> {
 }
 
 export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: TxDraft) => void; variant?: "outline" | "default" | "secondary" }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const scan = useServerFn(scanReceipt);
@@ -29,7 +32,8 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
 
   async function onFile(file: File) {
     setBusy(true);
-    const t = toast.loading("Membaca nota…");
+    const tid = toast.loading(t("Membaca nota…"));
+
     try {
       const image = await resize(file);
       const [d, up] = await Promise.all([scan({ data: { image } }), upload({ data: { image } }).catch(() => null)]);
@@ -46,9 +50,10 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
         source: "ocr",
         receipt_path: up?.path ?? null,
       });
-      toast.success("Nota terbaca — periksa lalu simpan", { id: t });
+      toast.success(t("Nota terbaca — periksa lalu simpan"), { id: tid });
     } catch (e) {
-      toast.error("Gagal membaca nota", { id: t, description: errMsg(e) });
+      toast.error(t("Gagal membaca nota"), { id: tid, description: errMsg(e) });
+
     } finally {
       setBusy(false);
       if (ref.current) ref.current.value = "";
@@ -59,7 +64,7 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
     <>
       <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
       <Button variant={variant} disabled={busy} onClick={() => ref.current?.click()}>
-        <ScanLine className="size-4" /> {busy ? "Membaca…" : "Scan nota"}
+        <ScanLine className="size-4" /> {busy ? t("Membaca…") : t("Scan nota")}
       </Button>
     </>
   );
