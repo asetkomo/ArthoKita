@@ -1,0 +1,158 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireAuth } from "./auth-middleware";
+import { CRUD_TABLES, DELETABLE_TABLES, tableSchemas, transactionSchema } from "./schemas";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const month = z.string().regex(/^\d{4}-\d{2}$/);
+const optUuid = z.string().uuid().nullable().optional();
+const optDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional();
+
+export const listRows = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ table: z.enum(CRUD_TABLES) }).parse(d))
+  .handler(async ({ data }) => {
+    const { db } = await import("./db.server");
+    const byName = data.table === "categories" || data.table === "accounts";
+    const res = await db().from(data.table).select("*").order(byName ? "name" : "created_at", { ascending: true });
+    if (res.error) throw new Error(res.error.message);
+    return (res.data ?? []) as any[];
+  });
+
+export const saveRow = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ table: z.enum(CRUD_TABLES), id: z.string().uuid().nullable().optional(), values: z.unknown() }).parse(d))
+  .handler(async ({ data }) => {
+    const values = tableSchemas[data.table].parse(data.values);
+    const { db } = await import("./db.server");
+    const q = data.id ? db().from(data.table).update(values).eq("id", data.id) : db().from(data.table).insert(values);
+    const res = await q.select().single();
+    if (res.error) throw new Error(res.error.message);
+    return res.data as any;
+  });
+
+export const deleteRow = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ table: z.enum(DELETABLE_TABLES), id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    if (data.table === "debt_payments") {
+      const { deleteDebtPayment } = await import("./finance.server");
+      await deleteDebtPayment(data.id);
+      return { ok: true };
+    }
+    const { db } = await import("./db.server");
+    const res = await db().from(data.table).delete().eq("id", data.id);
+    if (res.error) throw new Error(res.error.message);
+    return { ok: true };
+  });
+
+export const saveTransaction = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid().nullable().optional(), values: transactionSchema }).parse(d))
+  .handler(async ({ data }) => {
+    const { insertTransaction, updateTransaction } = await import("./finance.server");
+    return (data.id ? await updateTransaction(data.id, data.values) : await insertTransaction(data.values)) as any;
+  });
+
+export const listTransactions = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ month: month.optional(), kind: z.enum(["income", "expense", "transfer"]).optional(), search: z.string().max(100).optional(), category_id: z.string().uuid().optional(), account_id: z.string().uuid().optional() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { listTransactions } = await import("./finance.server");
+    return (await listTransactions(data)) as any[];
+  });
+
+export const getDashboard = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ month }).parse(d))
+  .handler(async ({ data }) => {
+    const { computeDashboard } = await import("./finance.server");
+    return (await computeDashboard(data.month)) as any;
+  });
+
+export const getReminders = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ days: z.number().int().min(1).max(365) }).parse(d))
+  .handler(async ({ data }) => {
+    const { computeReminders } = await import("./finance.server");
+    return computeReminders(data.days);
+  });
+
+export const getDebts = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { computeDebts } = await import("./finance.server");
+    return (await computeDebts()) as any[];
+  });
+
+export const getBudgets = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ month }).parse(d))
+  .handler(async ({ data }) => {
+    const { computeBudgets } = await import("./finance.server");
+    return computeBudgets(data.month);
+  });
+
+export const getBalances = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { db } = await import("./db.server");
+    const res = await db().from("account_balances").select("*").order("name");
+    if (res.error) throw new Error(res.error.message);
+    return (res.data ?? []) as any[];
+  });
+
+export const getFxRate = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { getUsdIdr } = await import("./finance.server");
+    return { usdIdr: await getUsdIdr() };
+  });
+
+export const payDebt = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ debt_id: z.string().uuid(), account_id: optUuid, date: optDate }).parse(d))
+  .handler(async ({ data }) => {
+    const { payDebt } = await import("./finance.server");
+    return payDebt(data.debt_id, data.account_id ?? null, data.date ?? null);
+  });
+
+export const paySubscription = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), account_id: optUuid, date: optDate }).parse(d))
+  .handler(async ({ data }) => {
+    const { paySubscription } = await import("./finance.server");
+    return paySubscription(data.id, data.account_id ?? null, data.date ?? null);
+  });
+
+export const addGoalFunds = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), amount: z.number().finite() }).parse(d))
+  .handler(async ({ data }) => {
+    const { db } = await import("./db.server");
+    const g = await db().from("goals").select("saved_amount").eq("id", data.id).single();
+    if (g.error) throw new Error(g.error.message);
+    const saved = Math.max(0, Number(g.data.saved_amount) + data.amount);
+    const res = await db().from("goals").update({ saved_amount: saved }).eq("id", data.id);
+    if (res.error) throw new Error(res.error.message);
+    return { ok: true, saved };
+  });
+
+export const exportTransactionsCsv = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ month: month.optional() }).parse(d))
+  .handler(async ({ data }) => {
+    const { exportCsv } = await import("./finance.server");
+    return { csv: await exportCsv(data.month) };
+  });
+
+export const scanReceipt = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ image: z.string().startsWith("data:image/").max(8_000_000) }).parse(d))
+  .handler(async ({ data }) => {
+    const { parseReceipt } = await import("./ocr.server");
+    const { categoryNames } = await import("./finance.server");
+    return parseReceipt(data.image, await categoryNames());
+  });
