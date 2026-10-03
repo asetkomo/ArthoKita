@@ -122,8 +122,12 @@ export async function listReceivables(options: { offset?: number; limit?: number
     const payments = (p.data ?? []).filter((y: any) => y.receivable_id === x.id).map((y: any) => ({ ...y, amount: Number(y.amount) }));
     return { ...x, amount: Number(x.amount), payments, ...receivableStatus(Number(x.amount), payments) };
   });
-  const outstanding = await db().from("receivables").select("amount, currency, status").eq("status", "active");
-  return { ready: true as const, items, total: r.count ?? items.length, outstanding: (outstanding.data ?? []) as any[] };
+  const outstanding = await db().from("receivables").select("id, amount, currency, status").eq("status", "active");
+  const outstandingIdr = (outstanding.data ?? []).filter((x: any) => x.currency === "IDR").reduce((sum: number, x: any) => {
+    const paid = (p.data ?? []).filter((y: any) => y.receivable_id === x.id).reduce((a: number, y: any) => a + Number(y.amount), 0);
+    return sum + Math.max(0, Number(x.amount) - paid);
+  }, 0);
+  return { ready: true as const, items, total: r.count ?? items.length, outstandingIdr };
 }
 
 export async function saveReceivable(id: string | null, v: ReceivableInput) {

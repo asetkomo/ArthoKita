@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CheckCircle2, HandCoins, Plus, RotateCcw, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
+import { Pagination } from "@/components/pagination";
 import { RouteError } from "@/components/route-error";
 import { CURRENCY_OPTIONS, EntityDialog } from "@/components/entity-dialog";
 import { Empty, RowActions } from "@/components/crud-page";
@@ -34,7 +35,9 @@ type Values = Record<string, unknown>;
 function ReceivablesPage() {
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
-  const data = useSuspenseQuery(receivablesQuery()).data as any;
+  const [offset, setOffset] = useState(0);
+  const pageSize = 24;
+  const data = useSuspenseQuery(receivablesQuery(offset, pageSize)).data as any;
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
   const save = useServerFn(saveReceivableFn);
   const pay = useServerFn(payReceivableFn);
@@ -55,7 +58,7 @@ function ReceivablesPage() {
     );
   }
   const items = data.items as any[];
-  const outstanding = items.filter((r) => r.status === "active" && r.currency === "IDR").reduce((a, r) => a + r.remaining, 0);
+  const outstanding = Number(data.outstandingIdr ?? 0);
 
   async function action(id: string, a: "settle" | "reopen" | "delete" | "delete_payment", question: string, destructive = false) {
     if (!(await ask.confirm(question, { confirmLabel: t("Ya, lanjutkan"), destructive }))) return;
@@ -107,6 +110,7 @@ function ReceivablesPage() {
           ))}
         </div>
       )}
+       <Pagination offset={offset} pageSize={pageSize} total={Number(data.total ?? items.length)} visible={items.length} onChange={setOffset} />
       <EntityDialog
         open={edit.open}
         onOpenChange={(o) => setEdit((s) => ({ ...s, open: o }))}
