@@ -35,6 +35,7 @@ const SPECIAL: Record<string, string> = {
   "auth.login_failed": "Login gagal",
   "auth.logout": "Logout",
   "bot.command": "Perintah bot",
+  "transaction.split": "Transaksi split ditambahkan",
   "recurring.post": "Transaksi berulang dicatat",
   "recurring.pause": "Transaksi berulang dijeda",
   "recurring.resume": "Transaksi berulang dilanjutkan",
@@ -62,5 +63,6 @@ export function activityDetail(detail: unknown, fmt: (n: number, c: string) => s
     parts.push(`${d["from"]} → ${d["to"]}`);
   if (typeof d["imported"] === "number") parts.push(`${d["imported"]} baris`);
   if (typeof d["restored"] === "number") parts.push(`${d["restored"]} baris`);
+  if (typeof d["rows"] === "number") parts.push(`${d["rows"]} baris`);
   return parts.join(" · ");
 }

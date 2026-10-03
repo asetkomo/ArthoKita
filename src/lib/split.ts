@@ -7,7 +7,7 @@
 export type SplitRow = {
   category_id: string | null;
   amount: number | string;
-  note?: string | null;
+  note?: string | null | undefined;
 };
 export type ReceiptItem = { name: string; qty?: number | null; price?: number | null };
 
