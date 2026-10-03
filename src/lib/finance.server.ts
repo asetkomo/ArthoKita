@@ -60,14 +60,30 @@ function normalizeTx(input: TransactionInput) {
   };
 }
 
+// Kolom receipt_path mungkin belum ada di database user (migrasi opsional).
+// Jika PostgREST menolak kolomnya, ulangi tanpa kolom itu agar fitur lain tetap jalan.
+function isMissingReceiptColumn(err: { message?: string } | null) {
+  return !!err?.message && err.message.includes("receipt_path");
+}
+
 export async function insertTransaction(input: TransactionInput, raw?: unknown) {
   const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency), raw: raw ?? null };
-  return must<any>(await db().from("transactions").insert(row).select().single());
+  const res = await db().from("transactions").insert(row).select().single();
+  if (res.error && isMissingReceiptColumn(res.error)) {
+    const { receipt_path: _drop, ...fallback } = row as Record<string, unknown>;
+    return must<any>(await db().from("transactions").insert(fallback).select().single());
+  }
+  return must<any>(res);
 }
 
 export async function updateTransaction(id: string, input: TransactionInput) {
   const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
-  return must<any>(await db().from("transactions").update(row).eq("id", id).select().single());
+  const res = await db().from("transactions").update(row).eq("id", id).select().single();
+  if (res.error && isMissingReceiptColumn(res.error)) {
+    const { receipt_path: _drop, ...fallback } = row as Record<string, unknown>;
+    return must<any>(await db().from("transactions").update(fallback).eq("id", id).select().single());
+  }
+  return must<any>(res);
 }
 
 export async function createFromExternal(t: ExternalTx) {
