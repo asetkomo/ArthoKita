@@ -8,6 +8,13 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 // On Vercel builds (VERCEL env is set automatically) target the Vercel runtime.
 const onVercel = !!process.env["VERCEL"];
+// Vercel only: the bot endpoint runs receipt OCR (5–15 s, AI timeout 45 s), above the default
+// function limit. nitro's `vercel.functionRules` emits a dedicated function with this config.
+// (Declared separately because the Lovable wrapper's types omit `vercel`; it passes nitro options through.)
+const vercelNitro = {
+  preset: "vercel",
+  vercel: { functionRules: { "/api/public/n8n/bot": { maxDuration: 60 } } },
+};
 
 export default defineConfig({
   tanstackStart: {
@@ -15,5 +22,5 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  ...(onVercel ? { nitro: { preset: "vercel" } } : {}),
+  ...(onVercel ? { nitro: vercelNitro } : {}),
 });

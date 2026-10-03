@@ -16,7 +16,11 @@
 | `N8N_API_KEY` | string acak ≥ 24 karakter, dipakai n8n di header `x-api-key` |
 | `AI_API_KEY` | API key untuk OCR / parsing chat (OpenAI-compatible) |
 | `AI_API_URL` | opsional, default Lovable AI gateway. Contoh OpenAI: `https://api.openai.com/v1/chat/completions` |
-| `AI_MODEL` | opsional, mis. `gpt-4o-mini` atau `google/gemini-2.5-flash` |
+| `AI_MODEL` | opsional, mis. `gpt-4o-mini` atau `google/gemini-2.5-flash` (dipakai OCR/vision) |
+| `AI_MODEL_TEXT` | opsional, model lebih murah untuk parsing chat (mis. `gemini-2.5-flash-lite`). Default = `AI_MODEL` |
+| `BOT_DEFAULT_ACCOUNT` | opsional, nama akun default untuk transaksi bot bila akun tidak disebut (mis. `BCA`) |
+| `BOT_ALLOWED_CHAT_IDS` | wajib untuk bot, daftar chat_id Telegram yang diizinkan (pisahkan koma). Kosong = semua chat ditolak; bot membalas dengan chat_id Anda agar mudah ditambahkan |
+| `BOT_TEXT_AI` | opsional: `auto` (default, AI hanya bila pesan ambigu), `always`, atau `never` (0 token untuk chat) |
 | `APP_TIMEZONE` | opsional, default `Asia/Jakarta` |
 | `FALLBACK_USD_IDR` | opsional, kurs cadangan bila API kurs gagal |
 | `RESEND_API_KEY` | opsional, untuk kirim email pengingat langsung (resend.com) |
@@ -39,6 +43,8 @@ Semua endpoint wajib header `x-api-key: <N8N_API_KEY>`. Setiap respons punya fie
 | GET | `/api/public/n8n/reminders-email?days=7` | pengingat siap-email: `subject`, `text`, `html`, `count` |
 | POST | `/api/public/n8n/reminders-send-email` | `{ "days": 7, "to": "opsional@email.com" }` → kirim langsung via Resend (butuh env Resend) |
 | GET | `/api/public/n8n/summary?month=YYYY-MM` | laporan bulanan |
+| POST | `/api/public/n8n/bot` | **Satu pintu bot Telegram.** `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` → `{ method: "send"\|"edit"\|"none", text, reply_markup, toast? }` siap diteruskan ke Telegram Bot API. Chat & foto nota menjadi pratinjau dengan tombol ✅/❌/🏷/🏦/🔁 |
+| GET | `/api/public/n8n/report?period=…` | Laporan periode: `today`, `yesterday`, `week`, `lastweek`, `month`, `lastmonth`, `YYYY-MM`, `YYYY-MM-DD` |
 | POST | `/api/public/n8n/command` | `{ "text": "saldo" / "summary" / "reminders" / "pay <nama>" / "help" }` → aksi bot langsung, jawaban siap kirim |
 
 ### Contoh alur n8n
@@ -82,3 +88,32 @@ Jalankan bagian **v4** di `supabase/schema.sql` (aman dijalankan ulang). Sebelum
 - **Biaya transfer/admin** di formulir transaksi baru: isi manual atau klik preset; dicatat sebagai pengeluaran terpisah kategori "Biaya Admin" dari akun asal.
 - **Biaya bulanan otomatis**: isi nominal + tanggal potong di akun. Dicatat sekali per bulan saat dashboard/pengingat dibuka (termasuk panggilan n8n `/api/public/n8n/reminders`), dan muncul di daftar pengingat.
 - **Pajak langganan**: kolom pajak % opsional; total tagihan & pembayaran = harga + pajak.
+
+## v7 — Bot Telegram dengan pratinjau & tombol
+1. Jalankan bagian **v7** di `supabase/schema.sql` (kolom `transactions.external_id` + tabel `bot_drafts`).
+2. Set env `BOT_ALLOWED_CHAT_IDS` (wajib; kosong = semua chat ditolak), `BOT_DEFAULT_ACCOUNT`, dan (opsional) `AI_MODEL_TEXT`. Belum tahu chat_id? Kirim pesan ke bot: balasannya "Bot belum dikonfigurasi: tambahkan chat_id … ke BOT_ALLOWED_CHAT_IDS".
+3. Impor workflow n8n dari folder `n8n/` (lihat `n8n/README.md`).
+
+Alur: pesan/foto → `POST /api/public/n8n/bot` → pratinjau + tombol → tekan ✅ → tersimpan (idempoten; klik ganda atau retry tidak menggandakan) → tombol ↩️ Undo.
+Chat sederhana ("kopi 25rb", "gaji 8jt ke BCA") diurai tanpa AI; kategori ditebak dari kata kunci lalu riwayat transaksi. AI hanya untuk foto nota dan chat yang ambigu.
+
+Perintah bot (daftarkan di BotFather → /setcommands):
+```
+hariini - Laporan hari ini
+kemarin - Laporan kemarin
+minggu - Laporan minggu ini
+bulan - Laporan bulan ini (opsional YYYY-MM)
+bulanlalu - Laporan bulan lalu
+pemasukan - Daftar pemasukan (hariini/minggu/bulan)
+pengeluaran - Daftar pengeluaran (hariini/minggu/bulan)
+saldo - Saldo semua akun
+paylater - Paylater, cicilan & hutang
+langganan - Langganan aktif & tagihan
+tagihan - Tagihan jatuh tempo (opsional jumlah hari)
+budget - Pemakaian budget bulan ini
+piutang - Piutang yang belum lunas
+bayar - Catat bayar langganan/cicilan
+tarik - Tarik tunai, mis. /tarik 500rb dari BCA
+undo - Hapus transaksi terakhir dari bot
+help - Bantuan
+```

@@ -42,3 +42,11 @@
 - [x] Metadata opsional tipe emas dan nomor produk dengan fallback database lama
 - [x] Indeks query transaksi, langganan, emas, dan piutang
 - [x] Cache baca terarah dan activity log opsional tidak lagi memblokir halaman Pengaturan
+
+## v7 — Bot Telegram
+- [x] Endpoint tunggal `/api/public/n8n/bot` (chat, foto nota, tombol inline)
+- [x] Pratinjau + tombol ✅ Simpan / ❌ Batal / 🏷 Kategori / 🏦 Akun / 🔁 Masuk-Keluar, lalu ↩️ Undo
+- [x] Parser chat tanpa AI + tebakan kategori dari kata kunci & riwayat
+- [x] Idempotensi `external_id` dan tabel `bot_drafts`
+- [x] Laporan harian/mingguan/bulanan (`/report`, `/hariini`, `/minggu`, `/bulan`), daftar pemasukan/pengeluaran, paylater, langganan, budget, piutang
+- [x] Fix: AI tidak lagi membuat kategori "Nama (expense)"; akun default bot; batas ukuran gambar sesuai limit Vercel

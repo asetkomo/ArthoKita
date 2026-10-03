@@ -265,3 +265,28 @@ alter table public.gold_purchases add column if not exists account_id uuid refer
 alter table public.gold_purchases add column if not exists transaction_id uuid references public.transactions(id) on delete set null;
 insert into public.categories (name, kind, color) values ('Emas','expense','#c9a227'), ('Emas','income','#c9a227')
 on conflict (name, kind) do nothing;
+
+-- ============ v7: bot Telegram — idempotensi & pratinjau sebelum simpan (aman dijalankan ulang) ============
+-- external_id: kunci idempotensi (mis. "draft:<uuid>") agar retry webhook / klik ganda tidak mencatat dua kali.
+alter table public.transactions add column if not exists external_id text;
+create unique index if not exists transactions_external_id_uidx on public.transactions (external_id) where external_id is not null;
+create index if not exists transactions_source_created_idx on public.transactions (source, created_at desc);
+
+-- Pratinjau transaksi dari bot (chat / foto nota) yang menunggu tombol ✅/❌.
+create table if not exists public.bot_drafts (
+  id uuid primary key default gen_random_uuid(),
+  external_id text not null unique,           -- "tg:<chat_id>:<update_id>"
+  chat_id text not null,
+  source text not null default 'telegram' check (source in ('telegram','whatsapp','ocr')),
+  payload jsonb not null,
+  receipt_path text,
+  status text not null default 'pending' check (status in ('pending','saved','cancelled','undone')),
+  transaction_id uuid references public.transactions(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists bot_drafts_created_idx on public.bot_drafts (created_at);
+create index if not exists bot_drafts_tx_idx on public.bot_drafts (transaction_id);
+revoke all on public.bot_drafts from anon, authenticated;
+grant all on public.bot_drafts to service_role;
+alter table public.bot_drafts enable row level security;

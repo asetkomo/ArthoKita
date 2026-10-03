@@ -71,17 +71,45 @@ async function toIdr(amount: number, currency: string, rate?: number): Promise<n
 }
 
 /* ---------------- Lookups ---------------- */
+/** Escape LIKE/ILIKE wildcards (`%`, `_`) and the escape char `\\` so user input matches literally. */
+export function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+const normName = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Pure, deterministic name resolution: exact (case/whitespace-insensitive) match first, then a partial
+ * match ranked prefix > word-start > substring, then shortest name, then name and id as tie-breakers.
+ */
+export function pickBestNameMatch<T extends { id: string; name: string }>(rows: readonly T[], query: string | null | undefined): T | null {
+  const q = normName(query ?? "");
+  if (!q) return null;
+  const byNameThenId = (a: T, b: T) => (a.name < b.name ? -1 : a.name > b.name ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const exact = rows.filter((r) => normName(r.name) === q).sort(byNameThenId);
+  if (exact[0]) return exact[0];
+  const rank = (n: string) => (n.startsWith(q) ? 0 : (" " + n).includes(" " + q) ? 1 : 2);
+  const partial = rows
+    .map((r) => ({ r, n: normName(r.name) }))
+    .filter((x) => x.n.includes(q))
+    .sort((a, b) => rank(a.n) - rank(b.n) || a.n.length - b.n.length || byNameThenId(a.r, b.r));
+  return partial[0]?.r ?? null;
+}
+
 export async function ensureCategory(name: string, kind: "income" | "expense"): Promise<string> {
-  const found = await db().from("categories").select("id").ilike("name", name.trim()).eq("kind", kind).limit(1).maybeSingle();
-  if (found.data) return found.data.id as string;
-  const created = must<any>(await db().from("categories").insert({ name: name.trim(), kind }).select("id").single());
+  const clean = name.trim().replace(/\s+/g, " ");
+  const rows = must<any[]>(await db().from("categories").select("id, name").eq("kind", kind).ilike("name", escapeLike(clean)));
+  const found = rows.filter((r) => normName(r.name) === normName(clean)).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))[0];
+  if (found) return found.id as string;
+  const created = must<any>(await db().from("categories").insert({ name: clean, kind }).select("id").single());
   return created.id;
 }
 
-async function findAccount(name?: string | null): Promise<string | null> {
-  if (!name) return null;
-  const r = await db().from("accounts").select("id").ilike("name", `%${name.replace(/[%,()]/g, "").trim()}%`).limit(1).maybeSingle();
-  return (r.data?.id as string) ?? null;
+export async function findAccount(name?: string | null): Promise<string | null> {
+  const q = (name ?? "").trim().replace(/\s+/g, " ");
+  if (!q) return null;
+  const rows = must<any[]>(await db().from("accounts").select("id, name").ilike("name", `%${escapeLike(q)}%`));
+  return pickBestNameMatch(rows as { id: string; name: string }[], q)?.id ?? null;
 }
 
 /* ---------------- Transactions ---------------- */
@@ -99,18 +127,32 @@ function normalizeTx(input: TransactionInput) {
 function isMissingReceiptColumn(err: { message?: string } | null) {
   return !!err?.message && err.message.includes("receipt_path");
 }
-
-async function insertTxRow(row: Record<string, unknown>) {
-  const res = await db().from("transactions").insert(row).select().single();
-  if (res.error && isMissingReceiptColumn(res.error)) {
-    const { receipt_path: _drop, ...fallback } = row;
-    return must<any>(await db().from("transactions").insert(fallback).select().single());
-  }
-  return must<any>(res);
+// external_id (v7) juga opsional: bila kolom belum ada, simpan tanpa kolom itu.
+function isMissingExternalColumn(err: { message?: string } | null) {
+  return !!err?.message && err.message.includes("external_id");
 }
 
-export async function insertTransaction(input: TransactionInput, raw?: unknown) {
-  const tx = await insertTxRow({ ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency), raw: raw ?? null });
+async function insertTxRow(row: Record<string, unknown>) {
+  let current = row;
+  for (let i = 0; i < 3; i++) {
+    const res = await db().from("transactions").insert(current).select().single();
+    if (res.error && isMissingReceiptColumn(res.error) && "receipt_path" in current) {
+      const { receipt_path: _drop, ...rest } = current;
+      current = rest;
+      continue;
+    }
+    if (res.error && isMissingExternalColumn(res.error) && "external_id" in current) {
+      const { external_id: _drop, ...rest } = current;
+      current = rest;
+      continue;
+    }
+    return must<any>(res);
+  }
+  return must<any>(await db().from("transactions").insert(current).select().single());
+}
+
+export async function insertTransaction(input: TransactionInput, raw?: unknown, extra?: { external_id?: string | null }) {
+  const tx = await insertTxRow({ ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency), raw: raw ?? null, ...(extra?.external_id ? { external_id: extra.external_id } : {}) });
   const fee = Number(input.fee) || 0;
   if (fee > 0 && input.kind !== "income") {
     await insertTxRow({
@@ -139,13 +181,31 @@ export async function updateTransaction(id: string, input: TransactionInput) {
 }
 
 
+/** Account used by the bot when none is mentioned (env BOT_DEFAULT_ACCOUNT, matched by name). */
+export async function defaultAccountId(): Promise<string | null> {
+  return findAccount(process.env["BOT_DEFAULT_ACCOUNT"] || null);
+}
+
+export async function findByExternalId(externalId: string): Promise<any | null> {
+  const r = await db().from("transactions").select("*").eq("external_id", externalId).limit(1).maybeSingle();
+  if (r.error) return null; // kolom belum ada (v7 belum dijalankan) → anggap tidak ada
+  return r.data ?? null;
+}
+
 export async function createFromExternal(t: ExternalTx) {
-  const category_id = t.kind !== "transfer" && t.category ? await ensureCategory(t.category, t.kind) : null;
+  if (t.external_id) {
+    const dup = await findByExternalId(t.external_id);
+    if (dup) return { transaction: dup, duplicate: true, message: "ℹ️ Transaksi ini sudah tercatat sebelumnya." };
+  }
+  // "Makan (expense)" → "Makan": jangan pernah membuat kategori dengan akhiran jenis.
+  const catName = t.category?.replace(/\s*\((income|expense)\)\s*$/i, "").trim() || null;
+  const category_id = t.kind !== "transfer" && catName ? await ensureCategory(catName, t.kind) : null;
+  const botSource = t.source === "telegram" || t.source === "whatsapp" || t.source === "ocr";
   const input: TransactionInput = {
     kind: t.kind,
     amount: t.amount,
     currency: t.currency,
-    account_id: await findAccount(t.account),
+    account_id: (await findAccount(t.account)) ?? (botSource ? await defaultAccountId() : null),
     to_account_id: t.kind === "transfer" ? await findAccount(t.to_account) : null,
     category_id,
     description: t.description ?? null,
@@ -154,13 +214,21 @@ export async function createFromExternal(t: ExternalTx) {
     source: t.source,
     items: t.items ?? null,
     notes: t.notes ?? null,
-    receipt_path: null,
+    receipt_path: t.receipt_path ?? null,
   };
-  const tx = await insertTransaction(input, t.raw);
+  let tx: any;
+  try {
+    tx = await insertTransaction(input, t.raw, { external_id: t.external_id ?? null });
+  } catch (e) {
+    // Balapan dua request dengan external_id sama → unique violation; kembalikan yang sudah ada.
+    const dup = t.external_id && /duplicate key|23505/i.test(String((e as Error).message)) ? await findByExternalId(t.external_id) : null;
+    if (dup) return { transaction: dup, duplicate: true, message: "ℹ️ Transaksi ini sudah tercatat sebelumnya." };
+    throw e;
+  }
   const label = t.kind === "income" ? "Pemasukan" : t.kind === "expense" ? "Pengeluaran" : "Transfer";
   const amountText = new Intl.NumberFormat("id-ID", { style: "currency", currency: t.currency, maximumFractionDigits: t.currency === "USD" ? 2 : 0 }).format(t.amount);
-  const message = `✅ Tercatat: ${label} ${amountText}${t.category ? ` • ${t.category}` : ""}${t.description || t.merchant ? ` • ${t.description ?? t.merchant}` : ""}`;
-  return { transaction: tx, message };
+  const message = `✅ Tercatat: ${label} ${amountText}${catName ? ` • ${catName}` : ""}${t.description || t.merchant ? ` • ${t.description ?? t.merchant}` : ""}`;
+  return { transaction: tx, duplicate: false, message };
 }
 
 export type TxFilters = { month?: string | undefined; kind?: string | undefined; search?: string | undefined; category_id?: string | undefined; account_id?: string | undefined; limit?: number | undefined; offset?: number | undefined; sort?: "occurred_at" | "amount" | "description" | undefined; direction?: "asc" | "desc" | undefined };
@@ -484,9 +552,18 @@ export async function summaryText(month: string): Promise<string> {
   return `📊 Ringkasan ${month}\nPemasukan: ${fmt(d.income)}\nPengeluaran: ${fmt(d.expense)}\nSelisih: ${fmt(d.net)}\nTotal saldo: ${fmt(d.totalBalanceIdr)}\nSisa hutang: ${fmt(d.debtOutstandingIdr)}${top ? `\nPengeluaran terbesar:\n${top}` : ""}`;
 }
 
-export async function categoryNames(): Promise<string[]> {
-  const rows = must<any[]>(await db().from("categories").select("name, kind"));
-  return rows.map((r) => `${r.name} (${r.kind})`);
+/** Category & account names for AI prompts / quick parser (names only, split by kind). */
+export async function parseContext(): Promise<import("./ocr.server").ParseContext> {
+  const [cats, accs] = await Promise.all([
+    db().from("categories").select("name, kind").order("name"),
+    db().from("accounts").select("name").eq("archived", false).order("name"),
+  ]);
+  const rows = must<any[]>(cats);
+  return {
+    income: rows.filter((r) => r.kind === "income").map((r) => String(r.name)),
+    expense: rows.filter((r) => r.kind === "expense").map((r) => String(r.name)),
+    accounts: (accs.data ?? []).map((a: any) => String(a.name)),
+  };
 }
 
 /* ---------------- Yearly recap ---------------- */
@@ -830,21 +907,43 @@ function fmtMoney(n: number, c: string) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: c, maximumFractionDigits: c === "USD" ? 2 : 0 }).format(n);
 }
 
-export async function botCommand(text: string): Promise<{ message: string }> {
-  const { classifyBotCommand, botHelp, botSearchToken } = await import("./bot");
+export async function botCommand(text: string): Promise<{ message: string; type: string }> {
+  const { classifyBotCommand, botHelp, botSearchToken, clampMessage } = await import("./bot");
+  const bot = await import("./bot.server");
   const cmd = classifyBotCommand(text);
   let message: string;
   switch (cmd.type) {
-    case "balances": {
-      const rows = must<any[]>(await db().from("account_balances").select("*").eq("archived", false).order("name"));
-      message = rows.length ? `💰 Saldo:\n${rows.map((a) => `• ${a.name}: ${fmtMoney(Number(a.balance), a.currency)}`).join("\n")}` : "Belum ada akun terdaftar.";
+    case "balances":
+      message = await bot.balancesText();
+      break;
+    case "summary":
+      message = await bot.reportText(cmd.month ?? "month");
+      break;
+    case "report":
+      message = await bot.reportText(cmd.period);
+      break;
+    case "list":
+      message = await bot.listText(cmd.kind, cmd.period);
+      break;
+    case "debts":
+      message = await bot.debtsText();
+      break;
+    case "subscriptions":
+      message = await bot.subscriptionsText();
+      break;
+    case "budget":
+      message = await bot.budgetText();
+      break;
+    case "receivables":
+      message = await bot.receivablesText();
+      break;
+    case "undo": {
+      const r = await bot.undoLast();
+      message = r.message;
       break;
     }
-    case "summary":
-      message = await summaryText(cmd.month ?? today().slice(0, 7));
-      break;
     case "reminders":
-      message = remindersText(await computeReminders(14));
+      message = remindersText(await computeReminders(cmd.days));
       break;
     case "pay":
       message = await botPay(cmd.target, botSearchToken);
@@ -856,17 +955,17 @@ export async function botCommand(text: string): Promise<{ message: string }> {
       message = botHelp();
       break;
     default:
-      message = `🤖 Perintah tidak dikenali: "${text}"\n${botHelp()}`;
+      message = `🤖 Perintah tidak dikenali: "${text.slice(0, 50)}". Ketik /help untuk daftar perintah.`;
   }
   await logActivity("bot.command", null, { text: text.slice(0, 200), type: cmd.type });
-  return { message };
+  return { message: clampMessage(message), type: cmd.type };
 }
 
 async function botPay(target: string, clean: (s: string) => string): Promise<string> {
   if (!target) return "Sebutkan namanya juga, mis. 'sudah bayar Netflix' atau 'bayar cicilan KTA'.";
   const token = clean(target);
-  const subs = must<any[]>(await db().from("subscriptions").select("id, name").ilike("name", `%${token}%`).limit(5));
-  const debts = must<any[]>(await db().from("debts").select("id, name").ilike("name", `%${token}%`).limit(5));
+  const subs = must<any[]>(await db().from("subscriptions").select("id, name").ilike("name", `%${escapeLike(token)}%`).limit(5));
+  const debts = must<any[]>(await db().from("debts").select("id, name").ilike("name", `%${escapeLike(token)}%`).limit(5));
   if (!subs.length && !debts.length) return `❓ Tidak menemukan langganan/cicilan bernama "${target}".`;
   if (subs.length + debts.length > 1) return `❓ Nama "${target}" cocok dengan beberapa item (${[...subs, ...debts].map((x) => x.name).join(", ")}). Sebutkan lebih spesifik.`;
   if (subs[0]) {
