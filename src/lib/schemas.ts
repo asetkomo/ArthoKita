@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 export const CURRENCIES = ["IDR", "USD"] as const;
-export const CRUD_TABLES = ["accounts", "categories", "debts", "subscriptions", "budgets", "goals"] as const;
+export const CRUD_TABLES = ["accounts", "categories", "debts", "subscriptions", "budgets", "goals", "gold_purchases"] as const;
 export type CrudTable = (typeof CRUD_TABLES)[number];
-export const DELETABLE_TABLES = [...CRUD_TABLES, "transactions", "debt_payments"] as const;
+export const DELETABLE_TABLES = [...CRUD_TABLES, "transactions", "debt_payments", "receivables", "receivable_payments"] as const;
 
 const emptyToNull = (v: unknown) => (v === "" || v === undefined ? null : v);
 const optId = z.preprocess(emptyToNull, z.string().uuid().nullable());
@@ -92,6 +92,28 @@ export const goalSchema = z.object({
   color: optText(20),
 });
 
+export const goldSchema = z.object({
+  kind: z.enum(["buy", "sell"]).default("buy"),
+  occurred_at: dateStr,
+  grams: z.coerce.number().finite().positive("Gram harus lebih dari 0").max(100000),
+  price_per_gram: money,
+  total: z.preprocess(emptyToNull, z.coerce.number().finite().positive().nullable()),
+  place: optText(100),
+  notes: optText(1000),
+}).transform((v) => ({ ...v, total: v.total ?? Math.round(v.grams * v.price_per_gram) }));
+
+export const receivableSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  borrower: optText(100),
+  amount: money,
+  currency: z.enum(CURRENCIES).default("IDR"),
+  lent_at: dateStr,
+  due_date: optDate,
+  account_id: optId,
+  notes: optText(1000),
+});
+export type ReceivableInput = z.output<typeof receivableSchema>;
+
 export const tableSchemas: Record<CrudTable, z.ZodTypeAny> = {
   accounts: accountSchema,
   categories: categorySchema,
@@ -99,6 +121,7 @@ export const tableSchemas: Record<CrudTable, z.ZodTypeAny> = {
   subscriptions: subscriptionSchema,
   budgets: budgetSchema,
   goals: goalSchema,
+  gold_purchases: goldSchema,
 };
 
 /** Payload from n8n / bots. Category & account are matched by name. */
@@ -137,6 +160,7 @@ export type Category = z.output<typeof categorySchema> & { id: string };
 export type Debt = z.output<typeof debtSchema> & { id: string };
 export type Subscription = z.output<typeof subscriptionSchema> & { id: string };
 export type Budget = z.output<typeof budgetSchema> & { id: string };
+export type GoldRow = z.output<typeof goldSchema> & { id: string };
 export type Goal = z.output<typeof goalSchema> & { id: string };
 
 export const importRowSchema = z.object({
