@@ -1,6 +1,6 @@
 import { queryOptions, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getNetWorth, getReminders, getTxCount, getYearly, getActivity, getCategoryTrend, getYearlySummary, getGold, getReceivables, listRows, listTransactions, saveRow } from "./finance.functions";
+import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getNetWorth, getReminders, getTxCount, getYearly, getActivity, getCategoryTrend, getYearlySummary, getGold, getReceivables, getAssets, listRows, listTransactions, saveRow } from "./finance.functions";
 import type { CrudTable } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -12,6 +12,7 @@ export const budgetsQuery = (month: string) => queryOptions({ queryKey: ["budget
 export const balancesQuery = () => queryOptions({ queryKey: ["balances"], queryFn: () => getBalances() });
 export const fxQuery = () => queryOptions({ queryKey: ["fx"], queryFn: () => getFxRate(), staleTime: 3600_000 });
 export const goldQuery = () => queryOptions({ queryKey: ["gold"], queryFn: () => getGold(), staleTime: 3600_000 });
+export const assetsQuery = () => queryOptions({ queryKey: ["assets"], queryFn: () => getAssets() });
 export const receivablesQuery = () => queryOptions({ queryKey: ["receivables"], queryFn: () => getReceivables() });
 export const trendQuery = (months: number, end: string) => queryOptions({ queryKey: ["trend", months, end], queryFn: () => getCategoryTrend({ data: { months, end } }) });
 export const yearlySummaryQuery = (year: number) => queryOptions({ queryKey: ["yearly-summary", year], queryFn: () => getYearlySummary({ data: { year } }) });
@@ -24,7 +25,7 @@ export const yearlyQuery = (year: string) => queryOptions({ queryKey: ["yearly",
 
 
 /** Money-moving changes touch every aggregate; reference data only touches its own lists. */
-const MONEY = ["tx", "tx-count", "dashboard", "balances", "budgets", "trend", "yearly", "yearly-summary", "net-worth", "reminders", "activity"];
+const MONEY = ["tx", "tx-count", "dashboard", "balances", "budgets", "trend", "yearly", "yearly-summary", "net-worth", "reminders", "activity", "assets"];
 const AFFECTS: Record<string, string[]> = {
   transactions: MONEY,
   accounts: [...MONEY, "rows"],
@@ -33,8 +34,8 @@ const AFFECTS: Record<string, string[]> = {
   debt_payments: [...MONEY, "debts"],
   subscriptions: ["rows", "reminders", "dashboard", "activity"],
   budgets: ["rows", "budgets", "dashboard", "activity"],
-  goals: ["rows", "dashboard", "activity"],
-  gold_purchases: ["rows", "gold", "net-worth", "activity"],
+  goals: ["rows", "dashboard", "activity", "assets"],
+  gold_purchases: ["rows", "gold", "net-worth", "activity", "assets"],
   receivables: [...MONEY, "receivables"],
 };
 

@@ -329,6 +329,7 @@ export type Reminder = {
 };
 
 export async function computeReminders(days = 30): Promise<Reminder[]> {
+  await applyMonthlyFees();
   const t = today();
   const limit = addDays(t, days);
   const rate = await getUsdIdr();

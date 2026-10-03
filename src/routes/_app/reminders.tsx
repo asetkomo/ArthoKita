@@ -63,7 +63,7 @@ function RemindersPage() {
                 <p className={`text-xs ${r.overdue ? "text-expense" : "text-muted-foreground"}`}>{r.type === "budget" ? t("Peringatan budget bulan ini") : `${dateLabel(r.due_date, locale)} · ${r.overdue ? `${t("terlambat")} ${-r.days_left} ${t("hari")}` : r.days_left === 0 ? t("hari ini") : `${r.days_left} ${t("hari lagi")}`}`}</p>
               </div>
               <p className="num font-semibold">{money(r.amount, r.currency)}</p>
-              {r.type !== "budget" ? <Button size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> {t("Bayar")}</Button> : null}
+              {r.type === "debt" || r.type === "subscription" ? <Button size="sm" variant="outline" onClick={() => pay(r)}><CheckCircle2 className="size-4" /> {t("Bayar")}</Button> : null}
             </div>
           ))}
         </Card>

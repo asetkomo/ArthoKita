@@ -194,3 +194,40 @@ export async function receivableDeltasByMonth(rate: number): Promise<{ month: st
   }
   return out;
 }
+
+/** Dashboard overview: asset composition, gold position, receivables, goals and today's gold prices. */
+export async function assetsOverview() {
+  const rate = await getUsdIdr();
+  const [bal, goals, gold, rec] = await Promise.all([
+    db().from("account_balances").select("type, currency, balance").eq("archived", false),
+    db().from("goals").select("target_amount, saved_amount"),
+    goldSummary(),
+    listReceivables(),
+  ]);
+  const groups: Record<string, number> = { cash: 0, investment: 0, credit: 0 };
+  for (const b of (bal.data ?? []) as any[]) {
+    const v = Number(b.balance) * (b.currency === "USD" ? rate : 1);
+    if (b.type === "investment") groups["investment"]! += v;
+    else if (b.type === "credit_card") groups["credit"]! += v;
+    else groups["cash"]! += v;
+  }
+  const goldInfo = gold.ready
+    ? (() => {
+        const h = gold.holdings;
+        const val = (p: any) => (p ? { value: Math.round(h.grams * p.buyback), pnl: Math.round(h.grams * p.buyback) - h.cost, buy: p.buy, buyback: p.buyback, estimated: p.estimated, date: p.date } : null);
+        return { ready: true, grams: h.grams, cost: h.cost, avgPrice: h.avgPrice, realized: h.realized, world: val(gold.prices.world), antam: val(gold.prices.antam) };
+      })()
+    : { ready: false as const };
+  const receivablesOutstanding = rec.ready ? rec.items.filter((i: any) => i.status !== "paid").reduce((a: number, i: any) => a + i.remaining * (i.currency === "USD" ? rate : 1), 0) : 0;
+  const g = (goals.data ?? []) as any[];
+  const goalsSaved = g.reduce((a, x) => a + Number(x.saved_amount), 0);
+  const goalsTarget = g.reduce((a, x) => a + Number(x.target_amount), 0);
+  const goldValue = (goldInfo as any).antam?.value ?? (goldInfo as any).world?.value ?? 0;
+  const composition = [
+    { key: "cash", value: Math.max(0, groups["cash"]!) },
+    { key: "investment", value: Math.max(0, groups["investment"]!) },
+    { key: "gold", value: goldValue },
+    { key: "receivables", value: receivablesOutstanding },
+  ].filter((c) => c.value > 0);
+  return { gold: goldInfo, receivablesOutstanding, goalsSaved, goalsTarget, composition, totalAssets: composition.reduce((a, c) => a + c.value, 0), creditCardIdr: groups["credit"]! };
+}

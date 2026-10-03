@@ -313,3 +313,10 @@ export const receivableActionFn = createServerFn({ method: "POST" })
     else await a.deleteReceivablePayment(data.id);
     return { ok: true };
   });
+
+export const getAssets = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { assetsOverview } = await import("./assets.server");
+    return (await assetsOverview()) as any;
+  });
