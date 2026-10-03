@@ -169,3 +169,74 @@ values ('receipts', 'receipts', false, 5242880)
 on conflict (id) do nothing;
 -- Tidak perlu policy: hanya server (service role) yang mengakses bucket ini;
 -- browser melihat foto lewat signed URL berlaku 10 menit.
+
+-- ===== v3: catatan aktivitas, tabungan emas, piutang (aman dijalankan ulang) =====
+create table if not exists public.activity_log (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  entity text,
+  detail jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists activity_log_created_idx on public.activity_log (created_at desc);
+
+create table if not exists public.gold_purchases (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'buy' check (kind in ('buy','sell')),
+  occurred_at date not null default current_date,
+  grams numeric(14,4) not null check (grams > 0),
+  price_per_gram numeric(18,2) not null check (price_per_gram > 0),
+  total numeric(18,2) not null,
+  place text,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.gold_prices (
+  price_date date not null,
+  source text not null check (source in ('world','antam')),
+  buy numeric(18,2) not null,
+  buyback numeric(18,2) not null,
+  estimated boolean not null default false,
+  fetched_at timestamptz not null default now(),
+  primary key (price_date, source)
+);
+
+create table if not exists public.receivables (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  borrower text,
+  amount numeric(18,2) not null check (amount > 0),
+  currency text not null default 'IDR' check (currency in ('IDR','USD')),
+  lent_at date not null default current_date,
+  due_date date,
+  account_id uuid references public.accounts(id) on delete set null,
+  transaction_id uuid references public.transactions(id) on delete set null,
+  notes text,
+  status text not null default 'active' check (status in ('active','paid')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.receivable_payments (
+  id uuid primary key default gen_random_uuid(),
+  receivable_id uuid not null references public.receivables(id) on delete cascade,
+  amount numeric(18,2) not null check (amount > 0),
+  paid_at date not null default current_date,
+  account_id uuid references public.accounts(id) on delete set null,
+  transaction_id uuid references public.transactions(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists receivable_payments_rec_idx on public.receivable_payments (receivable_id);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['activity_log','gold_purchases','gold_prices','receivables','receivable_payments'] loop
+    execute format('revoke all on public.%I from anon, authenticated', t);
+    execute format('grant all on public.%I to service_role', t);
+    execute format('alter table public.%I enable row level security', t);
+  end loop;
+end $$;
+
+insert into public.categories (name, kind, color) values ('Piutang','expense','#9a7b3c'), ('Piutang','income','#9a7b3c')
+on conflict (name, kind) do nothing;
