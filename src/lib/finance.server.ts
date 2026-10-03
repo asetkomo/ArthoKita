@@ -405,11 +405,12 @@ export async function addGoalFunds(goalId: string, amount: number, accountId: st
   let names: Record<string, string> = {};
   if (plan.transfer) {
     const t = plan.transfer;
-    const accs = must<any[]>(await db().from("accounts").select("id, name").in("id", [t.account_id, t.to_account_id]));
+    const accs = must<any[]>(await db().from("accounts").select("id, name, currency").in("id", [t.account_id, t.to_account_id]));
     if (accs.length < 2) throw new Error("Akun tidak ditemukan");
     names = Object.fromEntries(accs.map((a) => [a.id, a.name]));
+    const currency = accs.find((a) => a.id === t.account_id)?.currency === "USD" ? "USD" : "IDR";
     await insertTransaction({
-      kind: "transfer", amount: t.amount, currency: "IDR", account_id: t.account_id, to_account_id: t.to_account_id,
+      kind: "transfer", amount: t.amount, currency, account_id: t.account_id, to_account_id: t.to_account_id,
       category_id: null, description: t.description, merchant: null, occurred_at: t.occurred_at, source: "web",
       items: null, notes: t.notes, receipt_path: null,
     });
