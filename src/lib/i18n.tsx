@@ -21,6 +21,8 @@ const DICT: Record<string, string> = {
   "Mode gelap": "Dark mode",
   "Keluar": "Log out",
   "Ganti bahasa": "Switch language",
+  "Menu utama": "Main menu",
+  "Aksi lainnya": "More actions",
   /* Common */
   "Batal": "Cancel",
   "Simpan": "Save",

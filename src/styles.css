@@ -3,6 +3,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Short landscape viewports (phones on their side): reclaim vertical space. */
+@custom-variant short (@media (max-height: 500px) and (orientation: landscape));
 
 @theme inline {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;

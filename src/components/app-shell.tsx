@@ -5,6 +5,7 @@ import { BarChart3, Bell, Coins, CreditCard, HandCoins, LayoutDashboard, Languag
 import { logout } from "@/lib/auth.functions";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -68,41 +69,55 @@ export function AppShell({ children }: { children: ReactNode }) {
     await router.invalidate();
     await navigate({ to: "/login" });
   }
+  const sideItem = "flex items-center justify-center gap-3 rounded-lg p-2.5 text-sm transition-colors hover:bg-sidebar-accent lg:justify-start lg:px-3 lg:py-2";
+  const sideTool = "flex w-full justify-center gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent lg:justify-start";
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-clip lg:grid lg:grid-cols-[240px_minmax(0,1fr)]">
-      <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[240px] flex-col overflow-y-auto bg-sidebar p-4 text-sidebar-foreground lg:flex">
-        <div className="mb-8 px-2 pt-2">
-          <p className="font-display text-2xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
-          <p className="text-xs text-ink-muted">{t("buku kas pribadi")}</p>
+    <TooltipProvider delayDuration={200}>
+    <div className="min-h-screen w-full max-w-full overflow-x-clip md:grid md:grid-cols-[72px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
+      <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[72px] flex-col overflow-y-auto bg-sidebar px-2 py-4 text-sidebar-foreground md:flex lg:w-[240px] lg:p-4">
+        <div className="mb-6 px-1 pt-2 text-center lg:mb-8 lg:px-2 lg:text-left">
+          <p className="font-display text-2xl font-bold"><span className="lg:hidden">D</span><span className="hidden lg:inline">Dompetku</span><span className="text-sidebar-primary">.</span></p>
+          <p className="hidden text-xs text-ink-muted lg:block">{t("buku kas pribadi")}</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.map((n) => (
-            <Link key={n.to} to={n.to} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent" activeProps={{ className: "bg-sidebar-accent text-sidebar-primary font-semibold" }}>
-              <n.icon className="size-4" /> {t(n.label)}
-            </Link>
+            <Tooltip key={n.to}>
+              <TooltipTrigger asChild>
+                <Link to={n.to} aria-label={t(n.label)} className={sideItem} activeProps={{ className: "bg-sidebar-accent text-sidebar-primary font-semibold" }}>
+                  <n.icon className="size-5 shrink-0 lg:size-4" /> <span className="hidden truncate lg:inline">{t(n.label)}</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="lg:hidden">{t(n.label)}</TooltipContent>
+            </Tooltip>
           ))}
         </nav>
-        <div className="flex flex-col gap-0.5">
-          <ThemeToggle />
-          <LanguageToggle />
-          <Button type="button" variant="ghost" onClick={out} className="w-full justify-start gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent">
-            <LogOut className="size-4" /> {t("Keluar")}
+        <div className="mt-4 flex flex-col gap-0.5">
+          <div className="hidden lg:contents">
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
+          <div className="flex flex-col items-center gap-0.5 lg:hidden">
+            <ThemeToggle className="size-11 p-0 text-ink-muted hover:bg-sidebar-accent" />
+            <LanguageToggle className="h-11 w-full gap-1 px-1 text-ink-muted hover:bg-sidebar-accent" />
+          </div>
+          <Button type="button" variant="ghost" onClick={out} aria-label={t("Keluar")} className={sideTool}>
+            <LogOut className="size-4" /> <span className="hidden lg:inline">{t("Keluar")}</span>
           </Button>
         </div>
       </aside>
-      <div className="min-w-0 lg:col-start-2">
-        <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground lg:hidden">
-           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3">
-             <p className="min-w-0 truncate font-display text-xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
-             <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-               <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />
-               <ThemeToggle className="size-9 shrink-0 p-0" />
-               <Button type="button" size="icon" variant="ghost" className="size-9 shrink-0" onClick={out} aria-label={t("Keluar")}><LogOut className="size-4" /></Button>
+      <div className="min-w-0 md:col-start-2">
+        <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground short:static md:hidden">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 short:py-1.5">
+            <p className="min-w-0 truncate font-display text-xl font-bold">Dompetku<span className="text-sidebar-primary">.</span></p>
+            <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+              <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />
+              <ThemeToggle className="size-9 shrink-0 p-0" />
+              <Button type="button" size="icon" variant="ghost" className="size-9 shrink-0" onClick={out} aria-label={t("Keluar")}><LogOut className="size-4" /></Button>
             </div>
           </div>
-          <nav className="no-scrollbar flex max-w-full gap-1 overflow-x-auto px-3 pb-3">
+          <nav className="no-scrollbar flex max-w-full gap-1 overflow-x-auto px-3 pb-3 short:pb-2" aria-label={t("Menu utama")}>
             {NAV.map((n) => (
-              <Link key={n.to} to={n.to} className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs" activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" }}>
+              <Link key={n.to} to={n.to} className="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs" activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" }}>
                 <n.icon className="size-3.5" /> {t(n.label)}
               </Link>
             ))}
@@ -111,6 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="mx-auto w-full min-w-0 max-w-6xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
 
