@@ -13,12 +13,19 @@
 - [x] Impor CSV transaksi (format hasil ekspor) di halaman Transaksi
 - [x] Lampiran foto nota per transaksi (Supabase Storage bucket "receipts")
 - [x] Mode gelap/terang (tombol di sidebar & header mobile)
-- [ ] Grafik kekayaan bersih (net worth) di dashboard
-- [ ] Perintah bot n8n langsung (saldo, ringkasan, bayar) via /api/public/n8n/command
-- [ ] Filter, pencarian, dan paginasi halaman Transaksi
-- [ ] PWA (manifest + ikon + tema)
-- [ ] Cetak PDF Rekap Tahunan
-- [ ] Deteksi duplikat saat impor CSV
-- [ ] Cadangan data (JSON + CSV) di Pengaturan
-- [ ] Catatan aktivitas terbaru di Pengaturan
-- [ ] Sakelar bahasa Indonesia/Inggris di sidebar & header
+- [x] Grafik kekayaan bersih (net worth) di dashboard
+- [x] Perintah bot n8n langsung (saldo, ringkasan, bayar) via /api/public/n8n/command
+- [x] Filter, pencarian, dan paginasi halaman Transaksi
+- [x] PWA (manifest + ikon + tema)
+- [x] Cetak PDF Rekap Tahunan
+- [x] Deteksi duplikat saat impor CSV
+- [x] Cadangan data (JSON + CSV) di Pengaturan
+- [x] Catatan aktivitas terbaru di Pengaturan
+- [x] Sakelar bahasa Indonesia/Inggris di sidebar & header
+- [x] Pengaturan tahan tabel activity_log belum ada
+- [x] Catatan aktivitas lengkap (CRUD, bayar, impor, cadangan, login/logout) + label ID/EN
+- [x] Responsif mobile & PWA (tanpa scroll horizontal, safe-area)
+- [x] Performa: cache query, preload intent, invalidasi terarah, query paralel
+- [x] Tabungan Emas (/gold) dengan harga dunia & Antam
+- [x] Piutang (/receivables) dengan pembayaran bertahap
+- [x] Tarik tunai ATM (tombol + bot)

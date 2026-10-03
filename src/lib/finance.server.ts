@@ -13,19 +13,34 @@ function must<T>(res: Res<T>): T {
 export const today = () => todayStr(process.env["APP_TIMEZONE"] || "Asia/Jakarta");
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+/** True when PostgREST reports a table that has not been created yet (schema v3 not run). */
+export function isMissingTable(err: { message?: string; code?: string } | null | undefined): boolean {
+  if (!err) return false;
+  return err.code === "PGRST205" || err.code === "42P01" || /could not find the table|does not exist/i.test(err.message ?? "");
+}
+
 /* ---------------- Activity log ---------------- */
 export async function logActivity(action: string, entity?: string | null, detail?: unknown) {
   try {
-    await db().from("activity_log").insert({ action, entity: entity ?? null, detail: detail ?? null });
+    const res = await db().from("activity_log").insert({ action, entity: entity ?? null, detail: detail ?? null });
+    if (res.error && !isMissingTable(res.error)) console.error("activity log failed", res.error.message);
   } catch (e) {
     console.error("activity log failed", e);
   }
 }
 
 export async function listActivity(limit = 30) {
-  const res = await db().from("activity_log").select("*").order("created_at", { ascending: false }).limit(limit);
-  if (res.error) throw new Error(res.error.message);
-  return (res.data ?? []) as any[];
+  try {
+    const res = await db().from("activity_log").select("id, action, entity, detail, created_at").order("created_at", { ascending: false }).limit(limit);
+    if (res.error) {
+      if (!isMissingTable(res.error)) console.error("activity list failed", res.error.message);
+      return [] as any[];
+    }
+    return (res.data ?? []) as any[];
+  } catch (e) {
+    console.error("activity list failed", e);
+    return [] as any[];
+  }
 }
 
 
@@ -101,14 +116,14 @@ export async function insertTransaction(input: TransactionInput, raw?: unknown) 
 export async function updateTransaction(id: string, input: TransactionInput) {
   const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
   const res = await db().from("transactions").update(row).eq("id", id).select().single();
-  let data: Record<string, unknown> | null = null;
+  let data: Record<string, unknown>;
   if (res.error && isMissingReceiptColumn(res.error)) {
     const { receipt_path: _drop, ...fallback } = row;
     data = must<any>(await db().from("transactions").update(fallback).eq("id", id).select().single());
-  } else if (!res.error) {
-    data = res.data as Record<string, unknown>;
+  } else {
+    data = must<any>(res);
   }
-  if (data) await logActivity("transaction.update", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency });
+  await logActivity("transaction.update", "transactions", { kind: input.kind, amount: input.amount, currency: input.currency, description: input.description ?? null });
   return data as any;
 }
 
@@ -255,9 +270,11 @@ export async function payDebt(debtId: string, accountId: string | null, date: st
 
 export async function deleteDebtPayment(id: string) {
   const p = must<any>(await db().from("debt_payments").select("*").eq("id", id).single());
+  const d = await db().from("debts").select("name, currency").eq("id", p.debt_id).maybeSingle();
   must(await db().from("debt_payments").delete().eq("id", id));
   if (p.transaction_id) await db().from("transactions").delete().eq("id", p.transaction_id);
   await db().from("debts").update({ status: "active" }).eq("id", p.debt_id);
+  return { name: (d.data as any)?.name ?? null, amount: Number(p.amount), currency: (d.data as any)?.currency ?? "IDR", installment: p.installment_no };
 }
 
 /* ---------------- Subscriptions ---------------- */
@@ -709,38 +726,56 @@ export async function sendReminderEmail(days: number, to?: string) {
 
 /* ---------------- Reports: net worth ---------------- */
 export async function netWorthSeries(months = 12, endMonth: string) {
-  const rate = await getUsdIdr();
-  const accs = must<any[]>(await db().from("accounts").select("initial_balance, currency"));
+  const { end } = monthRange(endMonth);
+  const assets = await import("./assets.server");
+  const [rate, accRes, txRes, goldRows, prices] = await Promise.all([
+    getUsdIdr(),
+    db().from("accounts").select("initial_balance, currency"),
+    db().from("transactions").select("occurred_at, kind, amount_idr").neq("kind", "transfer").lt("occurred_at", end).limit(200000),
+    assets.goldGramsByMonth(),
+    assets.getGoldPrices().catch(() => ({ world: null, antam: null })),
+  ]);
+  const accs = must<any[]>(accRes);
+  const rows = must<any[]>(txRes);
+  const recv = await assets.receivableDeltasByMonth(rate);
   let initial = 0;
   for (const a of accs) initial += Number(a.initial_balance) * (a.currency === "USD" ? rate : 1);
   const first = shiftMonth(endMonth, -(months - 1));
-  const { end } = monthRange(endMonth);
-  const rows = must<any[]>(await db().from("transactions").select("occurred_at, kind, amount_idr").neq("kind", "transfer").lt("occurred_at", end).limit(200000));
   const monthlyNet = new Map<string, number>();
-  for (const t of rows) {
-    const m = String(t.occurred_at).slice(0, 7);
-    const v = Number(t.amount_idr);
-    monthlyNet.set(m, (monthlyNet.get(m) ?? 0) + (t.kind === "income" ? v : -v));
-  }
+  const add = (m: string, v: number) => monthlyNet.set(m, (monthlyNet.get(m) ?? 0) + v);
+  for (const t of rows) add(String(t.occurred_at).slice(0, 7), t.kind === "income" ? Number(t.amount_idr) : -Number(t.amount_idr));
+  for (const r of recv) add(r.month, r.delta);
+  const gramsDelta = new Map<string, number>();
+  for (const g of goldRows) gramsDelta.set(g.month, (gramsDelta.get(g.month) ?? 0) + g.grams);
+  const goldPrice = prices.world?.buyback ?? prices.antam?.buyback ?? 0;
   let cum = initial;
-  for (const m of [...monthlyNet.keys()].sort()) {
+  let grams = 0;
+  for (const m of [...new Set([...monthlyNet.keys(), ...gramsDelta.keys()])].sort()) {
     if (m >= first) break;
     cum += monthlyNet.get(m) ?? 0;
+    grams += gramsDelta.get(m) ?? 0;
   }
-  const out: { month: string; netWorth: number }[] = [];
+  const out: { month: string; netWorth: number; gold: number }[] = [];
   for (let i = months - 1; i >= 0; i--) {
     const m = shiftMonth(endMonth, -i);
     cum += monthlyNet.get(m) ?? 0;
-    out.push({ month: m, netWorth: r2(cum) });
+    grams += gramsDelta.get(m) ?? 0;
+    const gold = r2(Math.max(0, grams) * goldPrice);
+    out.push({ month: m, netWorth: r2(cum + gold), gold });
   }
   return out;
 }
 
 /* ---------------- Backup ---------------- */
 export async function exportBackup() {
-  const tables = ["accounts", "categories", "transactions", "debts", "debt_payments", "subscriptions", "budgets", "goals", "fx_rates"] as const;
+  const tables = ["accounts", "categories", "transactions", "debts", "debt_payments", "subscriptions", "budgets", "goals", "fx_rates", "gold_purchases", "gold_prices", "receivables", "receivable_payments"] as const;
   const data: Record<string, any[]> = {};
-  for (const t of tables) data[t] = must<any[]>(await db().from(t).select("*").limit(50000));
+  const results = await Promise.all(tables.map((t) => db().from(t).select("*").limit(50000)));
+  tables.forEach((t, i) => {
+    const r = results[i]!;
+    if (r.error && !isMissingTable(r.error)) throw new Error(r.error.message);
+    data[t] = (r.data ?? []) as any[];
+  });
   await logActivity("backup.export", null, { tables: tables.length });
   return { exportedAt: new Date().toISOString(), app: "dompetku", version: 1, data };
 }
@@ -769,6 +804,9 @@ export async function botCommand(text: string): Promise<{ message: string }> {
     case "pay":
       message = await botPay(cmd.target, botSearchToken);
       break;
+    case "withdraw":
+      message = await cashWithdraw(cmd.amount, cmd.from, "telegram");
+      break;
     case "help":
       message = botHelp();
       break;
@@ -796,3 +834,20 @@ async function botPay(target: string, clean: (s: string) => string): Promise<str
   return `✅ Cicilan ${d.name} ke-${(count ?? 0) + 1} dicatat.`;
 }
 
+
+/** ATM cash withdrawal = transfer from a bank/e-wallet account into the first cash account (created if missing). */
+export async function cashWithdraw(amount: number, from: string | null, source: "web" | "telegram" = "web"): Promise<string> {
+  if (!(amount > 0)) return "Sebutkan nominalnya, mis. 'tarik tunai 500rb'.";
+  let cash = await db().from("accounts").select("id, name").eq("type", "cash").eq("archived", false).order("created_at").limit(1).maybeSingle();
+  if (!cash.data) cash = await db().from("accounts").insert({ name: "Tunai", type: "cash", currency: "IDR", initial_balance: 0 }).select("id, name").single();
+  if (cash.error || !cash.data) throw new Error(cash.error?.message ?? "Akun tunai tidak tersedia");
+  let fromId = from ? await findAccount(from) : null;
+  if (!fromId) {
+    const bank = await db().from("accounts").select("id").eq("type", "bank").eq("archived", false).order("created_at").limit(1).maybeSingle();
+    fromId = (bank.data?.id as string) ?? null;
+  }
+  if (!fromId) return "❓ Tidak ada akun bank untuk ditarik. Sebutkan akunnya, mis. 'tarik tunai 500rb dari BCA'.";
+  const fromName = (await db().from("accounts").select("name").eq("id", fromId).single()).data?.name ?? "-";
+  await insertTransaction({ kind: "transfer", amount, currency: "IDR", account_id: fromId, to_account_id: cash.data.id, category_id: null, description: "Tarik tunai", merchant: null, occurred_at: today(), source, items: null, notes: null, receipt_path: null });
+  return `🏧 Tarik tunai ${fmtMoney(amount, "IDR")} dari ${fromName} ke ${cash.data.name} dicatat.`;
+}

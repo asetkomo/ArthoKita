@@ -17,6 +17,8 @@ import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppDebtsRouteImport } from './routes/_app/debts'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
+import { Route as AppGoldRouteImport } from './routes/_app/gold'
+import { Route as AppReceivablesRouteImport } from './routes/_app/receivables'
 import { Route as AppRekapRouteImport } from './routes/_app/rekap'
 import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
@@ -69,6 +71,16 @@ const AppDebtsRoute = AppDebtsRouteImport.update({
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGoldRoute = AppGoldRouteImport.update({
+  id: '/gold',
+  path: '/gold',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReceivablesRoute = AppReceivablesRouteImport.update({
+  id: '/receivables',
+  path: '/receivables',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRekapRoute = AppRekapRouteImport.update({
@@ -153,6 +165,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/debts': typeof AppDebtsRoute
   '/goals': typeof AppGoalsRoute
+  '/gold': typeof AppGoldRoute
+  '/receivables': typeof AppReceivablesRoute
   '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
   '/reports': typeof AppReportsRoute
@@ -176,6 +190,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/debts': typeof AppDebtsRoute
   '/goals': typeof AppGoalsRoute
+  '/gold': typeof AppGoldRoute
+  '/receivables': typeof AppReceivablesRoute
   '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
   '/reports': typeof AppReportsRoute
@@ -201,6 +217,8 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/debts': typeof AppDebtsRoute
   '/_app/goals': typeof AppGoalsRoute
+  '/_app/gold': typeof AppGoldRoute
+  '/_app/receivables': typeof AppReceivablesRoute
   '/_app/rekap': typeof AppRekapRoute
   '/_app/reminders': typeof AppRemindersRoute
   '/_app/reports': typeof AppReportsRoute
@@ -226,6 +244,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/goals'
+    | '/gold'
+    | '/receivables'
     | '/rekap'
     | '/reminders'
     | '/reports'
@@ -249,6 +269,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debts'
     | '/goals'
+    | '/gold'
+    | '/receivables'
     | '/rekap'
     | '/reminders'
     | '/reports'
@@ -273,6 +295,8 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/debts'
     | '/_app/goals'
+    | '/_app/gold'
+    | '/_app/receivables'
     | '/_app/rekap'
     | '/_app/reminders'
     | '/_app/reports'
@@ -359,6 +383,20 @@ declare module '@tanstack/react-router' {
       path: '/goals'
       fullPath: '/goals'
       preLoaderRoute: typeof AppGoalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/gold': {
+      id: '/_app/gold'
+      path: '/gold'
+      fullPath: '/gold'
+      preLoaderRoute: typeof AppGoldRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/receivables': {
+      id: '/_app/receivables'
+      path: '/receivables'
+      fullPath: '/receivables'
+      preLoaderRoute: typeof AppReceivablesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/rekap': {
@@ -468,6 +506,8 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppDebtsRoute: typeof AppDebtsRoute
   AppGoalsRoute: typeof AppGoalsRoute
+  AppGoldRoute: typeof AppGoldRoute
+  AppReceivablesRoute: typeof AppReceivablesRoute
   AppRekapRoute: typeof AppRekapRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppReportsRoute: typeof AppReportsRoute
@@ -482,6 +522,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppDebtsRoute: AppDebtsRoute,
   AppGoalsRoute: AppGoalsRoute,
+  AppGoldRoute: AppGoldRoute,
+  AppReceivablesRoute: AppReceivablesRoute,
   AppRekapRoute: AppRekapRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppReportsRoute: AppReportsRoute,

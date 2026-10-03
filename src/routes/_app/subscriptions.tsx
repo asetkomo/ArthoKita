@@ -10,7 +10,7 @@ import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { errMsg, fxQuery, rowsQuery } from "@/lib/queries";
+import { errMsg, fxQuery, rowsQuery, invalidateFor } from "@/lib/queries";
 import { paySubscription } from "@/lib/finance.functions";
 import { dateLabel, diffDays, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
@@ -41,7 +41,7 @@ function SubsPage() {
   const today = todayStr();
 
   async function doPay(s: Subscription) {
-    try { const r = await pay({ data: { id: s.id } }); await qc.invalidateQueries(); toast.success(`${t("Tercatat. Tagihan berikutnya")} ${dateLabel(r.next_due, locale)}`); } catch (e) { toast.error(errMsg(e)); }
+    try { const r = await pay({ data: { id: s.id } }); await Promise.all([invalidateFor(qc, "transactions"), invalidateFor(qc, "subscriptions")]); toast.success(`${t("Tercatat. Tagihan berikutnya")} ${dateLabel(r.next_due, locale)}`); } catch (e) { toast.error(errMsg(e)); }
   }
 
   return (

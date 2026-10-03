@@ -1,6 +1,6 @@
-import { queryOptions, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getNetWorth, getReminders, getTxCount, getYearly, getActivity, getCategoryTrend, getYearlySummary, listRows, listTransactions, saveRow } from "./finance.functions";
+import { deleteRow, getBalances, getBudgets, getDashboard, getDebts, getFxRate, getNetWorth, getReminders, getTxCount, getYearly, getActivity, getCategoryTrend, getYearlySummary, getGold, getReceivables, listRows, listTransactions, saveRow } from "./finance.functions";
 import type { CrudTable } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -11,6 +11,8 @@ export const debtsQuery = () => queryOptions({ queryKey: ["debts"], queryFn: () 
 export const budgetsQuery = (month: string) => queryOptions({ queryKey: ["budgets", month], queryFn: () => getBudgets({ data: { month } }) });
 export const balancesQuery = () => queryOptions({ queryKey: ["balances"], queryFn: () => getBalances() });
 export const fxQuery = () => queryOptions({ queryKey: ["fx"], queryFn: () => getFxRate(), staleTime: 3600_000 });
+export const goldQuery = () => queryOptions({ queryKey: ["gold"], queryFn: () => getGold(), staleTime: 3600_000 });
+export const receivablesQuery = () => queryOptions({ queryKey: ["receivables"], queryFn: () => getReceivables() });
 export const trendQuery = (months: number, end: string) => queryOptions({ queryKey: ["trend", months, end], queryFn: () => getCategoryTrend({ data: { months, end } }) });
 export const yearlySummaryQuery = (year: number) => queryOptions({ queryKey: ["yearly-summary", year], queryFn: () => getYearlySummary({ data: { year } }) });
 export const netWorthQuery = (months: number, end: string) => queryOptions({ queryKey: ["net-worth", months, end], queryFn: () => getNetWorth({ data: { months, end } }) });
@@ -21,6 +23,30 @@ export const txCountQuery = (f: Omit<TxFilter, "offset">) => queryOptions({ quer
 export const yearlyQuery = (year: string) => queryOptions({ queryKey: ["yearly", year], queryFn: () => getYearly({ data: { year } }) });
 
 
+/** Money-moving changes touch every aggregate; reference data only touches its own lists. */
+const MONEY = ["tx", "tx-count", "dashboard", "balances", "budgets", "trend", "yearly", "yearly-summary", "net-worth", "reminders", "activity"];
+const AFFECTS: Record<string, string[]> = {
+  transactions: MONEY,
+  accounts: [...MONEY, "rows"],
+  categories: ["rows", "tx", "dashboard", "budgets", "trend", "activity"],
+  debts: ["rows", "debts", "reminders", "dashboard", "activity"],
+  debt_payments: [...MONEY, "debts"],
+  subscriptions: ["rows", "reminders", "dashboard", "activity"],
+  budgets: ["rows", "budgets", "dashboard", "activity"],
+  goals: ["rows", "dashboard", "activity"],
+  gold_purchases: ["rows", "gold", "net-worth", "activity"],
+  receivables: [...MONEY, "receivables"],
+};
+
+export function invalidateFor(qc: QueryClient, table: string) {
+  const keys = new Set(AFFECTS[table] ?? MONEY);
+  return qc.invalidateQueries({ predicate: (q) => {
+    const k = q.queryKey[0];
+    if (k === "rows") return keys.has("rows") && (q.queryKey[1] === table || table === "accounts" || table === "categories");
+    return typeof k === "string" && keys.has(k);
+  } });
+}
+
 export function useCrud(table: CrudTable) {
   const qc = useQueryClient();
   const save = useServerFn(saveRow);
@@ -28,11 +54,11 @@ export function useCrud(table: CrudTable) {
   return {
     save: async (values: Record<string, unknown>, id?: string | null) => {
       await save({ data: { table, id: id ?? null, values } });
-      await qc.invalidateQueries();
+      await invalidateFor(qc, table);
     },
     remove: async (id: string) => {
       await del({ data: { table, id } });
-      await qc.invalidateQueries();
+      await invalidateFor(qc, table);
     },
   };
 }

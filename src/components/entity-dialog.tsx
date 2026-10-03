@@ -28,7 +28,7 @@ export function EntityDialog(props: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   title: string;
-  description?: string;
+  description?: string | undefined;
   fields: FieldDef[] | ((v: Values) => FieldDef[]);
   initial: Values;
   onSubmit: (v: Values) => Promise<void>;
@@ -62,7 +62,7 @@ export function EntityDialog(props: {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="font-display">{props.title}</DialogTitle>
           {props.description ? <DialogDescription>{props.description}</DialogDescription> : null}

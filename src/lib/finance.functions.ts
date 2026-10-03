@@ -29,7 +29,7 @@ export const saveRow = createServerFn({ method: "POST" })
     const res = await q.select().single();
     if (res.error) throw new Error(res.error.message);
     const { logActivity } = await import("./finance.server");
-    await logActivity(`${data.table}.${data.id ? "update" : "create"}`, data.table, { name: (values as any).name ?? null });
+    await logActivity(`${data.table}.${data.id ? "update" : "create"}`, data.table, { name: (values as any).name ?? (values as any).place ?? null, amount: (values as any).amount ?? (values as any).target_amount ?? (values as any).grams ?? null, currency: (values as any).currency ?? null });
     return res.data as any;
   });
 
@@ -39,8 +39,8 @@ export const deleteRow = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.table === "debt_payments") {
       const { deleteDebtPayment, logActivity } = await import("./finance.server");
-      await deleteDebtPayment(data.id);
-      await logActivity("debt_payment.delete", "debt_payments", { id: data.id });
+      const info = await deleteDebtPayment(data.id);
+      await logActivity("debt_payment.delete", "debt_payments", info);
       return { ok: true };
     }
     const { db } = await import("./db.server");
@@ -49,10 +49,12 @@ export const deleteRow = createServerFn({ method: "POST" })
       const { removeReceipt } = await import("./receipt.server");
       await removeReceipt((old.data as any)?.receipt_path);
     }
+    const prev = await db().from(data.table).select("*").eq("id", data.id).maybeSingle();
     const res = await db().from(data.table).delete().eq("id", data.id);
     if (res.error) throw new Error(res.error.message);
     const { logActivity } = await import("./finance.server");
-    await logActivity(`${data.table}.delete`, data.table, { id: data.id });
+    const p = (prev.data ?? {}) as any;
+    await logActivity(`${data.table}.delete`, data.table, { name: p.name ?? p.description ?? null, amount: p.amount ?? p.grams ?? null, currency: p.currency ?? null });
     return { ok: true };
   });
 
@@ -155,8 +157,10 @@ export const addGoalFunds = createServerFn({ method: "POST" })
     const g = await db().from("goals").select("saved_amount").eq("id", data.id).single();
     if (g.error) throw new Error(g.error.message);
     const saved = Math.max(0, Number(g.data.saved_amount) + data.amount);
-    const res = await db().from("goals").update({ saved_amount: saved }).eq("id", data.id);
+    const res = await db().from("goals").update({ saved_amount: saved }).eq("id", data.id).select("name").single();
     if (res.error) throw new Error(res.error.message);
+    const { logActivity } = await import("./finance.server");
+    await logActivity("goal.funds", "goals", { name: (res.data as any)?.name ?? null, amount: Math.abs(data.amount), currency: "IDR" });
     return { ok: true, saved };
   });
 
@@ -256,3 +260,49 @@ export const getActivity = createServerFn({ method: "GET" })
     return listActivity(data.limit ?? 30);
   });
 
+
+/* ---------------- Gold & receivables & cash ---------------- */
+const recvSchema = () => import("./schemas").then((m) => m.receivableSchema);
+
+export const getGold = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { goldSummary } = await import("./assets.server");
+    return goldSummary() as Promise<any>;
+  });
+
+export const getReceivables = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async () => {
+    const { listReceivables } = await import("./assets.server");
+    return listReceivables() as Promise<any>;
+  });
+
+export const saveReceivableFn = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid().nullable().optional(), values: z.unknown() }).parse(d))
+  .handler(async ({ data }) => {
+    const values = (await recvSchema()).parse(data.values);
+    const { saveReceivable } = await import("./assets.server");
+    return (await saveReceivable(data.id ?? null, values)) as any;
+  });
+
+export const payReceivableFn = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), amount: z.number().positive(), account_id: optUuid, date: optDate }).parse(d))
+  .handler(async ({ data }) => {
+    const { payReceivable } = await import("./assets.server");
+    return payReceivable(data.id, data.amount, data.account_id ?? null, data.date ?? null);
+  });
+
+export const receivableActionFn = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), action: z.enum(["settle", "reopen", "delete", "delete_payment"]) }).parse(d))
+  .handler(async ({ data }) => {
+    const a = await import("./assets.server");
+    if (data.action === "settle") await a.setReceivableStatus(data.id, "paid");
+    else if (data.action === "reopen") await a.setReceivableStatus(data.id, "active");
+    else if (data.action === "delete") await a.deleteReceivable(data.id);
+    else await a.deleteReceivablePayment(data.id);
+    return { ok: true };
+  });

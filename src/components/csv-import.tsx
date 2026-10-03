@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { buildPreview, parseCsv, type PreviewRow } from "@/lib/csv";
 import { importCsvTransactions } from "@/lib/finance.functions";
-import { errMsg, rowsQuery } from "@/lib/queries";
+import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { dateLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
@@ -60,7 +60,7 @@ export function CsvImport() {
     setBusy(true);
     try {
       const res = await run({ data: { rows: valid.map((r) => r.value!), createMissing: needsConfirm ? createMissing : false } });
-      await qc.invalidateQueries();
+      await invalidateFor(qc, "transactions");
       const parts = [`${res.createdCategories + res.createdAccounts ? `${res.createdCategories} ${t("kategori")} & ${res.createdAccounts} ${t("akun baru dibuat")}` : ""}${dupCount ? `${dupCount} ${t("Duplikat")} ${t("dilewati")}` : ""}`.trim()];
       toast.success(`${res.inserted} ${t("transaksi diimpor")}`, { description: parts.filter(Boolean).join(" · ") || undefined });
       setRows(null);
