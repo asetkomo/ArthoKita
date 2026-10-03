@@ -526,7 +526,8 @@ export async function importCsv(text: string) {
   if (idx("tanggal") < 0 || idx("jenis") < 0 || idx("jumlah") < 0) {
     throw new Error("Format CSV tidak dikenali. Gunakan file hasil ekspor dengan kolom: Tanggal, Jenis, Kategori, Akun, Jumlah, Mata Uang, …");
   }
-  let imported = 0;
+  type Parsed = { line: number; row: string[]; kind: "income" | "expense" | "transfer"; date: string; currency: "IDR" | "USD"; amount: number; category: string | null; account: string | null; to_account: string | null; description: string | null; merchant: string | null; notes: string | null };
+  const items: Parsed[] = [];
   const errors: string[] = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i]!;
@@ -538,28 +539,52 @@ export async function importCsv(text: string) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`tanggal "${date}" tidak valid`);
       const currency = (r[idx("mata uang")]?.trim().toUpperCase() || "IDR") as "IDR" | "USD";
       if (currency !== "IDR" && currency !== "USD") throw new Error(`mata uang "${currency}" tidak valid`);
-      await createFromExternal({
+      items.push({
+        line: i + 1,
+        row: r,
         kind,
-        amount: parseAmount(r[idx("jumlah")] ?? ""),
+        date,
         currency,
+        amount: parseAmount(r[idx("jumlah")] ?? ""),
         category: r[idx("kategori")]?.trim() || null,
         account: r[idx("akun")]?.trim() || null,
         to_account: kind === "transfer" ? r[idx("ke akun")]?.trim() || null : null,
         description: r[idx("deskripsi")]?.trim() || null,
         merchant: r[idx("merchant")]?.trim() || null,
-        date,
-        source: "web",
         notes: r[idx("catatan")]?.trim() || null,
-        raw: null,
       });
-      imported++;
     } catch (e) {
       errors.push(`Baris ${i + 1}: ${e instanceof Error ? e.message : "gagal"}`);
     }
   }
-  const message = `${imported} transaksi berhasil diimpor${errors.length ? `, ${errors.length} gagal` : ""}.`;
-  return { imported, failed: errors.length, errors: errors.slice(0, 10), message };
+  let imported = 0;
+  let duplicates = 0;
+  if (items.length) {
+    const dates = items.map((i) => i.date);
+    const min = dates.reduce((a, b) => (a < b ? a : b));
+    const max = dates.reduce((a, b) => (a > b ? a : b));
+    const existing = must<any[]>(await db().from("transactions").select("occurred_at, kind, amount, currency, description").gte("occurred_at", min).lte("occurred_at", max).limit(50000));
+    const seen = new Set(existing.map((t) => dupKey({ date: t.occurred_at, kind: t.kind, amount: Number(t.amount), currency: t.currency, description: t.description })));
+    for (const it of items) {
+      try {
+        const key = dupKey({ date: it.date, kind: it.kind, amount: it.amount, currency: it.currency, description: it.description });
+        if (seen.has(key)) {
+          duplicates++;
+          continue;
+        }
+        seen.add(key);
+        await createFromExternal({ kind: it.kind, amount: it.amount, currency: it.currency, category: it.category, account: it.account, to_account: it.to_account, description: it.description, merchant: it.merchant, date: it.date, source: "web", notes: it.notes, raw: null });
+        imported++;
+      } catch (e) {
+        errors.push(`Baris ${it.line}: ${e instanceof Error ? e.message : "gagal"}`);
+      }
+    }
+  }
+  const message = `${imported} transaksi berhasil diimpor${duplicates ? `, ${duplicates} duplikat dilewati` : ""}${errors.length ? `, ${errors.length} gagal` : ""}.`;
+  if (imported) await logActivity("import", "transactions", { imported, duplicates, failed: errors.length });
+  return { imported, duplicates, failed: errors.length, errors: errors.slice(0, 10), message };
 }
+
 /* ---------------- Reports ---------------- */
 export async function categoryTrend(months: number, endMonth: string) {
   const first = shiftMonth(endMonth, -(months - 1));
@@ -609,32 +634,53 @@ export async function importTransactions(rows: import("./schemas").ImportRowInpu
   const out: any[] = [];
   let createdCategories = 0;
   let createdAccounts = 0;
+  let duplicates = 0;
+  const dates = rows.map((r) => r.date);
+  const existing = dates.length
+    ? must<any[]>(
+        await db()
+          .from("transactions")
+          .select("occurred_at, kind, amount, currency, description")
+          .gte("occurred_at", dates.reduce((a, b) => (a < b ? a : b)))
+          .lte("occurred_at", dates.reduce((a, b) => (a > b ? a : b)))
+          .limit(50000),
+      )
+    : [];
+  const seen = new Set(existing.map((t) => dupKey({ date: t.occurred_at, kind: t.kind, amount: Number(t.amount), currency: t.currency, description: t.description })));
   for (const r of rows) {
+    const key = dupKey({ date: r.date, kind: r.kind, amount: r.amount, currency: r.currency, description: r.notes });
+    if (seen.has(key)) {
+      duplicates++;
+      continue;
+    }
+    seen.add(key);
     let category_id: string | null = null;
     if (r.category) {
-      const key = `${r.kind}:${r.category.toLowerCase()}`;
-      category_id = catMap.get(key) ?? null;
+      const key2 = `${r.kind}:${r.category.toLowerCase()}`;
+      category_id = catMap.get(key2) ?? null;
       if (!category_id && createMissing) {
         category_id = must<any>(await db().from("categories").insert({ name: r.category, kind: r.kind }).select("id").single()).id;
-        catMap.set(key, category_id!);
+        catMap.set(key2, category_id!);
         createdCategories++;
       }
     }
     let account_id: string | null = null;
     if (r.account) {
-      const key = r.account.toLowerCase();
-      account_id = accMap.get(key) ?? null;
+      const key2 = r.account.toLowerCase();
+      account_id = accMap.get(key2) ?? null;
       if (!account_id && createMissing) {
         account_id = must<any>(await db().from("accounts").insert({ name: r.account, type: "other", currency: r.currency }).select("id").single()).id;
-        accMap.set(key, account_id!);
+        accMap.set(key2, account_id!);
         createdAccounts++;
       }
     }
     out.push({ kind: r.kind, amount: r.amount, currency: r.currency, amount_idr: await toIdr(r.amount, r.currency, rate), category_id, account_id, description: r.notes, occurred_at: r.date, source: "import" });
   }
   for (let i = 0; i < out.length; i += 500) must(await db().from("transactions").insert(out.slice(i, i + 500)));
-  return { inserted: out.length, createdCategories, createdAccounts };
+  if (out.length) await logActivity("import", "transactions", { imported: out.length, duplicates });
+  return { inserted: out.length, duplicates, createdCategories, createdAccounts };
 }
+
 
 /* ---------------- Email ---------------- */
 export async function reminderEmail(days: number) {
@@ -660,3 +706,93 @@ export async function sendReminderEmail(days: number, to?: string) {
   }
   return { sent: true, count: mail.count, subject: mail.subject };
 }
+
+/* ---------------- Reports: net worth ---------------- */
+export async function netWorthSeries(months = 12, endMonth: string) {
+  const rate = await getUsdIdr();
+  const accs = must<any[]>(await db().from("accounts").select("initial_balance, currency"));
+  let initial = 0;
+  for (const a of accs) initial += Number(a.initial_balance) * (a.currency === "USD" ? rate : 1);
+  const first = shiftMonth(endMonth, -(months - 1));
+  const { end } = monthRange(endMonth);
+  const rows = must<any[]>(await db().from("transactions").select("occurred_at, kind, amount_idr").neq("kind", "transfer").lt("occurred_at", end).limit(200000));
+  const monthlyNet = new Map<string, number>();
+  for (const t of rows) {
+    const m = String(t.occurred_at).slice(0, 7);
+    const v = Number(t.amount_idr);
+    monthlyNet.set(m, (monthlyNet.get(m) ?? 0) + (t.kind === "income" ? v : -v));
+  }
+  let cum = initial;
+  for (const m of [...monthlyNet.keys()].sort()) {
+    if (m >= first) break;
+    cum += monthlyNet.get(m) ?? 0;
+  }
+  const out: { month: string; netWorth: number }[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const m = shiftMonth(endMonth, -i);
+    cum += monthlyNet.get(m) ?? 0;
+    out.push({ month: m, netWorth: r2(cum) });
+  }
+  return out;
+}
+
+/* ---------------- Backup ---------------- */
+export async function exportBackup() {
+  const tables = ["accounts", "categories", "transactions", "debts", "debt_payments", "subscriptions", "budgets", "goals", "fx_rates"] as const;
+  const data: Record<string, any[]> = {};
+  for (const t of tables) data[t] = must<any[]>(await db().from(t).select("*").limit(50000));
+  await logActivity("backup.export", null, { tables: tables.length });
+  return { exportedAt: new Date().toISOString(), app: "dompetku", version: 1, data };
+}
+
+/* ---------------- Bot command (n8n) ---------------- */
+function fmtMoney(n: number, c: string) {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: c, maximumFractionDigits: c === "USD" ? 2 : 0 }).format(n);
+}
+
+export async function botCommand(text: string): Promise<{ message: string }> {
+  const { classifyBotCommand, botHelp, botSearchToken } = await import("./bot");
+  const cmd = classifyBotCommand(text);
+  let message: string;
+  switch (cmd.type) {
+    case "balances": {
+      const rows = must<any[]>(await db().from("account_balances").select("*").eq("archived", false).order("name"));
+      message = rows.length ? `💰 Saldo:\n${rows.map((a) => `• ${a.name}: ${fmtMoney(Number(a.balance), a.currency)}`).join("\n")}` : "Belum ada akun terdaftar.";
+      break;
+    }
+    case "summary":
+      message = await summaryText(cmd.month ?? today().slice(0, 7));
+      break;
+    case "reminders":
+      message = remindersText(await computeReminders(14));
+      break;
+    case "pay":
+      message = await botPay(cmd.target, botSearchToken);
+      break;
+    case "help":
+      message = botHelp();
+      break;
+    default:
+      message = `🤖 Perintah tidak dikenali: "${text}"\n${botHelp()}`;
+  }
+  await logActivity("bot.command", null, { text: text.slice(0, 200), type: cmd.type });
+  return { message };
+}
+
+async function botPay(target: string, clean: (s: string) => string): Promise<string> {
+  if (!target) return "Sebutkan namanya juga, mis. 'sudah bayar Netflix' atau 'bayar cicilan KTA'.";
+  const token = clean(target);
+  const subs = must<any[]>(await db().from("subscriptions").select("id, name").ilike("name", `%${token}%`).limit(5));
+  const debts = must<any[]>(await db().from("debts").select("id, name").ilike("name", `%${token}%`).limit(5));
+  if (!subs.length && !debts.length) return `❓ Tidak menemukan langganan/cicilan bernama "${target}".`;
+  if (subs.length + debts.length > 1) return `❓ Nama "${target}" cocok dengan beberapa item (${[...subs, ...debts].map((x) => x.name).join(", ")}). Sebutkan lebih spesifik.`;
+  if (subs[0]) {
+    const r = await paySubscription(subs[0]!.id, null, null);
+    return `✅ Langganan ${subs[0]!.name} dicatat. Tagihan berikutnya ${r.next_due}.`;
+  }
+  const d = debts[0]!;
+  const { count } = await db().from("debt_payments").select("id", { count: "exact", head: true }).eq("debt_id", d.id);
+  await payDebt(d.id, null, null);
+  return `✅ Cicilan ${d.name} ke-${(count ?? 0) + 1} dicatat.`;
+}
+
