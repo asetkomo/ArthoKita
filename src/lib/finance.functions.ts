@@ -157,8 +157,10 @@ export const addGoalFunds = createServerFn({ method: "POST" })
     const g = await db().from("goals").select("saved_amount").eq("id", data.id).single();
     if (g.error) throw new Error(g.error.message);
     const saved = Math.max(0, Number(g.data.saved_amount) + data.amount);
-    const res = await db().from("goals").update({ saved_amount: saved }).eq("id", data.id);
+    const res = await db().from("goals").update({ saved_amount: saved }).eq("id", data.id).select("name").single();
     if (res.error) throw new Error(res.error.message);
+    const { logActivity } = await import("./finance.server");
+    await logActivity("goal.funds", "goals", { name: (res.data as any)?.name ?? null, amount: Math.abs(data.amount), currency: "IDR" });
     return { ok: true, saved };
   });
 

@@ -15,11 +15,12 @@ import { exportBackupJson } from "@/lib/finance.functions";
 import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
+import { activityDetail, activityLabel } from "@/lib/activity";
 import type { Category } from "@/lib/schemas";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => pageHead("Pengaturan", "Kategori, kurs, cadangan data, dan integrasi bot n8n."),
-  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery())]),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(rowsQuery("categories")), context.queryClient.ensureQueryData(fxQuery()), context.queryClient.ensureQueryData(activityQuery(30))]),
   errorComponent: RouteError,
   component: SettingsPage,
 });
@@ -36,7 +37,7 @@ const ENDPOINTS = [
 ];
 
 function SettingsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const categories = useSuspenseQuery(rowsQuery("categories")).data as Category[];
   const { usdIdr } = useSuspenseQuery(fxQuery()).data;
   const activity = useSuspenseQuery(activityQuery(30)).data as any[];
@@ -106,11 +107,11 @@ function SettingsPage() {
           <ul className="mt-3 max-h-72 space-y-1 overflow-auto text-sm">
             {activity.map((a) => (
               <li key={a.id} className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 odd:bg-muted/50">
-                <span className="truncate">
-                  <span className="num text-xs text-muted-foreground">{String(a.action)}</span>
-                  {(a.detail as any)?.name ? <span className="ml-2">{String((a.detail as any).name)}</span> : null}
+                <span className="min-w-0 truncate">
+                  <span className={String(a.action) === "auth.login_failed" ? "font-medium text-expense" : "font-medium"}>{activityLabel(String(a.action), t)}</span>
+                  {activityDetail(a.detail, (n, c) => money(n, c)) ? <span className="ml-2 text-muted-foreground">{activityDetail(a.detail, (n, c) => money(n, c))}</span> : null}
                 </span>
-                <span className="num shrink-0 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                <span className="num shrink-0 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString(lang === "en" ? "en-US" : "id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
               </li>
             ))}
           </ul>
@@ -123,7 +124,7 @@ function SettingsPage() {
         <ul className="mt-4 space-y-3">
           {ENDPOINTS.map((e) => (
             <li key={e.path} className="rounded-xl border p-3">
-              <p className="text-sm"><span className="mr-2 rounded bg-ink px-1.5 py-0.5 text-xs font-semibold text-ink-foreground">{e.method}</span><code className="num break-all text-xs">{origin}{e.path}</code></p>
+              <p className="min-w-0 text-sm"><span className="mr-2 rounded bg-ink px-1.5 py-0.5 text-xs font-semibold text-ink-foreground">{e.method}</span><code className="num break-all text-xs">{origin}{e.path}</code></p>
               <p className="mt-1 text-xs text-muted-foreground">{t(e.desc)}</p>
               {e.body ? <pre className="num mt-2 overflow-x-auto rounded-lg bg-muted p-2 text-xs">{e.body}</pre> : null}
             </li>
