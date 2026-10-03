@@ -179,3 +179,12 @@
     background: var(--color-card);
   }
 }
+
+@layer base {
+  html, body { max-width: 100%; overflow-x: hidden; }
+  .recharts-responsive-container { min-width: 0; }
+}
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
