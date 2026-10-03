@@ -24,11 +24,18 @@ export const saveRow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ table: z.enum(CRUD_TABLES), id: z.string().uuid().nullable().optional(), values: z.unknown() }).parse(d))
   .handler(async ({ data }) => {
     const values = tableSchemas[data.table].parse(data.values);
+    if (data.table === "gold_purchases") {
+      const { saveGold } = await import("./assets.server");
+      const saved = await saveGold(data.id ?? null, values as any);
+      const { logActivity } = await import("./finance.server");
+      await logActivity(`gold_purchases.${data.id ? "update" : "create"}`, "gold_purchases", { name: (values as any).place ?? null, amount: (values as any).grams, currency: null });
+      return saved as any;
+    }
     const { db } = await import("./db.server");
     const run = (v: any) => (data.id ? db().from(data.table).update(v).eq("id", data.id) : db().from(data.table).insert(v)).select().single();
     let res = await run(values);
     // Optional v4 columns may not exist yet in the user's database: retry without them.
-    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : data.table === "gold_purchases" ? ["gold_type", "product_number"] : [];
+    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : [];
     if (res.error && optional.some((c) => res.error!.message.includes(c))) {
       const v: any = { ...(values as any) };
       for (const c of optional) delete v[c];
@@ -59,8 +66,9 @@ export const deleteRow = createServerFn({ method: "POST" })
     const prev = await db().from(data.table).select("*").eq("id", data.id).maybeSingle();
     const res = await db().from(data.table).delete().eq("id", data.id);
     if (res.error) throw new Error(res.error.message);
-    const { logActivity } = await import("./finance.server");
     const p = (prev.data ?? {}) as any;
+    if (data.table === "gold_purchases" && p.transaction_id) await db().from("transactions").delete().eq("id", p.transaction_id);
+    const { logActivity } = await import("./finance.server");
     await logActivity(`${data.table}.delete`, data.table, { name: p.name ?? p.description ?? null, amount: p.amount ?? p.grams ?? null, currency: p.currency ?? null });
     return { ok: true };
   });

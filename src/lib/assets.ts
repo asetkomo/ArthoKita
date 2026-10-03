@@ -36,6 +36,32 @@ export function receivableStatus(amount: number, payments: { amount: number }[])
   return { paid, remaining: Math.max(0, amount - paid), progress: amount > 0 ? Math.min(100, (paid / amount) * 100) : 0 };
 }
 
+/** Gold records move cash into an asset: buy = expense, sell = income, category "Emas". */
+export const GOLD_CATEGORY = "Emas";
+export const GOLD_LINK_COLUMNS = ["account_id", "transaction_id"] as const;
+
+export type GoldLinkInput = { kind: "buy" | "sell"; grams: number; total: number; place: string | null; occurred_at: string; account_id: string | null; notes: string | null };
+
+/** Linked transaction for a gold record, or null when no account is chosen. */
+export function goldLinkedTx(g: GoldLinkInput) {
+  if (!g.account_id) return null;
+  const verb = g.kind === "buy" ? "Beli" : "Jual";
+  return {
+    kind: (g.kind === "buy" ? "expense" : "income") as "expense" | "income",
+    amount: g.total,
+    account_id: g.account_id,
+    occurred_at: g.occurred_at,
+    description: `${verb} emas ${g.grams} g${g.place ? ` · ${g.place}` : ""}`,
+    notes: g.notes,
+  };
+}
+
+/** What to do with the linked transaction when a gold record is saved. */
+export function goldLinkAction(existingTxId: string | null, accountId: string | null): "none" | "create" | "update" | "delete" {
+  if (accountId) return existingTxId ? "update" : "create";
+  return existingTxId ? "delete" : "none";
+}
+
 function round(n: number, d: number) {
   const f = 10 ** d;
   return Math.round(n * f) / f;
