@@ -29,3 +29,4 @@
 - Activity labels come from `src/lib/activity.ts`; action names are `<table>.<create|update|delete>` or the special keys listed there.
 - Fees: transfer/top-up/monthly account fees are separate expense transactions in category "Biaya Admin"; monthly fees are applied lazily (dashboard/reminders) and deduplicated by a notes marker from `src/lib/fees.ts` (pure, tested). Optional v4 columns are dropped and retried in saveRow when missing.
 - Unbounded history screens use validated server-side pagination and sorting; compact dashboard widgets and small form reference lists stay bounded or fully loaded for usability.
+- Gold records with an account create a linked expense (buy) / income (sell) transaction in category "Emas" via `saveGold` in assets.server.ts (pure helpers in assets.ts); edits sync and deletes remove it, and net worth counts gold value once against the cash outflow.

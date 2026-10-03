@@ -259,3 +259,9 @@ create index if not exists subscriptions_active_next_due_idx on public.subscript
 create index if not exists transactions_to_account_idx on public.transactions (to_account_id);
 create index if not exists transactions_occurred_kind_idx on public.transactions (occurred_at desc, kind);
 create index if not exists receivables_status_idx on public.receivables (status);
+
+-- ============ v6: emas tertaut ke akun & transaksi kategori "Emas" (aman dijalankan ulang) ============
+alter table public.gold_purchases add column if not exists account_id uuid references public.accounts(id) on delete set null;
+alter table public.gold_purchases add column if not exists transaction_id uuid references public.transactions(id) on delete set null;
+insert into public.categories (name, kind, color) values ('Emas','expense','#c9a227'), ('Emas','income','#c9a227')
+on conflict (name, kind) do nothing;

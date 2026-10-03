@@ -38,7 +38,7 @@ const AFFECTS: Record<string, string[]> = {
   subscriptions: ["rows", "reminders", "dashboard", "activity"],
   budgets: ["rows", "budgets", "dashboard", "activity"],
   goals: ["rows", "dashboard", "activity", "assets"],
-  gold_purchases: [...MONEY, "gold", "assets"],
+  gold_purchases: [...MONEY, "rows", "gold"],
   receivables: [...MONEY, "receivables"],
 };
 

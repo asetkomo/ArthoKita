@@ -56,7 +56,7 @@ function GoldPage() {
 
   return (
     <>
-      <PageHeader title={t("Tabungan Emas")} subtitle={t("Nilai dihitung dari harga buyback per gram.")} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Catat")}</Button>} />
+      <PageHeader title={t("Tabungan Emas")} subtitle={`${t("Nilai dihitung dari harga buyback per gram.")} ${t("Pilih akun agar beli/jual emas otomatis tercatat di Transaksi.")}`} actions={<Button onClick={() => crud.openNew()}><Plus className="size-4" /> {t("Catat")}</Button>} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label={t("Total emas")} value={`${holdings.grams.toLocaleString(locale)} g`} />
         <Stat label={t("Modal")} value={money(holdings.cost)} />
