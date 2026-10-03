@@ -53,7 +53,7 @@ function q(table: string) {
 }
 vi.mock("../lib/db.server", () => ({ db: () => ({ from: q, storage: { from: () => ({ remove: async () => ({}) }) } }) }));
 
-import { handleBotUpdate } from "../lib/bot.server";
+import { handleBotUpdate, isBotTransaction } from "../lib/bot.server";
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k];
@@ -123,5 +123,39 @@ describe("alur bot end-to-end (tanpa AI)", () => {
 
   it("pesan ambigu tanpa AI key memberi error ramah (bukan crash diam)", async () => {
     await expect(handleBotUpdate({ update_id: 5, chat_id: "111", text: "kemarin patungan sama andi" })).rejects.toThrow(/AI_API_KEY/);
+  });
+
+  it("undo lewat callback tidak bisa menghapus transaksi sembarang", async () => {
+    tables["transactions"] = [
+      { id: "0f8fad5b-d9cb-469f-a165-70867728950e", source: "telegram", amount: 5, currency: "IDR", created_at: new Date().toISOString(), notes: null },
+      { id: "1f8fad5b-d9cb-469f-a165-70867728950e", source: "ocr", amount: 5, currency: "IDR", created_at: new Date().toISOString(), notes: null },
+    ];
+    // tidak ada bot_drafts yang menautkan transaksi ini → ditolak walau source "telegram"
+    const r = await cb("u:0f8fad5b-d9cb-469f-a165-70867728950e");
+    expect(r.text).toContain("Hanya transaksi");
+    // /undo tidak menyentuh struk OCR dari web
+    const u = await handleBotUpdate({ update_id: 6, chat_id: "111", text: "/undo" });
+    expect(u.text).toContain("Dihapus");
+    expect(tables["transactions"]!.map((t) => t.id)).toEqual(["1f8fad5b-d9cb-469f-a165-70867728950e"]);
+  });
+
+  it("pratinjau milik chat lain tidak bisa disimpan", async () => {
+    process.env["BOT_ALLOWED_CHAT_IDS"] = "111,222";
+    await handleBotUpdate({ update_id: 7, chat_id: "111", text: "kopi 25rb" });
+    const id = tables["bot_drafts"]![0]!.id;
+    const r = await handleBotUpdate({ update_id: 8, chat_id: "222", callback_data: `d:s:${id}` });
+    expect(r.text).toContain("tidak ditemukan");
+    expect(tables["transactions"] ?? []).toHaveLength(0);
+  });
+});
+
+describe("undo hanya untuk transaksi bot", () => {
+  it("ocr dari web tidak bisa di-undo lewat bot", () => {
+    expect(isBotTransaction({ source: "ocr", raw: null, external_id: null })).toBe(false);
+    expect(isBotTransaction({ source: "ocr", external_id: "draft:abc" })).toBe(true);
+    expect(isBotTransaction({ source: "ocr", raw: { ocr: {} } })).toBe(true);
+    expect(isBotTransaction({ source: "telegram" })).toBe(true);
+    expect(isBotTransaction({ source: "web" })).toBe(false);
+    expect(isBotTransaction({ source: "telegram", notes: "[fee:x]" })).toBe(false);
   });
 });

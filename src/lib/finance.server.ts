@@ -880,7 +880,7 @@ function fmtMoney(n: number, c: string) {
 }
 
 export async function botCommand(text: string): Promise<{ message: string; type: string }> {
-  const { classifyBotCommand, botHelp, botSearchToken } = await import("./bot");
+  const { classifyBotCommand, botHelp, botSearchToken, clampMessage } = await import("./bot");
   const bot = await import("./bot.server");
   const cmd = classifyBotCommand(text);
   let message: string;
@@ -930,7 +930,7 @@ export async function botCommand(text: string): Promise<{ message: string; type:
       message = `🤖 Perintah tidak dikenali: "${text.slice(0, 50)}". Ketik /help untuk daftar perintah.`;
   }
   await logActivity("bot.command", null, { text: text.slice(0, 200), type: cmd.type });
-  return { message, type: cmd.type };
+  return { message: clampMessage(message), type: cmd.type };
 }
 
 async function botPay(target: string, clean: (s: string) => string): Promise<string> {

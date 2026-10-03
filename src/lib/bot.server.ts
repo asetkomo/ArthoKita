@@ -1,6 +1,7 @@
 /** Telegram/n8n bot: drafts with confirm buttons, reports and lists. Shared business logic stays in finance.server. */
 import { db } from "./db.server";
 import {
+  clampMessage,
   guessCategory,
   matchCategory,
   money,
@@ -40,14 +41,19 @@ export type BotReply = {
 
 const reply = (text: string, reply_markup: InlineKeyboard | null = null): BotReply => ({
   method: "send",
-  text,
+  text: clampMessage(text),
   reply_markup,
 });
 const edit = (
   text: string,
   reply_markup: InlineKeyboard | null = null,
   toast?: string,
-): BotReply => ({ method: "edit", text, reply_markup, ...(toast ? { toast } : {}) });
+): BotReply => ({
+  method: "edit",
+  text: clampMessage(text),
+  reply_markup,
+  ...(toast ? { toast } : {}),
+});
 
 /** Optional server-side allow-list (defense in depth on top of the n8n filter). */
 export function chatAllowed(chatId: string): boolean {
@@ -61,7 +67,7 @@ export function chatAllowed(chatId: string): boolean {
 /* ---------------- Entry point ---------------- */
 export async function handleBotUpdate(u: BotUpdate): Promise<BotReply> {
   if (!chatAllowed(u.chat_id)) return { method: "none", text: "", reply_markup: null };
-  if (u.callback_data) return handleCallback(u.callback_data);
+  if (u.callback_data) return handleCallback(u.callback_data, String(u.chat_id));
   if (u.image_base64) return draftFromImage(u);
   const text = (u.text ?? "").trim();
   if (!text)
@@ -79,6 +85,7 @@ export async function handleBotUpdate(u: BotUpdate): Promise<BotReply> {
 /* ---------------- Drafts ---------------- */
 type DraftRow = {
   id: string;
+  chat_id: string;
   status: string;
   payload: DraftPayload;
   receipt_path: string | null;
@@ -129,11 +136,12 @@ async function storeDraft(
       throw new Error("Tabel bot_drafts belum ada. Jalankan bagian v7 di supabase/schema.sql.");
     throw new Error(res.error.message);
   }
-  // Opportunistic cleanup of old drafts (cheap, indexed).
+  // Opportunistic cleanup of old drafts (cheap, indexed). Keep them longer than the 7-day undo
+  // window plus the 48 h draft TTL, because the ↩️ Undo button is validated against this table.
   void db()
     .from("bot_drafts")
     .delete()
-    .lt("created_at", new Date(Date.now() - 7 * 86400000).toISOString())
+    .lt("created_at", new Date(Date.now() - 10 * 86400000).toISOString())
     .then(() => undefined);
   return res.data as DraftRow;
 }
@@ -249,16 +257,29 @@ async function draftFromImage(u: BotUpdate): Promise<BotReply> {
 }
 
 /* ---------------- Callback buttons ---------------- */
-async function handleCallback(data: string): Promise<BotReply> {
+async function handleCallback(data: string, chatId: string): Promise<BotReply> {
   const cb = parseCallback(data);
   if (!cb) return edit("⚠️ Tombol tidak dikenali.", null, "Tidak dikenali");
   if (cb.kind === "undo") {
+    // Undo buttons are only ever attached to drafts saved through the bot; refuse any other id
+    // (callback_data can be forged by a modified Telegram client).
+    const link = await db()
+      .from("bot_drafts")
+      .select("id")
+      .eq("transaction_id", cb.id)
+      .eq("chat_id", chatId)
+      .limit(1)
+      .maybeSingle();
+    if (!link.data)
+      return edit("⚠️ Hanya transaksi yang disimpan lewat bot yang bisa di-undo.", null, "Gagal");
     const r = await undoTransaction(cb.id);
     return edit(r.message, null, r.ok ? "Dibatalkan" : "Gagal");
   }
   const row = (await db().from("bot_drafts").select("*").eq("id", cb.id).maybeSingle())
     .data as DraftRow | null;
-  if (!row) return edit("⚠️ Pratinjau tidak ditemukan.", null);
+  // A draft belongs to the chat it was created in; never act on another chat's draft.
+  if (!row || String(row.chat_id) !== chatId)
+    return edit("⚠️ Pratinjau tidak ditemukan.", null);
   if (row.status === "saved")
     return edit(
       "✅ Sudah tersimpan sebelumnya.",
@@ -291,11 +312,20 @@ async function handleCallback(data: string): Promise<BotReply> {
   switch (cb.op) {
     case "s":
       return saveDraft(row);
-    case "x":
-      await db().from("bot_drafts").update({ status: "cancelled" }).eq("id", row.id);
+    case "x": {
+      // Only a still-pending draft may be cancelled: a racing ✅ must not lose its receipt photo.
+      const c = await db()
+        .from("bot_drafts")
+        .update({ status: "cancelled" })
+        .eq("id", row.id)
+        .eq("status", "pending")
+        .select("id");
+      if (!c.error && !(c.data ?? []).length)
+        return edit("ℹ️ Pratinjau ini sudah diproses.", null);
       if (row.receipt_path)
         await (await import("./receipt.server")).removeReceipt(row.receipt_path);
       return edit("❌ Dibatalkan, tidak ada yang disimpan.", null, "Dibatalkan");
+    }
     case "b":
       return previewReply(row, true);
     case "k": {
@@ -356,16 +386,33 @@ async function saveDraft(row: DraftRow): Promise<BotReply> {
 }
 
 /* ---------------- Undo ---------------- */
+/**
+ * Created by the bot/n8n? source "ocr" is shared with the web receipt scanner, so an ocr row
+ * only counts when it carries the bot's idempotency key or n8n's raw payload.
+ */
+export function isBotTransaction(tx: {
+  source?: string | null;
+  external_id?: string | null;
+  raw?: unknown;
+  notes?: string | null;
+}): boolean {
+  if (tx.notes?.startsWith("[fee:")) return false;
+  if (tx.source === "telegram" || tx.source === "whatsapp") return true;
+  if (tx.source !== "ocr") return false;
+  const raw = (tx.raw ?? null) as { ocr?: unknown; draft_id?: unknown } | null;
+  return !!tx.external_id?.startsWith("draft:") || !!raw?.ocr || !!raw?.draft_id;
+}
+
 export async function undoTransaction(id: string): Promise<{ ok: boolean; message: string }> {
   const tx = (
     await db()
       .from("transactions")
-      .select("id, source, description, amount, currency, receipt_path, created_at")
+      .select("*") // "*" so it still works before v7 adds external_id
       .eq("id", id)
       .maybeSingle()
   ).data as any;
   if (!tx) return { ok: false, message: "⚠️ Transaksi tidak ditemukan (mungkin sudah dihapus)." };
-  if (!BOT_SOURCES.includes(tx.source))
+  if (!isBotTransaction(tx))
     return {
       ok: false,
       message: "⚠️ Hanya transaksi dari bot yang bisa di-undo. Hapus lewat web.",
@@ -392,17 +439,17 @@ export async function undoTransaction(id: string): Promise<{ ok: boolean; messag
 
 export async function undoLast(): Promise<{ ok: boolean; message: string }> {
   const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+  // Filter fee rows in JS: SQL `notes NOT LIKE ...` is NULL (→ excluded) for the usual notes = null.
   const r = await db()
     .from("transactions")
-    .select("id")
+    .select("*")
     .in("source", BOT_SOURCES)
     .gte("created_at", since)
-    .not("notes", "like", "[fee:%")
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!r.data) return { ok: false, message: "Tidak ada transaksi dari bot dalam 24 jam terakhir." };
-  return undoTransaction(r.data.id as string);
+    .limit(20);
+  const last = ((r.data ?? []) as any[]).find(isBotTransaction);
+  if (!last) return { ok: false, message: "Tidak ada transaksi dari bot dalam 24 jam terakhir." };
+  return undoTransaction(last.id as string);
 }
 
 /* ---------------- Reports & lists ---------------- */
