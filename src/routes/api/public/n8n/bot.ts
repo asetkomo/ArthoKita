@@ -1,27 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
+import { botUpdateSchema, readJsonBody } from "@/lib/bot-request";
 
 // POST /api/public/n8n/bot — satu pintu untuk semua update Telegram dari n8n.
 // Body: { update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }
+// mime_type wajib bila image_base64 ada: image/jpeg | image/png | image/webp (image/jpg → image/jpeg).
+// Body > 4,5 MB (batas Vercel) ditolak 413.
 // Balasan: { ok, method: "send"|"edit"|"none", text, reply_markup, toast? } → n8n tinggal meneruskan ke Telegram Bot API.
-const schema = z
-  .object({
-    update_id: z.coerce.number().int().nonnegative(),
-    chat_id: z.coerce.string().regex(/^-?\d{1,20}$/),
-    text: z.string().max(2000).nullable().optional(),
-    // Vercel membatasi body 4,5 MB.
-    image_base64: z.string().min(100).max(4_400_000).nullable().optional(),
-    mime_type: z
-      .string()
-      .regex(/^image\/[a-z+.-]+$/)
-      .nullable()
-      .optional(),
-    callback_data: z.string().max(64).nullable().optional(),
-  })
-  .refine((v) => v.text || v.image_base64 || v.callback_data, {
-    message: "text, image_base64, atau callback_data wajib diisi",
-  });
-
 export const Route = createFileRoute("/api/public/n8n/bot")({
   server: {
     handlers: {
@@ -29,7 +13,9 @@ export const Route = createFileRoute("/api/public/n8n/bot")({
         const { checkApiKey, json } = await import("@/lib/api-key.server");
         const denied = checkApiKey(request);
         if (denied) return denied;
-        const parsed = schema.safeParse(await request.json().catch(() => null));
+        const body = await readJsonBody(request);
+        if (!body.ok) return json({ ok: false, error: body.error, method: "none" }, body.status);
+        const parsed = botUpdateSchema.safeParse(body.value);
         if (!parsed.success)
           return json({ ok: false, error: parsed.error.flatten(), method: "none" }, 400);
         try {

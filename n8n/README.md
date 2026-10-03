@@ -13,7 +13,7 @@ Endpoint yang dipanggil workflow (semua dengan header `x-api-key`; daftar lengka
 
 | Workflow | Method & path | Field respons yang dipakai |
 |---|---|---|
-| 01 | `POST /api/public/n8n/bot` body `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` | `method`, `text`, `reply_markup`, `toast` |
+| 01 | `POST /api/public/n8n/bot` body `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` (`mime_type` wajib bila ada `image_base64`: `image/jpeg`\|`image/png`\|`image/webp`; body maks 4,5 MB, lebih besar → 413) | `method`, `text`, `reply_markup`, `toast` |
 | 02 | `GET /api/public/n8n/reminders?days=3` | `count`, `message` |
 | 02 | `GET /api/public/n8n/report?period=today\|lastweek\|lastmonth` | `message` |
 
