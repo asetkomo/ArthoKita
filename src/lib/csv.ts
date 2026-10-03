@@ -91,7 +91,12 @@ export type ImportRow = {
   account: string | null;
   notes: string | null;
 };
-export type PreviewRow = { line: number; raw: string[]; value: ImportRow | null; errors: string[] };
+export type PreviewRow = { line: number; raw: string[]; value: ImportRow | null; errors: string[]; duplicate: boolean };
+
+/** Fingerprint used to detect duplicate rows (same date, kind, amount, currency, notes). */
+export function dupKey(row: { date: string; kind: string; amount: number; currency: string; description?: string | null }): string {
+  return `${row.date}|${row.kind}|${Number(row.amount)}|${row.currency}|${(row.description ?? "").toLowerCase().trim()}`;
+}
 
 export function buildPreview(table: string[][]): { rows: PreviewRow[]; missingHeaders: string[] } {
   const [head = [], ...body] = table;
@@ -100,6 +105,7 @@ export function buildPreview(table: string[][]): { rows: PreviewRow[]; missingHe
   for (const [key, aliases] of Object.entries(HEADERS)) idx[key] = norm.findIndex((h) => aliases.includes(h));
   const missingHeaders = ["date", "amount"].filter((k) => idx[k]! < 0).map((k) => HEADERS[k]![0]!);
   const get = (r: string[], k: string) => (idx[k]! >= 0 ? (r[idx[k]!] ?? "").trim() : "");
+  const seen = new Set<string>();
   const rows = body.map((r, i): PreviewRow => {
     const errors: string[] = [];
     const date = parseDate(get(r, "date"));
@@ -115,7 +121,13 @@ export function buildPreview(table: string[][]): { rows: PreviewRow[]; missingHe
     const value: ImportRow | null = errors.length
       ? null
       : { date: date!, kind: kind ?? "expense", amount: amount!, currency: cur as "IDR" | "USD", category: get(r, "category") || null, account: get(r, "account") || null, notes: get(r, "notes") || null };
-    return { line: i + 2, raw: r, value, errors };
+    let duplicate = false;
+    if (value) {
+      const key = dupKey({ date: value.date, kind: value.kind, amount: value.amount, currency: value.currency, description: value.notes });
+      if (seen.has(key)) duplicate = true;
+      seen.add(key);
+    }
+    return { line: i + 2, raw: r, value, errors, duplicate };
   });
   return { rows, missingHeaders };
 }
