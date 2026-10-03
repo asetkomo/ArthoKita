@@ -4,6 +4,7 @@ import { addDays, addMonthsKeepDay, diffDays, monthRange, shiftMonth, todayStr }
 import type { ExternalTx, TransactionInput } from "./schemas";
 import { dupKey } from "./csv";
 import { fetchAll } from "./paginate";
+import { planGoalFunds } from "./goals";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Res<T> = { data: T | null; error: { message: string } | null };
@@ -387,6 +388,39 @@ export async function deleteDebtPayment(id: string) {
   if (p.transaction_id) await db().from("transactions").delete().eq("id", p.transaction_id);
   await db().from("debts").update({ status: "active" }).eq("id", p.debt_id);
   return { name: (d.data as any)?.name ?? null, amount: Number(p.amount), currency: (d.data as any)?.currency ?? "IDR", installment: p.installment_no };
+}
+
+/* ---------------- Goals ---------------- */
+/**
+ * Deposit (amount > 0) or withdraw (amount < 0) on a savings goal. When the goal has a savings
+ * account (v8) and another account is chosen, the money moves as a transfer between them;
+ * otherwise only saved_amount changes. Never creates an expense.
+ */
+export async function addGoalFunds(goalId: string, amount: number, accountId: string | null, date: string | null) {
+  const g = must<any>(await db().from("goals").select("*").eq("id", goalId).single());
+  const plan = planGoalFunds({
+    goalId, goalName: g.name, goalAccountId: g.account_id ?? null, saved: Number(g.saved_amount),
+    amount, accountId, date: date ?? today(),
+  });
+  let names: Record<string, string> = {};
+  if (plan.transfer) {
+    const t = plan.transfer;
+    const accs = must<any[]>(await db().from("accounts").select("id, name").in("id", [t.account_id, t.to_account_id]));
+    if (accs.length < 2) throw new Error("Akun tidak ditemukan");
+    names = Object.fromEntries(accs.map((a) => [a.id, a.name]));
+    await insertTransaction({
+      kind: "transfer", amount: t.amount, currency: "IDR", account_id: t.account_id, to_account_id: t.to_account_id,
+      category_id: null, description: t.description, merchant: null, occurred_at: t.occurred_at, source: "web",
+      items: null, notes: t.notes, receipt_path: null,
+    });
+  }
+  must(await db().from("goals").update({ saved_amount: plan.newSaved }).eq("id", goalId));
+  await logActivity("goal.funds", "goals", {
+    name: g.name, amount: plan.moved, currency: "IDR", direction: plan.direction,
+    from: plan.transfer ? names[plan.transfer.account_id] ?? null : null,
+    to: plan.transfer ? names[plan.transfer.to_account_id] ?? null : null,
+  });
+  return { ok: true, saved: plan.newSaved, moved: plan.moved, transfer: !!plan.transfer };
 }
 
 /* ---------------- Subscriptions ---------------- */

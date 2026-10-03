@@ -34,8 +34,8 @@ export const saveRow = createServerFn({ method: "POST" })
     const { db } = await import("./db.server");
     const run = (v: any) => (data.id ? db().from(data.table).update(v).eq("id", data.id) : db().from(data.table).insert(v)).select().single();
     let res = await run(values);
-    // Optional v4 columns may not exist yet in the user's database: retry without them.
-    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : [];
+    // Optional v4/v8 columns may not exist yet in the user's database: retry without them.
+    const optional = data.table === "accounts" ? ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] : data.table === "subscriptions" ? ["tax_percent"] : data.table === "goals" ? ["account_id"] : [];
     if (res.error && optional.some((c) => res.error!.message.includes(c))) {
       const v: any = { ...(values as any) };
       for (const c of optional) delete v[c];
@@ -166,17 +166,10 @@ export const paySubscription = createServerFn({ method: "POST" })
 
 export const addGoalFunds = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), amount: z.number().finite() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), amount: z.number().finite().refine((n) => n !== 0, "Nominal harus diisi"), account_id: optUuid, date: optDate }).parse(d))
   .handler(async ({ data }) => {
-    const { db } = await import("./db.server");
-    const g = await db().from("goals").select("saved_amount").eq("id", data.id).single();
-    if (g.error) throw new Error(g.error.message);
-    const saved = Math.max(0, Number(g.data.saved_amount) + data.amount);
-    const res = await db().from("goals").update({ saved_amount: saved }).eq("id", data.id).select("name").single();
-    if (res.error) throw new Error(res.error.message);
-    const { logActivity } = await import("./finance.server");
-    await logActivity("goal.funds", "goals", { name: (res.data as any)?.name ?? null, amount: Math.abs(data.amount), currency: "IDR" });
-    return { ok: true, saved };
+    const { addGoalFunds } = await import("./finance.server");
+    return addGoalFunds(data.id, data.amount, data.account_id ?? null, data.date ?? null);
   });
 
 export const exportTransactionsCsv = createServerFn({ method: "GET" })

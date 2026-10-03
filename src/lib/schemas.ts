@@ -98,6 +98,7 @@ export const goalSchema = z.object({
   saved_amount: z.coerce.number().min(0).default(0),
   deadline: optDate,
   color: optText(20),
+  account_id: optId.default(null),
 });
 
 export const goldSchema = z.object({
