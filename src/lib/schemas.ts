@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parsePresets } from "./fees";
 
 export const CURRENCIES = ["IDR", "USD"] as const;
 export const CRUD_TABLES = ["accounts", "categories", "debts", "subscriptions", "budgets", "goals", "gold_purchases"] as const;
@@ -19,7 +20,12 @@ export const accountSchema = z.object({
   initial_balance: z.coerce.number().finite().default(0),
   color: optText(20),
   archived: z.boolean().default(false),
+  transfer_fees: z.preprocess((v) => parsePresets(v), z.array(z.object({ label: z.string(), amount: z.number() }))).default([]),
+  topup_fees: z.preprocess((v) => parsePresets(v), z.array(z.object({ label: z.string(), amount: z.number() }))).default([]),
+  monthly_fee: z.preprocess(emptyToNull, z.coerce.number().min(0).nullable()).default(null),
+  monthly_fee_day: z.preprocess(emptyToNull, z.coerce.number().int().min(1).max(31).nullable()).default(null),
 });
+export const ACCOUNT_FEE_COLUMNS = ["transfer_fees", "topup_fees", "monthly_fee", "monthly_fee_day"] as const;
 
 export const categorySchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -47,6 +53,7 @@ export const transactionSchema = z.object({
   items: z.array(itemSchema).max(200).nullable().default(null),
   notes: optText(1000),
   receipt_path: optText(500),
+  fee: z.preprocess(emptyToNull, z.coerce.number().min(0).nullable()).optional(),
 });
 export type TransactionInput = z.output<typeof transactionSchema>;
 
@@ -75,6 +82,7 @@ export const subscriptionSchema = z.object({
   account_id: optId,
   category_id: optId,
   active: z.boolean().default(true),
+  tax_percent: z.preprocess(emptyToNull, z.coerce.number().min(0).max(100).nullable()).default(null),
   notes: optText(1000),
 });
 
