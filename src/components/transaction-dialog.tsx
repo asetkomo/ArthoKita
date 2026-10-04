@@ -116,7 +116,7 @@ export function TransactionDialog({
       fields={fields}
       initial={initial}
       onSubmit={async (v) => {
-        await save({ data: { id: id ?? null, values: v as never } });
+        notifyBudgetAlerts(await save({ data: { id: id ?? null, values: v as never } }), t);
         await invalidateFor(qc, "transactions");
       }}
       extra={(v, set) => (
@@ -268,4 +268,21 @@ function ReceiptField({
       )}
     </div>
   );
+}
+
+type BudgetAlertToast = {
+  category: string;
+  level: number;
+  percent: number;
+  spent: number;
+  effective: number;
+};
+
+/** v11: one warning toast per budget threshold crossed by the saved expense (additive, no-op if none). */
+function notifyBudgetAlerts(res: unknown, t: (s: string) => string) {
+  const list = (res as { budgetAlerts?: BudgetAlertToast[] } | null)?.budgetAlerts ?? [];
+  for (const a of list)
+    toast.warning(a.level === 100 ? t("Budget terlampaui") : t("Budget hampir habis"), {
+      description: `${a.category} · ${Math.round(a.percent)}% · ${money(a.spent)} / ${money(a.effective)}`,
+    });
 }
