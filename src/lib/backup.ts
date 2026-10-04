@@ -9,6 +9,8 @@ import { z } from "zod";
  * FK-safe insert order. `transactions` only references accounts/categories, while
  * gold_purchases / receivables / debt_payments / receivable_payments reference
  * transactions, so transactions go right after accounts & categories.
+ * Newer optional tables (v10 recurring_transactions, v11 budget_alerts, v13
+ * account_reconciliations) come last: their parents (accounts/categories/budgets) are earlier.
  * bot_drafts and activity_log are never restored.
  */
 export const RESTORE_TABLES = [
@@ -25,6 +27,9 @@ export const RESTORE_TABLES = [
   "receivable_payments",
   "fx_rates",
   "gold_prices",
+  "recurring_transactions",
+  "budget_alerts",
+  "account_reconciliations",
 ] as const;
 export type RestoreTable = (typeof RESTORE_TABLES)[number];
 
@@ -53,6 +58,9 @@ export const CONFLICT_KEYS: Record<RestoreTable, string[]> = {
   receivable_payments: ["id"],
   fx_rates: ["rate_date", "base", "quote"],
   gold_prices: ["price_date", "source"],
+  recurring_transactions: ["id"],
+  budget_alerts: ["id"],
+  account_reconciliations: ["id"],
 };
 
 /**
@@ -65,6 +73,7 @@ export const NATURAL_KEYS: Partial<Record<RestoreTable, string[]>> = {
   budgets: ["category_id"],
   debt_payments: ["debt_id", "installment_no"],
   transactions: ["external_id"],
+  budget_alerts: ["budget_id", "month", "level"],
 };
 
 /** FK column → referenced table, used to rewrite ids remapped by natural keys. */
@@ -75,7 +84,27 @@ export const FK_COLUMNS: Record<string, RestoreTable> = {
   debt_id: "debts",
   transaction_id: "transactions",
   receivable_id: "receivables",
+  budget_id: "budgets",
 };
+
+/**
+ * Generated (computed) columns that exist in exports but must never be written back —
+ * Postgres rejects inserts into them (v12 transactions.items_search).
+ */
+export const GENERATED_COLUMNS: Partial<Record<RestoreTable, string[]>> = {
+  transactions: ["items_search"],
+};
+
+/** Strips generated columns from rows before an upsert. */
+export function stripGenerated(table: RestoreTable, rows: Row[]): Row[] {
+  const cols = GENERATED_COLUMNS[table];
+  if (!cols?.length) return rows;
+  return rows.map((r) => {
+    const out: Row = { ...r };
+    for (const c of cols) delete out[c];
+    return out;
+  });
+}
 
 export type Row = Record<string, unknown>;
 /** table → { backupId: dbId } */

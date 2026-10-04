@@ -9,6 +9,7 @@ import {
   missingColumn,
   parseBackup,
   resolveNaturalKeys,
+  stripGenerated,
 } from "@/lib/backup";
 import { activityDetail, activityLabel } from "@/lib/activity";
 
@@ -51,6 +52,10 @@ describe("parseBackup", () => {
     expect(i("debts")).toBeLessThan(i("debt_payments"));
     expect(i("receivables")).toBeLessThan(i("receivable_payments"));
     expect(i("categories")).toBeLessThan(i("budgets"));
+    expect(i("accounts")).toBeLessThan(i("recurring_transactions"));
+    expect(i("categories")).toBeLessThan(i("recurring_transactions"));
+    expect(i("budgets")).toBeLessThan(i("budget_alerts"));
+    expect(i("accounts")).toBeLessThan(i("account_reconciliations"));
   });
   it("rejects invalid input", () => {
     expect(parseBackup("{nope").ok).toBe(false);
@@ -123,6 +128,20 @@ describe("restore helpers", () => {
         { rate_date: "d", base: "USD", quote: "IDR", rate: 2 },
       ]),
     ).toHaveLength(1);
+  });
+  it("strips generated columns and remaps budget alerts", () => {
+    expect(
+      stripGenerated("transactions", [
+        { id: "t", items_search: "kopi", split_group: "g", receipt_paths: ["a"] },
+      ]),
+    ).toEqual([{ id: "t", split_group: "g", receipt_paths: ["a"] }]);
+    const rows = [{ id: "a", name: "x" }];
+    expect(stripGenerated("accounts", rows)).toBe(rows);
+    expect(
+      applyRemap("budget_alerts", [{ id: "x", budget_id: "b-old" }], {
+        budgets: { "b-old": "b-db" },
+      }),
+    ).toEqual([{ id: "x", budget_id: "b-db" }]);
   });
   it("detects unknown columns and drops them", () => {
     expect(

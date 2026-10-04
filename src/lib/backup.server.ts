@@ -18,6 +18,7 @@ import {
   dropColumn,
   missingColumn,
   resolveNaturalKeys,
+  stripGenerated,
   type IdRemap,
   type RestoreTable,
   type Row,
@@ -66,7 +67,7 @@ async function existingByNaturalKey(table: RestoreTable, rows: Row[]): Promise<R
  * chunks (the client keeps it between calls). Unknown columns are dropped and retried.
  */
 export async function restoreChunk(table: RestoreTable, input: Row[], remap: IdRemap) {
-  let rows = applyRemap(table, input, remap);
+  let rows = applyRemap(table, stripGenerated(table, input), remap);
   const nat = resolveNaturalKeys(table, rows, await existingByNaturalKey(table, rows));
   rows = dedupeRows(table, nat.rows);
   const dropped: string[] = [];

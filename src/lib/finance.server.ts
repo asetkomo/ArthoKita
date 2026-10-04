@@ -1613,6 +1613,9 @@ export async function exportBackup() {
     "gold_prices",
     "receivables",
     "receivable_payments",
+    "recurring_transactions",
+    "budget_alerts",
+    "account_reconciliations",
   ] as const;
   const data: Record<string, any[]> = {};
   // Tables keyed without an `id` column (fx_rates, gold_prices) use their composite primary key for stable paging.
