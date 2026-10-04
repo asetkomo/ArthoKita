@@ -9,6 +9,30 @@ Starting with v1.0.0, versioned entries (`## [x.y.z]`) are generated automatical
 > [!NOTE]
 > When an entry mentions a **schema section** (`v2`…`v13`), self-hosters must run that section of [`supabase/schema.sql`](supabase/schema.sql) on their Supabase project. Every section is safe to run more than once, and the app keeps working (with the feature disabled) until you do.
 
+## [1.1.0](https://github.com/ilramdhan/dompetku/compare/v1.0.0...v1.1.0) (2026-10-04)
+
+
+### Features
+
+* **app-shell:** show app version under sidebar and in the icon rail ([44c8140](https://github.com/ilramdhan/dompetku/commit/44c8140c718994f175e4ef9aae356183e7cc4a16))
+* **landing:** sticky header, logo marquee, back-to-top and scoped smooth scroll ([e9bafa8](https://github.com/ilramdhan/dompetku/commit/e9bafa81813b4066b3eed72be213536e146087f2))
+* **landing:** sticky nav, tech-icon marquee, back-to-top, legal pages & app version badge with update check ([c23d0da](https://github.com/ilramdhan/dompetku/commit/c23d0daa6cc6064f3cb8ff1a8ba2742136d33285))
+* **legal:** add public /privacy and /terms pages ([4a8d6c5](https://github.com/ilramdhan/dompetku/commit/4a8d6c551da4f514d3364b8e3d45e660bc902eb5))
+* **settings:** add About card with version, commit, build date and links ([1bbf905](https://github.com/ilramdhan/dompetku/commit/1bbf9055c7e4ac3095e55df03a922b489dbf85da))
+* **version:** inject app version/commit at build and add VersionBadge ([a1f8504](https://github.com/ilramdhan/dompetku/commit/a1f85041bac3fa2801044a612877ebe7ec2014fe))
+
+
+### Bug Fixes
+
+* **root:** suppress expected html class hydration warning from the pre-paint theme script ([3c6a381](https://github.com/ilramdhan/dompetku/commit/3c6a3811553b6785535fa0f823a2ebe82b58484a))
+
+
+### Documentation
+
+* describe app version badge and update check ([832cc0d](https://github.com/ilramdhan/dompetku/commit/832cc0d8e2ea44ee99fd108acefaa6c19713edf7))
+* mention legal pages and credit Simple Icons ([10fad5e](https://github.com/ilramdhan/dompetku/commit/10fad5eeb4eda196462ce3b0a2db34882fe7b4c6))
+* **screenshots:** regenerate with sticky header, tech icons, legal links and version badge ([e0a3af2](https://github.com/ilramdhan/dompetku/commit/e0a3af2105fbb13d54bb0206e0d3d6b501282663))
+
 ## 1.0.0 (2026-10-04)
 
 
