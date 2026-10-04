@@ -48,6 +48,19 @@ const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => 
   return result;
 });
 
+// DEMO_MODE=true only: per-IP sliding-window limit on server-function writes (POST). The
+// counter is in memory, so each serverless instance limits separately. No-op otherwise.
+const demoRateLimitMiddleware = createMiddleware().server(
+  async ({ next, request, handlerType }) => {
+    if (process.env["DEMO_MODE"] === "true") {
+      const { demoRateLimit } = await import("./lib/demo.server");
+      const limited = demoRateLimit(request, handlerType);
+      if (limited) return limited;
+    }
+    return next();
+  },
+);
+
 // Start installs this automatically when src/start.ts is absent; defining the
 // file opts out, so re-add it explicitly to keep server functions protected
 // from cross-site requests.
@@ -56,5 +69,10 @@ const csrfMiddleware = createCsrfMiddleware({
 });
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [securityHeadersMiddleware, errorMiddleware, csrfMiddleware],
+  requestMiddleware: [
+    securityHeadersMiddleware,
+    errorMiddleware,
+    csrfMiddleware,
+    demoRateLimitMiddleware,
+  ],
 }));

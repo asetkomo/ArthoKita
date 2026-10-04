@@ -36,7 +36,9 @@ export const login = createServerFn({ method: "POST" })
       await slow();
       return { ok: false as const, locked: true as const };
     }
-    const totpOn = configuredTotpSecret() !== null;
+    const { isDemo } = await import("./demo.server");
+    // Demo instances publish their login; 2FA is never enforced there.
+    const totpOn = !isDemo() && configuredTotpSecret() !== null;
 
     if ("challenge" in data) {
       const username = totpOn ? readLoginChallenge(data.challenge) : null;
@@ -79,6 +81,7 @@ export const getTwoFactorStatus = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .handler(async () => {
     const { configuredTotpSecret } = await import("./totp.server");
+    if ((await import("./demo.server")).isDemo()) return { active: false, invalid: false };
     const invalid = !!process.env["APP_TOTP_SECRET"]?.trim() && configuredTotpSecret() === null;
     return { active: configuredTotpSecret() !== null, invalid };
   });
@@ -89,6 +92,7 @@ export const generateTwoFactorSecret = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { configuredTotpSecret, generateTotpSecret } = await import("./totp.server");
     const { buildOtpauthUri } = await import("./totp");
+    (await import("./demo.server")).assertNotDemo();
     if (configuredTotpSecret() !== null) throw new Error("2FA sudah aktif.");
     const secret = generateTotpSecret();
     return {

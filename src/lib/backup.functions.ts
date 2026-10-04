@@ -39,6 +39,7 @@ export const restoreBackup = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => restoreInput.parse(d))
   .handler(async ({ data }) => {
+    (await import("./demo.server")).assertNotDemo();
     const srv = await import("./backup.server");
     if (data.step === "clear") return { step: "clear" as const, ...(await srv.clearForReplace()) };
     if (data.step === "chunk") {

@@ -45,6 +45,7 @@ export const saveRow = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const values = tableSchemas[data.table].parse(data.values);
+    if (!data.id) await (await import("./demo.server")).assertDemoCapacity(data.table);
     if (data.table === "gold_purchases") {
       const { saveGold } = await import("./assets.server");
       const saved = await saveGold(data.id ?? null, values as any);
@@ -266,6 +267,7 @@ export const scanReceipt = createServerFn({ method: "POST" })
     z.object({ image: z.string().startsWith("data:image/").max(8_000_000) }).parse(d),
   )
   .handler(async ({ data }) => {
+    (await import("./demo.server")).assertNotDemo();
     const { parseReceipt } = await import("./ocr.server");
     const { parseContext } = await import("./finance.server");
     return parseReceipt(data.image, await parseContext());
@@ -283,6 +285,7 @@ export const importTransactionsCsv = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => z.object({ csv: z.string().min(1).max(5_000_000) }).parse(d))
   .handler(async ({ data }) => {
+    (await import("./demo.server")).assertNotDemo();
     const { importCsv } = await import("./finance.server");
     return importCsv(data.csv);
   });
@@ -293,6 +296,7 @@ export const uploadReceiptImage = createServerFn({ method: "POST" })
     z.object({ image: z.string().startsWith("data:image/").max(8_000_000) }).parse(d),
   )
   .handler(async ({ data }) => {
+    (await import("./demo.server")).assertNotDemo();
     const { uploadReceipt } = await import("./receipt.server");
     return uploadReceipt(data.image);
   });
@@ -331,6 +335,7 @@ export const importCsvTransactions = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    (await import("./demo.server")).assertNotDemo();
     const { importTransactions } = await import("./finance.server");
     return importTransactions(data.rows, data.createMissing);
   });
@@ -404,6 +409,7 @@ export const saveReceivableFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const values = (await recvSchema()).parse(data.values);
+    if (!data.id) await (await import("./demo.server")).assertDemoCapacity("receivables");
     const { saveReceivable } = await import("./assets.server");
     return (await saveReceivable(data.id ?? null, values)) as any;
   });

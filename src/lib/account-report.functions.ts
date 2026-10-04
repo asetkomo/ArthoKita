@@ -44,6 +44,7 @@ export const saveAccountReconciliation = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    await (await import("./demo.server")).assertDemoCapacity("account_reconciliations");
     const { saveReconciliation } = await import("./account-report.server");
     return saveReconciliation(data.id, data.as_of, data.statement_balance);
   });
