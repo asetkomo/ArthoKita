@@ -10,31 +10,24 @@
  * - Uses the app's own data shapes: amount_idr, notes markers ([auto:recurring:…],
  *   [auto:monthly_fee:…], [fee:…], [goal:…]), external_id for recurring items, linked
  *   Piutang/Emas/Cicilan transactions, split_group, items JSON.
- * - Refuses to touch a non-local database unless --allow-remote is passed.
- * - Without --reset it stops when accounts already exist; --reset wipes ALL app data first.
+ * - Refuses to touch a non-local database unless BOTH --allow-remote is passed and
+ *   DEMO_RESET_CONFIRM=yes is set (used by .github/workflows/demo-reset.yml for the public demo).
+ * - Without --reset it stops when accounts already exist; --reset wipes ALL app data first —
+ *   every table (incl. visitor rows, activity log, bot drafts, budget alerts), categories back to
+ *   the schema defaults, app_settings back to defaults and every object in the receipts bucket.
  */
+import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { defaultCategoriesFromSchema, parseSeedArgs } from "./seed-args.mjs";
 
-const args = new Set(process.argv.slice(2));
-const RESET = args.has("--reset");
-const ALLOW_REMOTE = args.has("--allow-remote");
-
-const URL_ = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!URL_ || !KEY) {
-  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (see docs/DEMO-DATA.md).");
+const parsed = parseSeedArgs(process.argv.slice(2), process.env);
+if (!parsed.ok) {
+  console.error(parsed.error);
   process.exit(1);
 }
-const host = new URL(URL_).hostname;
-if (
-  !["127.0.0.1", "localhost", "0.0.0.0", "host.docker.internal"].includes(host) &&
-  !ALLOW_REMOTE
-) {
-  console.error(
-    `Refusing to seed non-local database (${host}). Pass --allow-remote if you mean it.`,
-  );
-  process.exit(1);
-}
+const RESET = parsed.reset;
+const URL_ = parsed.url;
+const KEY = parsed.key;
 
 const sb = createClient(URL_, KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
@@ -99,6 +92,7 @@ const WIPE = [
   "budget_alerts",
   "account_reconciliations",
   "bot_drafts",
+  "app_settings",
   "recurring_transactions",
   "receivable_payments",
   "receivables",
@@ -111,7 +105,11 @@ const WIPE = [
   "transactions",
   "accounts",
   "activity_log",
+  "categories",
 ];
+const DEFAULT_CATEGORIES = defaultCategoriesFromSchema(
+  readFileSync(new URL("../supabase/schema.sql", import.meta.url), "utf8"),
+);
 const EXTRA_CATEGORIES = [
   { name: "Sewa & Rumah", kind: "expense", color: "#7a5c8a" },
   { name: "Dividen", kind: "income", color: "#3d7ea6" },
@@ -131,9 +129,39 @@ async function reset() {
     const { error } = await sb.from(t).delete().gte(col, "1900-01-01");
     if (error && !missing(error)) throw new Error(`${t}: ${error.message}`);
   }
-  for (const c of EXTRA_CATEGORIES)
-    await sb.from("categories").delete().eq("name", c.name).eq("kind", c.kind);
-  console.log("Reset: demo tables wiped.");
+  // Categories: back to exactly the schema defaults (visitors may have renamed/deleted them).
+  const cats = await sb.from("categories").upsert(DEFAULT_CATEGORIES, { onConflict: "name,kind" });
+  if (cats.error) throw new Error(`categories: ${cats.error.message}`);
+  await wipeReceipts();
+  console.log("Reset: all tables, categories, app settings and receipt photos wiped.");
+}
+
+/** Removes every object from the private `receipts` bucket (missing bucket = nothing to do). */
+async function wipeReceipts() {
+  const bucket = sb.storage.from("receipts");
+  const walk = async (prefix) => {
+    const paths = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await bucket.list(prefix, { limit: 1000, offset });
+      if (error) {
+        if (/not found|does not exist/i.test(error.message)) return paths;
+        throw new Error(`storage: ${error.message}`);
+      }
+      for (const o of data ?? []) {
+        const p = prefix ? `${prefix}/${o.name}` : o.name;
+        if (o.id === null)
+          paths.push(...(await walk(p))); // folder
+        else paths.push(p);
+      }
+      if ((data ?? []).length < 1000) return paths;
+    }
+  };
+  const paths = await walk("");
+  for (let i = 0; i < paths.length; i += 500) {
+    const { error } = await bucket.remove(paths.slice(i, i + 500));
+    if (error) throw new Error(`storage: ${error.message}`);
+  }
+  if (paths.length) console.log(`Reset: removed ${paths.length} receipt photo(s).`);
 }
 
 async function insert(table, rows) {
@@ -453,9 +481,13 @@ async function main() {
       }
 
     // Groceries: 4–6 trips, some scanned receipts with items
-    const trips = int(4, 6);
+    // Current month: draw days only up to today and scale counts to the days elapsed, so the
+    // dashboard always shows realistic month-to-date activity (never an empty month).
+    const upTo = off === 0 ? Math.max(1, TD) : 28;
+    const share = (n, min) => (off === 0 ? Math.max(min, Math.round((n * TD) / 30)) : n);
+    const trips = share(int(4, 6), 2);
     for (let i = 0; i < trips; i++) {
-      const day = int(1, 28);
+      const day = int(1, upTo);
       const scanned = rnd() < 0.5;
       const items = scanned ? groceryItems() : null;
       const a = items ? itemsTotal(items) : amt(120_000, 480_000);
@@ -476,9 +508,9 @@ async function main() {
     }
 
     // Dining: 9–13 meals
-    const meals = int(9, 13);
+    const meals = share(int(9, 13), 4);
     for (let i = 0; i < meals; i++) {
-      const day = int(1, 28);
+      const day = int(1, upTo);
       const a = amt(22_000, 165_000);
       const acc = pick([A.gopay, A.gopay, A.ovo, A.cash, A.cc]);
       if (!past(d(day))) continue;
@@ -496,9 +528,9 @@ async function main() {
     }
 
     // Transport: rides + fuel
-    const rides = int(6, 10);
+    const rides = share(int(6, 10), 3);
     for (let i = 0; i < rides; i++) {
-      const day = int(1, 28);
+      const day = int(1, upTo);
       const a = amt(14_000, 58_000);
       if (!past(d(day))) continue;
       add({
@@ -705,6 +737,27 @@ async function main() {
       }),
     );
   }
+
+  // Today: a couple of fresh entries so "today" never looks idle.
+  add({
+    kind: "expense",
+    amount: 28_000,
+    account: A.gopay,
+    category: cat("Makanan & Minuman"),
+    description: "Kopi pagi",
+    merchant: "Kopi Senja",
+    date: TODAY,
+    source: "telegram",
+  });
+  add({
+    kind: "expense",
+    amount: 19_500,
+    account: A.gopay,
+    category: cat("Transportasi"),
+    description: "Ojek online",
+    merchant: "RideKita",
+    date: TODAY,
+  });
 
   // Current month showcase: Hiburan over 100%, Transportasi ~85% of budget
   const cur = (day) => dateIn(0, Math.min(day, TD));
