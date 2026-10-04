@@ -95,6 +95,35 @@ Amounts and choices come from a seeded PRNG, so the same day always produces the
 are relative to today; set `DEMO_TODAY=YYYY-MM-DD` when seeding to pin them (the app itself still
 uses the real date, so keep the two close for "this month" widgets to match).
 
+## Regenerating screenshots
+
+The images in `public/screenshots/` (used by the README and the landing page) come from this demo
+stack. Start the dev server as in the quick start, then:
+
+```bash
+npm run db:up && npm run seed:demo -- --reset && npm run screenshots
+```
+
+`scripts/screenshots.mjs` (run through `npx` with Playwright and sharp, nothing is added to
+`package.json` dependencies) signs in through `/login` with `APP_USERNAME`/`APP_PASSWORD` from
+`.env.local`, forces the theme via `localStorage` `dk-theme`, keeps the Indonesian UI, disables
+animations and toasts, waits for data, skeletons and charts, and writes `<name>.png` and
+`<name>-dark.png`:
+
+- **Desktop 1440×900:** dashboard, transactions, budgets, reports, accounts-detail (first account),
+  goals, gold, recurring, settings, and `landing` (full page, logged out).
+- **Mobile 390×844 @2x:** dashboard-mobile, transactions-mobile, landing-mobile, telegram-bot.
+
+Dashboard, transactions and account detail step back one month so the shots show a full month.
+`telegram-bot` is a static chat mock (`scripts/telegram-mock.html`) whose texts follow the real bot
+reply formats. PNGs are palette-compressed with sharp (most are under 100 KB).
+
+Options: `SCREENSHOT_ONLY=dashboard,telegram-bot` captures a subset, and `SCREENSHOT_URL` points at
+another server. The script refuses non-local URLs unless you pass `--allow-remote`, because the
+images get committed: never capture an instance that holds real data. Turn off `APP_TOTP_SECRET`
+for the demo login. If you rename or add a shot, update `SCREENSHOTS` in `src/lib/landing.ts` and
+the README gallery too.
+
 ## Limitations
 
 - Receipt photos are not seeded (transactions have `items`, but no stored images). Uploading a

@@ -386,6 +386,17 @@ Open <http://localhost:8080> (the dev server port set by the Vite config).
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, test and build on every pull request and push to `main` — keep all four green. Architecture and conventions: [ARCHITECTURE.md](ARCHITECTURE.md) and [AGENTS.md](../AGENTS.md).
 
+### Regenerating screenshots
+
+The README and landing page images in `public/screenshots/` are captured from the local demo stack
+(fictional data only, see [DEMO-DATA.md](DEMO-DATA.md)). With the dev server running on port 8080:
+
+```sh
+npm run db:up && npm run seed:demo -- --reset && npm run screenshots
+```
+
+Details: [DEMO-DATA.md → Regenerating screenshots](DEMO-DATA.md#regenerating-screenshots).
+
 ---
 
 ## 8. Updating your instance
