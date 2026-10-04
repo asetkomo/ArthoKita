@@ -50,12 +50,10 @@ import {
   txQuery,
   type TxFilter,
 } from "@/lib/queries";
-import {
-  exportTransactionsCsv,
-  getReceiptUrl,
-  importTransactionsCsv,
-} from "@/lib/finance.functions";
+import { exportTransactionsCsv, importTransactionsCsv } from "@/lib/finance.functions";
 import { deleteTransaction } from "@/lib/split.functions";
+import { receiptPaths } from "@/lib/receipts";
+import { ReceiptGallery } from "@/components/receipt-gallery";
 import { currentMonth, dateLabel, monthLabel, shiftMonth } from "@/lib/dates";
 import { KIND_LABEL, money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
@@ -111,20 +109,11 @@ function TransactionsPage() {
   const delTx = useServerFn(deleteTransaction);
   const exp = useServerFn(exportTransactionsCsv);
   const imp = useServerFn(importTransactionsCsv);
-  const receipt = useServerFn(getReceiptUrl);
+  const [gallery, setGallery] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const csvRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const ask = useConfirm();
-
-  async function openReceipt(path: string) {
-    try {
-      const { url } = await receipt({ data: { path } });
-      window.open(url, "_blank", "noopener");
-    } catch (e) {
-      toast.error(errMsg(e));
-    }
-  }
 
   async function pickCsv(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -466,14 +455,18 @@ function TransactionsPage() {
                     {tx.source}
                   </Badge>
                 ) : null}
-                {tx.receipt_path ? (
+                {receiptPaths(tx).length ? (
                   <Button
-                    size="icon"
+                    size={receiptPaths(tx).length > 1 ? "sm" : "icon"}
                     variant="ghost"
                     aria-label={t("Lihat nota")}
-                    onClick={() => openReceipt(tx.receipt_path)}
+                    className="gap-1 px-2"
+                    onClick={() => setGallery(receiptPaths(tx))}
                   >
                     <Paperclip className="size-4" />
+                    {receiptPaths(tx).length > 1 ? (
+                      <span className="num text-xs">{receiptPaths(tx).length}</span>
+                    ) : null}
                   </Button>
                 ) : null}
                 <div className="shrink-0 text-right">
@@ -510,6 +503,7 @@ function TransactionsPage() {
                           source: tx.source,
                           items: tx.items,
                           receipt_path: tx.receipt_path,
+                          receipt_paths: receiptPaths(tx),
                         },
                       })
                     }
@@ -543,6 +537,7 @@ function TransactionsPage() {
         initial={dlg.draft}
         id={dlg.id}
       />
+      <ReceiptGallery paths={gallery} onOpenChange={(o) => !o && setGallery([])} />
       {ask.element}
     </>
   );

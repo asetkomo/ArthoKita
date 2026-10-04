@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Paperclip } from "lucide-react";
+import { Paperclip, X } from "lucide-react";
 import { CURRENCY_OPTIONS, EntityDialog, type FieldDef } from "./entity-dialog";
 import { Button } from "@/components/ui/button";
 import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
@@ -14,6 +14,8 @@ import { useI18n } from "@/lib/i18n";
 import { saveSplitTransaction } from "@/lib/split.functions";
 import { validateSplit, type SplitRow } from "@/lib/split";
 import { SplitEditor, SPLIT_ON, SPLIT_ROWS } from "./split-editor";
+import { useReceiptUrls } from "./receipt-gallery";
+import { MAX_RECEIPTS, receiptPaths } from "@/lib/receipts";
 import type { Account, Category } from "@/lib/schemas";
 
 export type TxDraft = Record<string, unknown>;
@@ -207,8 +209,11 @@ export function TransactionDialog({
             </div>
           ) : null}
           <ReceiptField
-            path={(v["receipt_path"] as string | null) ?? null}
-            onChange={(p) => set("receipt_path", p)}
+            paths={receiptPaths(v as never)}
+            onChange={(p) => {
+              set("receipt_paths", p);
+              set("receipt_path", p[0] ?? null);
+            }}
           />
         </div>
       )}
@@ -216,39 +221,39 @@ export function TransactionDialog({
   );
 }
 
-function ReceiptField({
-  path,
-  onChange,
-}: {
-  path: string | null;
-  onChange: (p: string | null) => void;
-}) {
+function ReceiptField({ paths, onChange }: { paths: string[]; onChange: (p: string[]) => void }) {
   const { t } = useI18n();
   const upload = useServerFn(uploadReceiptImage);
   const [busy, setBusy] = useState(false);
+  const urls = useReceiptUrls(paths);
+  const full = paths.length >= MAX_RECEIPTS;
 
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = [...(e.target.files ?? [])].slice(0, MAX_RECEIPTS - paths.length);
     e.target.value = "";
-    if (!file) return;
-    if (file.size > 5_000_000) {
-      toast.error(t("Gambar maksimal 5 MB"));
-      return;
-    }
+    if (!files.length) return;
     setBusy(true);
+    const added: string[] = [];
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result));
-        r.onerror = () => reject(new Error(t("Gagal membaca file")));
-        r.readAsDataURL(file);
-      });
-      const { path } = await upload({ data: { image: dataUrl } });
-      onChange(path);
-      toast.success(t("Foto nota terlampir"));
+      for (const file of files) {
+        if (file.size > 5_000_000) {
+          toast.error(t("Gambar maksimal 5 MB"), { description: file.name });
+          continue;
+        }
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(new Error(t("Gagal membaca file")));
+          r.readAsDataURL(file);
+        });
+        const { path } = await upload({ data: { image: dataUrl } });
+        added.push(path);
+      }
+      if (added.length) toast.success(t("Foto nota terlampir"));
     } catch (err) {
       toast.error(t("Gagal mengunggah nota"), { description: errMsg(err) });
     } finally {
+      if (added.length) onChange([...paths, ...added]);
       setBusy(false);
     }
   }
@@ -258,38 +263,54 @@ function ReceiptField({
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 font-medium">
           <Paperclip className="size-3.5" /> {t("Foto nota")}
-        </p>
-        <div className="flex items-center gap-2">
-          {path ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2 text-xs text-expense"
-              onClick={() => onChange(null)}
-            >
-              {t("Hapus")}
-            </Button>
+          {paths.length ? (
+            <span className="text-xs font-normal text-muted-foreground">
+              {paths.length}/{MAX_RECEIPTS}
+            </span>
           ) : null}
+        </p>
+        {full ? null : (
           <label className="cursor-pointer py-1.5 text-xs text-primary hover:underline">
-            {busy ? t("Mengunggah…") : path ? t("Ganti") : t("Unggah")}
+            {busy ? t("Mengunggah…") : paths.length ? t("Tambah foto") : t("Unggah")}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
+              multiple
               className="hidden"
               disabled={busy}
               onChange={pick}
             />
           </label>
-        </div>
+        )}
       </div>
-      {path ? (
-        <p className="mt-1.5 truncate text-xs text-muted-foreground">
-          {t("Terlampir — akan tersimpan bersama transaksi.")}
-        </p>
+      {paths.length ? (
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {paths.map((p, i) => (
+            <li
+              key={p}
+              className="relative size-16 overflow-hidden rounded-md border bg-background"
+            >
+              {urls[p] ? (
+                <img
+                  src={urls[p]}
+                  alt={`${t("Foto nota")} ${i + 1}`}
+                  className="size-full object-cover"
+                />
+              ) : null}
+              <button
+                type="button"
+                aria-label={t("Hapus")}
+                onClick={() => onChange(paths.filter((x) => x !== p))}
+                className="absolute right-0.5 top-0.5 rounded-full bg-background/90 p-0.5 text-expense shadow"
+              >
+                <X className="size-3" />
+              </button>
+            </li>
+          ))}
+        </ul>
       ) : (
         <p className="mt-1.5 text-xs text-muted-foreground">
-          {t("Opsional. JPEG/PNG/WebP, maks 5 MB.")}
+          {t("Opsional. Hingga 5 foto JPEG/PNG/WebP, maks 5 MB per foto.")}
         </p>
       )}
     </div>

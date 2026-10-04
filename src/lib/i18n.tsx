@@ -638,6 +638,12 @@ const DICT: Record<string, string> = {
     "This transaction is part of one receipt split across categories.",
   "Ya, hapus semua": "Yes, delete all",
   "Hapus baris ini saja?": "Delete just this row?",
+  /* Multiple receipt photos (v12) */
+  Buka: "Open",
+  "Tambah foto": "Add photo",
+  "foto · tautan berlaku 5 menit": "photo(s) · links valid for 5 minutes",
+  "Opsional. Hingga 5 foto JPEG/PNG/WebP, maks 5 MB per foto.":
+    "Optional. Up to 5 JPEG/PNG/WebP photos, max 5 MB each.",
 };
 
 const LangContext = createContext<{
