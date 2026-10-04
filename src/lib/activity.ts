@@ -35,6 +35,7 @@ const SPECIAL: Record<string, string> = {
   "auth.login_failed": "Login gagal",
   "auth.logout": "Logout",
   "bot.command": "Perintah bot",
+  "account.reconcile": "Akun direkonsiliasi",
   "transaction.split": "Transaksi split ditambahkan",
   "recurring.post": "Transaksi berulang dicatat",
   "recurring.pause": "Transaksi berulang dijeda",

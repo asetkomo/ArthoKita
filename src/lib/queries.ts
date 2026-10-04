@@ -22,6 +22,7 @@ import {
   saveRow,
 } from "./finance.functions";
 import { getRecurring } from "./recurring.functions";
+import { getAccountReport, getReconcileTransactions } from "./account-report.functions";
 import type { CrudTable } from "./schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -125,6 +126,17 @@ export const txQuery = (f: TxFilter) =>
   queryOptions({ queryKey: ["tx", f], queryFn: () => listTransactions({ data: f }) });
 export const txCountQuery = (f: Omit<TxFilter, "offset">) =>
   queryOptions({ queryKey: ["tx-count", f], queryFn: () => getTxCount({ data: f }) });
+export const accountReportQuery = (id: string, month: string) =>
+  queryOptions({
+    queryKey: ["account-report", id, month],
+    queryFn: () => getAccountReport({ data: { id, month } }),
+    staleTime: FRESH,
+  });
+export const reconcileTxQuery = (id: string, from: string, to: string) =>
+  queryOptions({
+    queryKey: ["account-recon", id, from, to],
+    queryFn: () => getReconcileTransactions({ data: { id, from, to } }),
+  });
 export const yearlyQuery = (year: string) =>
   queryOptions({
     queryKey: ["yearly", year],
@@ -146,6 +158,8 @@ const MONEY = [
   "reminders",
   "activity",
   "assets",
+  "account-report",
+  "account-recon",
 ];
 const AFFECTS: Record<string, string[]> = {
   transactions: MONEY,
@@ -160,6 +174,7 @@ const AFFECTS: Record<string, string[]> = {
   receivables: [...MONEY, "receivables"],
   // Posting a recurring item creates transactions, so it touches every money aggregate.
   recurring_transactions: [...MONEY, "rows", "recurring"],
+  account_reconciliations: ["account-report", "activity"],
 };
 
 export function invalidateFor(qc: QueryClient, table: string) {
