@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## 🤖 Dompetku — Telegram Bot\n\nn8n hanya **orkestrator**: semua logika (parsing, OCR, kategori, laporan, tombol) ada di web Dompetku (`POST /api/public/n8n/bot`), jadi mudah dites & dirawat.\n\n**Env n8n wajib:** `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` (+ `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`)\n**Credential:** Telegram API (trigger) & Header Auth `x-api-key` = `N8N_API_KEY` web.\n\n🔒 Chat di luar allow-list diabaikan diam-diam. Data eksekusi sukses tidak disimpan (privasi + hemat disk).",
+        "content": "## 🤖 Dompetku — Telegram Bot\n\nn8n is only a thin **relay**: all logic (parsing, OCR, categories, reports, buttons) lives in the Dompetku web app (`POST /api/public/n8n/bot`), so it is tested and easy to maintain.\n\n**Required n8n env:** `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` (+ `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`)\n**Credentials:** Telegram API (trigger) & Header Auth — Name `x-api-key`, Value = the web app's `N8N_API_KEY`. Replace every `REPLACE_ME` credential.\n\n🔒 Chats outside the allow-list are silently ignored. Successful executions are not saved (privacy + disk).\nGuide: docs/N8N.md",
         "height": 300,
         "width": 760,
         "color": "6"
@@ -356,7 +356,7 @@
     },
     {
       "parameters": {
-        "content": "### Alur\n1. **Teks** `kopi 25rb` → parser tanpa AI → pratinjau + tombol ✅❌🏷🏦🔁\n2. **Foto struk** → OCR (AI vision) → pratinjau\n3. **/perintah** → laporan / saldo / paylater / langganan (0 token)\n4. **Tombol** → `callback_data` diteruskan → pesan pratinjau di-*edit*\n\nRetry aman: draft & simpan idempoten (`update_id` / `draft:<id>`).\nError dari API → output merah → pengguna tetap dapat pesan ⚠️.",
+        "content": "### Flow\n1. **Text** `kopi 25rb` → parser without AI → preview + buttons ✅❌🏷🏦🔁\n2. **Receipt photo** → OCR (AI vision) → preview\n3. **/command** → reports / balances / paylater / subscriptions (0 AI tokens)\n4. **Button** → `callback_data` forwarded → the preview message is *edited*\n\nRetries are safe: drafts & saves are idempotent (`update_id` / `draft:<id>`).\nAPI error → red (error) output → the user still gets a ⚠️ message.",
         "height": 300,
         "width": 700,
         "color": "4"

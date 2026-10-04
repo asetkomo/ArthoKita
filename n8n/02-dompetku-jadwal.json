@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## ⏰ Dompetku — Jadwal\nSemua jam memakai zona waktu workflow **Asia/Jakarta**. Matikan trigger yang tidak dibutuhkan.\n\nEnv: `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`.\nPengingat hanya dikirim bila ada tagihan (≤3 hari / terlambat / budget hampir habis). Laporan tidak memakai token AI.",
+        "content": "## ⏰ Dompetku — Schedules\nAll times use the workflow time zone **Asia/Jakarta** (change it in workflow Settings). Disable the triggers you don't need.\n\nEnv: `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`.\nCredential: Header Auth `x-api-key` (replace `REPLACE_ME` on all 4 HTTP nodes).\nReminders are only sent when something is due (≤3 days / overdue / budget almost used up). Reports use no AI tokens.",
         "height": 220,
         "width": 640,
         "color": "6"
