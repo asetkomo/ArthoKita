@@ -9,6 +9,21 @@ Starting with v1.0.0, versioned entries (`## [x.y.z]`) are generated automatical
 > [!NOTE]
 > When an entry mentions a **schema section** (`v2`…`v13`), self-hosters must run that section of [`supabase/schema.sql`](supabase/schema.sql) on their Supabase project. Every section is safe to run more than once, and the app keeps working (with the feature disabled) until you do.
 
+## [1.2.0](https://github.com/ilramdhan/dompetku/compare/v1.1.0...v1.2.0) (2026-10-04)
+
+
+### Features
+
+* **demo:** daily demo reset workflow and safer, fuller seed reset ([3837701](https://github.com/ilramdhan/dompetku/commit/383770184c3abdee2ef0f6a3a3514ada384b187f))
+* **demo:** DEMO_MODE server guards, row caps, write rate limit and PUBLIC_DEMO_URL ([9eee011](https://github.com/ilramdhan/dompetku/commit/9eee011c04ce8c065231c4b0ec03c46c245bd44c))
+* **demo:** one-click demo login, in-app banner, disabled controls and Coba demo links ([f093107](https://github.com/ilramdhan/dompetku/commit/f0931072cc2f0504e4191ec0d7ebe85ac67d6b1a))
+* **demo:** public demo mode with one-click login, server guardrails, daily reset and Coba demo links ([4d42c33](https://github.com/ilramdhan/dompetku/commit/4d42c33d62487bbee5d521b6dbf6aca1e6190dc3))
+
+
+### Documentation
+
+* **demo:** public demo guide, env vars, README live demo link and security note ([3138ec9](https://github.com/ilramdhan/dompetku/commit/3138ec9150e26a96faab5536af0a93d83a473ed8))
+
 ## [1.1.0](https://github.com/ilramdhan/dompetku/compare/v1.0.0...v1.1.0) (2026-10-04)
 
 
