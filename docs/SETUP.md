@@ -5,6 +5,16 @@
 2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu Run.
 3. Ambil **Project URL** dan **service_role / secret key** (Project Settings → API).
 
+**Sudah punya database lama?** Jalankan bagian baru di `supabase/schema.sql` berurutan (semua aman dijalankan ulang, semuanya opsional — fitur terkait tersembunyi/memakai cara lama sampai dijalankan):
+1. **v8** — target tabungan tertaut akun (`goals.account_id`)
+2. **v9** — fungsi agregasi laporan di Postgres
+3. **v10** — transaksi berulang (`recurring_transactions`)
+4. **v11** — budget rollover & peringatan (`budgets.rollover`, `budget_alerts`)
+5. **v12** — split transaksi, banyak foto nota, cari item (`split_group`, `receipt_paths`, `items_search`)
+6. **v13** — laporan per akun & rekonsiliasi (`dk_account_monthly`, `account_reconciliations`)
+
+Detail tiap bagian ada di bawah (v8–v13).
+
 ## 2. Environment variables (Vercel → Settings → Environment Variables)
 | Nama | Isi |
 |---|---|
@@ -27,6 +37,10 @@
 | `RESEND_API_KEY` | opsional, untuk kirim email pengingat langsung (resend.com) |
 | `EMAIL_FROM` | opsional, pengirim terverifikasi di Resend, mis. `Dompetku <pengingat@domainanda.com>` |
 | `EMAIL_TO` | opsional, penerima (pisahkan koma untuk beberapa) |
+| `SENTRY_DSN` | opsional, kirim error server ke Sentry. Lihat *Monitoring error* |
+| `SUPABASE_PROJECT_ID` | hanya untuk developer lokal: `npm run gen:types` (bukan untuk Vercel). Lihat *Tipe database* |
+
+Backup otomatis mingguan: impor workflow `n8n/05-dompetku-backup.json` ke n8n (memakai `N8N_API_KEY` yang sama), lihat bagian *Cadangan data*.
 
 ## 3. Deploy ke Vercel
 Import repo → Framework preset **Other** → Build command `bun run build` (atau `npm run build`).
