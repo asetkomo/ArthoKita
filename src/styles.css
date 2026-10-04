@@ -276,3 +276,14 @@
     display: none;
   }
 }
+
+/* Privacy mode: until the client store is live (SSR HTML still has real numbers),
+   blur the page content; afterwards money()/compact() render masks. `.num-sensitive`
+   is a safety net for amounts rendered outside the formatters. */
+html.privacy:not(.privacy-live) main {
+  filter: blur(8px);
+  pointer-events: none;
+}
+html.privacy .num-sensitive {
+  filter: blur(6px);
+}

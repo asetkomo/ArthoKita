@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
+import { PrivacySync } from "@/lib/privacy-sync";
 
 function NotFoundComponent() {
   const { t } = useI18n();
@@ -117,7 +118,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <meta name="theme-color" content="#1d3b2f" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('dk-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('dk-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');if(localStorage.getItem('dk-privacy')==='1')document.documentElement.classList.add('privacy')}catch(e){}`,
           }}
         />
       </head>
@@ -135,6 +136,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
+        <PrivacySync />
         <Outlet />
         <Toaster richColors position="top-center" />
       </LanguageProvider>
