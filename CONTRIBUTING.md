@@ -67,7 +67,7 @@ git checkout -b fix/budget-rollover-rounding
 
 ### 3. Set up the project locally
 
-Follow **[Running locally in docs/SELF-HOSTING.md](docs/SELF-HOSTING.md#running-locally)** — it explains how to install the tools, create a free Supabase project and fill in `.env`.
+Follow **[Running locally in docs/SELF-HOSTING.md](docs/SELF-HOSTING.md#7-running-locally-for-developers)** — it explains how to install the tools, create a free Supabase project and fill in `.env`.
 
 The project uses [Bun](https://bun.sh) in CI, but npm works too:
 
