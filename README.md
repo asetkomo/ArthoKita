@@ -11,6 +11,7 @@ hi saya ingin membuat aplikasi web yg bisa track pemasukan dan pengeluaran beser
 - Laporan per akun, grafik saldo & rekonsiliasi rekening koran
 - Bot Telegram (pratinjau sebelum simpan, /undo) + otomasi n8n (pengingat, laporan, backup mingguan)
 - Cadangan & pulihkan JSON, login 2 langkah (TOTP), monitoring error (Sentry opsional), PWA, ID/EN, mode gelap
+- Mode privasi (ikon mata / Shift+H): sembunyikan semua nominal, saldo, grafik & gram emas per perangkat
 
 Panduan pemasangan: [docs/SETUP.md](docs/SETUP.md).
 
