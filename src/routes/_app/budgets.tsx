@@ -30,7 +30,7 @@ function BudgetsPage() {
   const month = currentMonth();
   const { data: budgets } = useSuspenseQuery(budgetsQuery(month));
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
-  const crud = useCrudDialog("budgets", { alert_percent: 80 });
+  const crud = useCrudDialog("budgets", { alert_percent: 80, rollover: false });
   const total = budgets.reduce((a, b) => a + b.amount, 0);
   const spent = budgets.reduce((a, b) => a + b.spent, 0);
   return (
@@ -72,6 +72,7 @@ function BudgetsPage() {
                         category_id: b.category_id,
                         amount: b.amount,
                         alert_percent: b.alert_percent,
+                        rollover: b.rollover,
                       })
                     }
                     onDelete={() => crud.remove(b.id, `${t("budget")} ${b.category}`)}
@@ -79,13 +80,23 @@ function BudgetsPage() {
                 </div>
                 <p className="mt-3 break-words text-sm">
                   <span className={`num text-xl font-semibold ${tone}`}>{money(b.spent)}</span>{" "}
-                  <span className="text-muted-foreground">/ {money(b.amount)}</span>
+                  <span className="text-muted-foreground">/ {money(b.effective)}</span>
                 </p>
+                {b.rollover ? (
+                  <p className="mt-1 break-words text-xs text-muted-foreground">
+                    {t("Dibawa dari bulan lalu")}:{" "}
+                    <span className={`num ${b.carry < 0 ? "text-expense" : "text-income"}`}>
+                      {b.carry >= 0 ? "+" : ""}
+                      {money(b.carry)}
+                    </span>{" "}
+                    · {t("Batas efektif")} {money(b.effective)}
+                  </p>
+                ) : null}
                 <Progress className="mt-3" value={Math.min(100, b.percent)} />
                 <p className="mt-2 break-words text-xs text-muted-foreground">
                   {b.percent >= 100
-                    ? `${t("Lewat")} ${money(b.spent - b.amount)}`
-                    : `${t("Sisa")} ${money(b.amount - b.spent)}`}{" "}
+                    ? `${t("Lewat")} ${money(b.spent - b.effective)}`
+                    : `${t("Sisa")} ${money(b.effective - b.spent)}`}{" "}
                   · {t("peringatan di")} {b.alert_percent}%
                 </p>
               </Card>
@@ -104,6 +115,7 @@ function BudgetsPage() {
         },
         { name: "amount", label: t("Batas per bulan (IDR)"), type: "number", half: true },
         { name: "alert_percent", label: t("Peringatan saat (%)"), type: "number", half: true },
+        { name: "rollover", label: t("Sisa bulan lalu dibawa (rollover)"), type: "switch" },
       ])}
     </>
   );

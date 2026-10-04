@@ -293,6 +293,11 @@ const DICT: Record<string, string> = {
   "%": "%",
   "Batas per bulan (IDR)": "Monthly limit (IDR)",
   "Peringatan saat (%)": "Alert at (%)",
+  "Sisa bulan lalu dibawa (rollover)": "Carry over last month's remainder (rollover)",
+  "Dibawa dari bulan lalu": "Carried from last month",
+  "Batas efektif": "Effective limit",
+  "Budget terlampaui": "Budget exceeded",
+  "Budget hampir habis": "Budget almost used up",
   /* Goals */
   "Pantau progres tabungan untuk setiap tujuan keuanganmu.":
     "Track savings progress for each of your financial goals.",
