@@ -16,6 +16,7 @@ import { paySubscription } from "@/lib/finance.functions";
 import { dateLabel, diffDays, todayStr } from "@/lib/dates";
 import { withTax } from "@/lib/fees";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account, Category, Subscription } from "@/lib/schemas";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/_app/subscriptions")({
 });
 
 function SubsPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const subs = useSuspenseQuery(rowsQuery("subscriptions")).data as Subscription[];

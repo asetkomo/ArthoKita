@@ -22,6 +22,7 @@ import {
 import { parseAmount, parseCsv } from "@/lib/csv";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { errMsg, invalidateFor, reconcileTxQuery } from "@/lib/queries";
 import { useI18n } from "@/lib/i18n";
 
@@ -41,6 +42,7 @@ export function AccountReconcile({
   last: Last;
   onRecord: (draft: TxDraft) => void;
 }) {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const qc = useQueryClient();

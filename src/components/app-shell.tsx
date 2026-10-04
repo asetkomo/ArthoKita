@@ -7,6 +7,8 @@ import {
   CalendarClock,
   Coins,
   CreditCard,
+  Eye,
+  EyeOff,
   HandCoins,
   LayoutDashboard,
   Languages,
@@ -22,6 +24,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/lib/auth.functions";
 import { useI18n } from "@/lib/i18n";
+import { togglePrivate, usePrivacy } from "@/lib/privacy";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -72,6 +75,36 @@ export function ThemeToggle({ className }: { className?: string }) {
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
       {className === undefined ? (dark ? t("Mode terang") : t("Mode gelap")) : null}
     </Button>
+  );
+}
+
+export function PrivacyToggle({ className }: { className?: string }) {
+  const { t } = useI18n();
+  const hidden = usePrivacy();
+  const label = hidden ? t("Tampilkan angka") : t("Sembunyikan angka");
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={togglePrivate}
+          aria-label={label}
+          aria-pressed={hidden}
+          aria-keyshortcuts="Shift+H"
+          className={
+            className ??
+            "flex w-full justify-start gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent"
+          }
+        >
+          {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          {className === undefined ? label : null}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side={className === undefined ? "right" : "bottom"}>
+        {label} (Shift+H)
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -154,10 +187,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="hidden lg:contents">
               <ThemeToggle />
               <LanguageToggle />
+              <PrivacyToggle />
             </div>
             <div className="flex flex-col items-center gap-0.5 lg:hidden">
               <ThemeToggle className="size-11 p-0 text-ink-muted hover:bg-sidebar-accent" />
               <LanguageToggle className="h-11 w-full gap-1 px-1 text-ink-muted hover:bg-sidebar-accent" />
+              <PrivacyToggle className="size-11 p-0 text-ink-muted hover:bg-sidebar-accent" />
             </div>
             <Button
               type="button"
@@ -179,6 +214,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />
                 <ThemeToggle className="size-9 shrink-0 p-0" />
+                <PrivacyToggle className="size-9 shrink-0 p-0" />
                 <Button
                   type="button"
                   size="icon"

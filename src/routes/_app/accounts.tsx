@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { balancesQuery, rowsQuery } from "@/lib/queries";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { formatPresets } from "@/lib/fees";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_app/accounts")({
 });
 
 function AccountsPage() {
+  usePrivacy();
   const { t } = useI18n();
   const { data: balances } = useSuspenseQuery(balancesQuery());
   const rows = useSuspenseQuery(rowsQuery("accounts")).data as any[];

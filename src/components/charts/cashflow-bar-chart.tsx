@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { compact, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const tooltip = {
@@ -27,6 +28,7 @@ export default function CashflowBarChart({
   incomeLabel: string;
   expenseLabel: string;
 }) {
+  usePrivacy();
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>

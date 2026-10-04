@@ -18,6 +18,7 @@ import { debtsQuery, errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { deleteRow, payDebt } from "@/lib/finance.functions";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account } from "@/lib/schemas";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/_app/debts")({
 });
 
 function DebtsPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const { data: debts } = useSuspenseQuery(debtsQuery());
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];

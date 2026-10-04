@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { budgetsQuery, rowsQuery } from "@/lib/queries";
 import { currentMonth, monthLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Category } from "@/lib/schemas";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_app/budgets")({
 });
 
 function BudgetsPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const month = currentMonth();
   const { data: budgets } = useSuspenseQuery(budgetsQuery(month));

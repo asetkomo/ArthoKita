@@ -166,7 +166,8 @@ export function TransactionDialog({
                         onClick={() => set("fee", o.amount)}
                         className="h-8 max-w-full rounded-full px-2.5 text-xs"
                       >
-                        {o.label} · {money(o.amount, String(v["currency"] ?? "IDR"))}
+                        {o.label} ·{" "}
+                        {money(o.amount, String(v["currency"] ?? "IDR"), { reveal: true })}
                       </Button>
                     ))}
                     {Number(v["fee"]) > 0 ? (
@@ -200,7 +201,9 @@ export function TransactionDialog({
                         {it.name}
                       </span>
                       <span className="num shrink-0 text-muted-foreground">
-                        {it.price != null ? money(it.price, String(v["currency"] ?? "IDR")) : ""}
+                        {it.price != null
+                          ? money(it.price, String(v["currency"] ?? "IDR"), { reveal: true })
+                          : ""}
                       </span>
                     </li>
                   ),

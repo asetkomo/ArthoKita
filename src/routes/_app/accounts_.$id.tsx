@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { accountReportQuery, txCountQuery, txQuery } from "@/lib/queries";
 import { currentMonth, dateLabel, monthLabel, shiftMonth, shortMonth } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { signedAmount, TRANSFER_OUT } from "@/lib/account-report";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_app/accounts_/$id")({
 });
 
 function AccountDetailPage() {
+  usePrivacy();
   const { id } = Route.useParams();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";

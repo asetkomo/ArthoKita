@@ -15,6 +15,7 @@ import { goldQuery, rowsQuery } from "@/lib/queries";
 import { goldValue, type GoldPrice } from "@/lib/assets";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { secret, usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_app/gold")({
 });
 
 function GoldPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [offset, setOffset] = useState(0);
@@ -118,7 +120,10 @@ function GoldPage() {
         }
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label={t("Total emas")} value={`${holdings.grams.toLocaleString(locale)} g`} />
+        <Stat
+          label={t("Total emas")}
+          value={`${secret(holdings.grams.toLocaleString(locale))} g`}
+        />
         <Stat label={t("Modal")} value={money(holdings.cost)} />
         <Stat label={t("Rata-rata harga beli")} value={`${money(holdings.avgPrice)}/g`} />
         <Stat
@@ -225,7 +230,9 @@ function GoldPage() {
                     >
                       {r.kind === "buy" ? t("Beli") : t("Jual")}
                     </Badge>
-                    <p className="num min-w-0 truncate text-sm font-medium">{r.grams} g</p>
+                    <p className="num min-w-0 truncate text-sm font-medium">
+                      {secret(String(r.grams))} g
+                    </p>
                   </div>
                   <p className="num min-w-0 break-words text-right text-sm font-semibold">
                     {money(r.total)}
@@ -248,7 +255,7 @@ function GoldPage() {
                     </p>
                     <RowActions
                       onEdit={() => edit(r)}
-                      onDelete={() => crud.remove(r.id, `${r.grams} g`)}
+                      onDelete={() => crud.remove(r.id, `${secret(String(r.grams))} g`)}
                     />
                   </div>
                 </li>
@@ -290,7 +297,9 @@ function GoldPage() {
                           </p>
                         ) : null}
                       </td>
-                      <td className="num whitespace-nowrap px-4 py-2.5 text-right">{r.grams} g</td>
+                      <td className="num whitespace-nowrap px-4 py-2.5 text-right">
+                        {secret(String(r.grams))} g
+                      </td>
                       <td className="num whitespace-nowrap px-4 py-2.5 text-right">
                         {money(r.price_per_gram)}
                       </td>
@@ -301,7 +310,7 @@ function GoldPage() {
                         <div className="flex justify-end">
                           <RowActions
                             onEdit={() => edit(r)}
-                            onDelete={() => crud.remove(r.id, `${r.grams} g`)}
+                            onDelete={() => crud.remove(r.id, `${secret(String(r.grams))} g`)}
                           />
                         </div>
                       </td>

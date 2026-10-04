@@ -56,6 +56,7 @@ import { receiptPaths } from "@/lib/receipts";
 import { ReceiptGallery } from "@/components/receipt-gallery";
 import { currentMonth, dateLabel, monthLabel, shiftMonth } from "@/lib/dates";
 import { KIND_LABEL, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account, Category } from "@/lib/schemas";
@@ -73,6 +74,7 @@ export const Route = createFileRoute("/_app/transactions")({
 });
 
 function TransactionsPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [month, setMonth] = useState(currentMonth());

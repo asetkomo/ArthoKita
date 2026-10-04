@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { compact, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { CHART_PALETTE } from "./shared";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,6 +21,7 @@ const tooltip = {
 
 /** Stacked per-category expense trend (dashboard). */
 export default function StackedAreaChart({ data, keys }: { data: any[]; keys: string[] }) {
+  usePrivacy();
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data}>

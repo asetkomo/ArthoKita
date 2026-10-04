@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { assetsQuery } from "@/lib/queries";
 import { money } from "@/lib/format";
+import { secret, usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -18,6 +19,7 @@ const COLORS: Record<string, string> = {
 };
 
 export function AssetsOverview() {
+  usePrivacy();
   const { t } = useI18n();
   const { data: a } = useQuery(assetsQuery());
   if (!a) return null;
@@ -53,7 +55,7 @@ export function AssetsOverview() {
                   {money(ref?.value ?? 0)}
                 </p>
                 <p className="num break-words text-xs text-muted-foreground">
-                  {g.grams} g · {t("modal")} {money(g.cost)}
+                  {secret(String(g.grams))} g · {t("modal")} {money(g.cost)}
                 </p>
                 {ref ? (
                   <p

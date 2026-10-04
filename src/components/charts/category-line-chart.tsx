@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { compact, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { tooltipStyle } from "./shared";
 
 export type LineSeries = { key: string; name: string; color: string };
@@ -21,6 +22,7 @@ export default function CategoryLineChart({
   data: Record<string, unknown>[];
   series: LineSeries[];
 }) {
+  usePrivacy();
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>

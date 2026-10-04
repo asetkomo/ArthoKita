@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trendQuery, yearlySummaryQuery } from "@/lib/queries";
 import { currentMonth, monthLabel, shortMonth } from "@/lib/dates";
 import { compact, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -50,6 +51,7 @@ function ReportsPage() {
 }
 
 function CategoryTrend() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [months, setMonths] = useState(6);
@@ -127,6 +129,7 @@ function CategoryTrend() {
 }
 
 function YearlyRecap() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [year, setYear] = useState(Number(currentMonth().slice(0, 4)));
@@ -293,6 +296,7 @@ function YearlyRecap() {
 }
 
 function Stat({ label, value, className }: { label: string; value: number; className?: string }) {
+  usePrivacy();
   return (
     <div className="min-w-0 rounded-xl border p-4">
       <p className="text-xs text-muted-foreground">{label}</p>

@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { fxQuery, activityQuery, rowsQuery } from "@/lib/queries";
 import { exportBackupJson } from "@/lib/finance.functions";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import { activityDetail, activityLabel } from "@/lib/activity";
@@ -85,6 +86,7 @@ const ENDPOINTS = [
 type ActivityRow = { id: string; action: unknown; detail: unknown; created_at: string };
 
 function SettingsPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const categories = useSuspenseQuery(rowsQuery("categories")).data as Category[];
   const { usdIdr } = useSuspenseQuery(fxQuery()).data;
@@ -162,7 +164,10 @@ function SettingsPage() {
           <h2 className="text-lg font-semibold">{t("Kurs")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("Diperbarui otomatis sekali sehari. Saat ini ")}
-            <span className="num font-semibold text-foreground">1 USD = {money(usdIdr)}</span>.
+            <span className="num font-semibold text-foreground">
+              1 USD = {money(usdIdr, "IDR", { reveal: true })}
+            </span>
+            .
           </p>
         </Card>
         <Card className="min-w-0 p-5">

@@ -19,6 +19,7 @@ import { errMsg, invalidateFor, receivablesQuery, rowsQuery } from "@/lib/querie
 import { payReceivableFn, receivableActionFn, saveReceivableFn } from "@/lib/finance.functions";
 import { dateLabel, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account } from "@/lib/schemas";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/_app/receivables")({
 type Values = Record<string, unknown>;
 
 function ReceivablesPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [offset, setOffset] = useState(0);

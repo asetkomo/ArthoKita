@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { yearlyQuery } from "@/lib/queries";
 import { currentMonth, shortMonth } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/_app/rekap")({
 });
 
 function RekapPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [year, setYear] = useState(currentMonth().slice(0, 4));

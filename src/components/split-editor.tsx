@@ -164,7 +164,7 @@ export function SplitEditor({
           <p
             className={`num text-xs ${remaining === 0 ? "text-muted-foreground" : "text-expense"}`}
           >
-            {t("Sisa")}: {money(remaining, currency)}
+            {t("Sisa")}: {money(remaining, currency, { reveal: true })}
             {remaining === 0 ? ` · ${t("Pas dengan total")}` : ""}
           </p>
           <p className="text-xs text-muted-foreground">

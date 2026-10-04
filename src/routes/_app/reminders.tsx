@@ -16,6 +16,7 @@ import { payDebt, paySubscription } from "@/lib/finance.functions";
 import { postRecurring } from "@/lib/recurring.functions";
 import { dateLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_app/reminders")({
 });
 
 function RemindersPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [days, setDays] = useState(30);

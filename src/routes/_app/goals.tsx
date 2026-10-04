@@ -17,6 +17,7 @@ import { addGoalFunds } from "@/lib/finance.functions";
 import { dateLabel, monthLabel, todayStr } from "@/lib/dates";
 import { projectGoal, type GoalStatus } from "@/lib/goals";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account, Goal } from "@/lib/schemas";
@@ -169,6 +170,7 @@ function GoalCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const saved = Number(g.saved_amount);

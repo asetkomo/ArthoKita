@@ -8,6 +8,7 @@ import {
   YAxis,
 } from "recharts";
 import { compact, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const tooltip = {
@@ -18,6 +19,7 @@ const tooltip = {
 
 /** Net worth over time (dashboard). */
 export default function NetWorthChart({ data, label }: { data: any[]; label: string }) {
+  usePrivacy();
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data}>

@@ -17,6 +17,7 @@ import { postRecurring, toggleRecurring } from "@/lib/recurring.functions";
 import { monthlyEquivalent, type RecurringCycle } from "@/lib/recurring";
 import { dateLabel, diffDays, todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import type { Account, Category, Recurring } from "@/lib/schemas";
@@ -43,6 +44,7 @@ const CYCLE_LABEL = { weekly: "Mingguan", monthly: "Bulanan", yearly: "Tahunan" 
 const CYCLE_UNIT = { weekly: "minggu", monthly: "bulan", yearly: "tahun" } as const;
 
 function RecurringPage() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const data = useSuspenseQuery(recurringQuery()).data;

@@ -29,6 +29,7 @@ import { dashboardQuery, netWorthQuery } from "@/lib/queries";
 import { currentMonth, dateLabel, monthLabel, shiftMonth, shortMonth, todayStr } from "@/lib/dates";
 import { projectGoal } from "@/lib/goals";
 import { money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/_app/dashboard")({
 });
 
 function Dashboard() {
+  usePrivacy();
   const { t, lang } = useI18n();
   const locale = lang === "en" ? "en-US" : "id-ID";
   const [month, setMonth] = useState(currentMonth());
@@ -423,6 +425,7 @@ function Stat({
   tone: "income" | "expense";
   icon: React.ReactNode;
 }) {
+  usePrivacy();
   return (
     <Card className="min-w-0 p-5">
       <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">

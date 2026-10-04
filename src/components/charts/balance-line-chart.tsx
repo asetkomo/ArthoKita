@@ -8,6 +8,7 @@ import {
   YAxis,
 } from "recharts";
 import { compact, money } from "@/lib/format";
+import { usePrivacy } from "@/lib/privacy";
 import { tooltipStyle } from "./shared";
 
 /** Month-end balance of one account (account detail page). */
@@ -20,6 +21,7 @@ export default function BalanceLineChart({
   label: string;
   currency?: string;
 }) {
+  usePrivacy();
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>

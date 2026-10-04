@@ -278,7 +278,7 @@ export function CsvImport() {
                         <td
                           className={`num whitespace-nowrap px-3 py-1.5 text-right ${r.value.kind === "income" ? "text-income" : "text-expense"}`}
                         >
-                          {money(r.value.amount, r.value.currency)}
+                          {money(r.value.amount, r.value.currency, { reveal: true })}
                         </td>
                         <td className="px-3 py-1.5">{r.value.category ?? "—"}</td>
                         <td className="px-3 py-1.5">{r.value.account ?? "—"}</td>
