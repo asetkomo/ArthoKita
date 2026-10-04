@@ -1,6 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_BRANDING } from "@/lib/app-settings";
@@ -96,5 +96,76 @@ describe("landing route", () => {
     branding.landing_enabled = false;
     const router = await load("/");
     expect(router.state.location.pathname).toBe("/login");
+  });
+});
+
+describe("landing polish", () => {
+  it("renders the tech marquee with one accessible list and an aria-hidden duplicate", async () => {
+    const router = await load("/");
+    render(<RouterProvider router={router} />);
+    const marquee = await screen.findByTestId("tech-marquee");
+    const lists = Array.from(marquee.querySelectorAll("ul"));
+    expect(lists).toHaveLength(2);
+    expect(lists[0]).not.toHaveAttribute("aria-hidden");
+    expect(lists[1]).toHaveAttribute("aria-hidden", "true");
+    // Only the first set is exposed to assistive tech (static fallback hides the copy via CSS).
+    const visible = within(marquee).getAllByRole("listitem");
+    const [first] = lists;
+    expect(visible).toHaveLength(first!.children.length);
+    expect(within(first!).getByText("Supabase")).toBeInTheDocument();
+  });
+
+  it("links to the legal pages from the footer and scopes smooth scrolling to public pages", async () => {
+    const router = await load("/");
+    const { unmount } = render(<RouterProvider router={router} />);
+    await screen.findByRole("heading", { level: 1 });
+    expect(document.documentElement).toHaveClass("landing-smooth");
+    const privacy = screen.getAllByRole("link", { name: "Privasi" });
+    expect(privacy[0]).toHaveAttribute("href", "/privacy");
+    expect(screen.getAllByRole("link", { name: "Ketentuan" })[0]).toHaveAttribute("href", "/terms");
+    expect(screen.getByRole("button", { name: "Kembali ke atas" })).toBeInTheDocument();
+    unmount();
+    expect(document.documentElement).not.toHaveClass("landing-smooth");
+  });
+});
+
+describe("marquee reduced-motion fallback", () => {
+  it("stops the animation, wraps the logos and hides the duplicate set", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+    const start = css.indexOf("@media (prefers-reduced-motion: reduce)");
+    expect(start).toBeGreaterThan(-1);
+    const block = css.slice(start, css.indexOf("\n}\n", start));
+    expect(block).toMatch(/\.landing-marquee-track\s*{[^}]*animation:\s*none/);
+    expect(block).toMatch(/\.landing-marquee-group\s*{[^}]*flex-wrap:\s*wrap/);
+    expect(block).toMatch(/\.landing-marquee-group\[aria-hidden="true"\]\s*{[^}]*display:\s*none/);
+    expect(block).toMatch(/html\.landing-smooth\s*{[^}]*scroll-behavior:\s*auto/);
+  });
+});
+
+describe("legal routes", () => {
+  it("renders the privacy policy with its sections and update date", async () => {
+    const router = await load("/privacy");
+    render(<RouterProvider router={router} />);
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Kebijakan Privasi" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Cookie & penyimpanan browser/ }),
+    ).toBeInTheDocument();
+    expect(document.querySelector("time")).toHaveAttribute("dateTime", "2026-10-04");
+    // Section links in the shared header point back to the landing page.
+    expect(screen.getAllByRole("link", { name: "Fitur" })[0]).toHaveAttribute("href", "/#fitur");
+  });
+
+  it("renders the terms page for visitors even when the landing is disabled", async () => {
+    branding.landing_enabled = false;
+    const router = await load("/terms");
+    render(<RouterProvider router={router} />);
+    expect(router.state.location.pathname).toBe("/terms");
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Syarat & Ketentuan" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Bukan nasihat keuangan/ })).toBeInTheDocument();
   });
 });
