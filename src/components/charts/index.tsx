@@ -28,6 +28,7 @@ const LazyStackedArea = lazy(() => import("./stacked-area-chart"));
 const LazyNetWorth = lazy(() => import("./net-worth-chart"));
 const LazyCategoryLines = lazy(() => import("./category-line-chart"));
 const LazyCashflowBars = lazy(() => import("./cashflow-bar-chart"));
+const LazyBalanceLine = lazy(() => import("./balance-line-chart"));
 
 export const DonutChart = withSuspense<ComponentProps<typeof LazyDonut>>(LazyDonut);
 export const CashflowAreaChart =
@@ -39,6 +40,8 @@ export const CategoryLineChart =
   withSuspense<ComponentProps<typeof LazyCategoryLines>>(LazyCategoryLines);
 export const CashflowBarChart =
   withSuspense<ComponentProps<typeof LazyCashflowBars>>(LazyCashflowBars);
+export const BalanceLineChart =
+  withSuspense<ComponentProps<typeof LazyBalanceLine>>(LazyBalanceLine);
 
 export type { DonutSlice } from "./donut-chart";
 export type { LineSeries } from "./category-line-chart";

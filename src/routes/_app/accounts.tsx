@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app-shell";
@@ -76,7 +76,14 @@ function AccountsPage() {
                 />
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-lg font-semibold">{a.name}</p>
+                    <Link
+                      to="/accounts/$id"
+                      params={{ id: a.id }}
+                      className="block truncate font-display text-lg font-semibold hover:underline"
+                      title={t("Lihat laporan akun")}
+                    >
+                      {a.name}
+                    </Link>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       <Badge variant="secondary">
                         {TYPES.find((ty) => ty.value === a.type)?.label}

@@ -645,6 +645,52 @@ const DICT: Record<string, string> = {
   "foto · tautan berlaku 5 menit": "photo(s) · links valid for 5 minutes",
   "Opsional. Hingga 5 foto JPEG/PNG/WebP, maks 5 MB per foto.":
     "Optional. Up to 5 JPEG/PNG/WebP photos, max 5 MB each.",
+  /* Account report & reconciliation */
+  "Akun direkonsiliasi": "Account reconciled",
+  Bandingkan: "Compare",
+  "Belum ada transaksi bulan ini.": "No transactions this month yet.",
+  "Belum ada uang keluar bulan ini.": "No money out this month yet.",
+  "Belum tercatat di aplikasi": "Not recorded in the app",
+  "Cocokkan saldo aplikasi dengan rekening koran atau mutasi bank.":
+    "Match the app balance against your bank statement or transaction history.",
+  "Impor CSV mutasi bank (tanggal, keterangan, jumlah ±) untuk mencocokkan transaksi.":
+    "Import a bank statement CSV (date, description, amount ±) to match transactions.",
+  "Impor mutasi": "Import statement",
+  "Jalankan skema v13 untuk menyimpan riwayat rekonsiliasi.":
+    "Run schema v13 to save reconciliation history.",
+  "Kolom wajib tidak ada:": "Missing required columns:",
+  "Lihat laporan akun": "View account report",
+  Rekonsiliasi: "Reconciliation",
+  "Rekonsiliasi disimpan": "Reconciliation saved",
+  Saldo: "Balance",
+  "Saldo 12 bulan": "12-month balance",
+  "Saldo akhir bulan": "Closing balance",
+  "Saldo akhir rekening koran": "Statement closing balance",
+  "Saldo aplikasi": "App balance",
+  "Saldo awal bulan": "Opening balance",
+  "Saldo cocok": "Balances match",
+  "Saldo rekening koran": "Statement balance",
+  "Saldo rekening koran tidak valid": "Invalid statement balance",
+  "Selisih positif berarti bank mencatat lebih banyak dari aplikasi.":
+    "A positive difference means the bank shows more than the app.",
+  "Semua baris bank cocok.": "All bank lines matched.",
+  "Semua transaksi aplikasi cocok.": "All app transactions matched.",
+  "Simpan rekonsiliasi": "Save reconciliation",
+  "Tanggal rekening koran": "Statement date",
+  "Terakhir direkonsiliasi": "Last reconciled",
+  "Tidak ada baris mutasi yang valid.": "No valid statement lines.",
+  "Tidak ada di mutasi bank": "Not in the bank statement",
+  "Transaksi akun": "Account transactions",
+  "Transfer keluar": "Transfers out",
+  "Uang keluar": "Money out",
+  "Uang keluar per kategori": "Money out by category",
+  "Uang masuk": "Money in",
+  "Uang masuk/keluar termasuk transfer antar akun dan biaya admin.":
+    "Money in/out includes transfers between accounts and admin fees.",
+  "baris dilewati": "rows skipped",
+  cocok: "matched",
+  "hanya di aplikasi": "only in app",
+  "hanya di bank": "only in bank",
 };
 
 const LangContext = createContext<{
