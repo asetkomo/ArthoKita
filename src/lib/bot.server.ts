@@ -456,7 +456,9 @@ export async function undoTransaction(id: string): Promise<{ ok: boolean; messag
   await db().from("transactions").delete().like("notes", `[fee:${tx.id}]`);
   const del = await db().from("transactions").delete().eq("id", tx.id);
   if (del.error) return { ok: false, message: `⚠️ Gagal undo: ${del.error.message}` };
-  if (tx.receipt_path) await (await import("./receipt.server")).removeReceipt(tx.receipt_path);
+  // All photos (receipt_paths, v12) — only those no other transaction (e.g. a split sibling made
+  // on the web) still references. Undo removes just this row, never its whole split group.
+  await (await import("./split.server")).removeOrphanPhotos([tx], [tx.id]);
   await db().from("bot_drafts").update({ status: "undone" }).eq("transaction_id", tx.id);
   const f = await fin();
   await f.logActivity("transaction.delete", "transactions", {

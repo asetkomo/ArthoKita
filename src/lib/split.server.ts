@@ -107,7 +107,10 @@ export async function saveSplitTransaction(
 }
 
 /** Removes receipt photos of the given rows that no remaining transaction still references. */
-async function removeOrphanPhotos(rows: TxRow[], deletedIds: string[]) {
+export async function removeOrphanPhotos(
+  rows: Pick<TxRow, "receipt_path" | "receipt_paths">[],
+  deletedIds: string[],
+) {
   const paths = [...new Set(rows.flatMap((r) => receiptPaths(r)))];
   if (!paths.length) return;
   const { removeReceipt } = await import("./receipt.server");
