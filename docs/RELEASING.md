@@ -69,10 +69,10 @@ That's it — no local commands, no `npm publish`.
 
 The repository had no numbered releases before; `package.json` was set to `0.0.0` and the manifest to `"0.0.0"`. To make the first release **1.0.0** (the app is feature-complete and public):
 
-- `release-please-config.json` sets `"release-as": "1.0.0"` for the root package, so the first Release PR is `chore(release): v1.0.0` regardless of commit types.
+- `release-please-config.json` temporarily set `"release-as": "1.0.0"` for the root package, so the first Release PR was `chore(release): v1.0.0` regardless of commit types.
 - `"bootstrap-sha"` points to the last commit on `main` before release-please was introduced. Without it, release-please would scan the entire history (there is no previous tag) and dump every old commit into the changelog; the manually written history already lives in `CHANGELOG.md`.
 
-**After v1.0.0 is released, remove `"release-as": "1.0.0"`** (and optionally `"bootstrap-sha"`, which is ignored once a release tag exists) in a follow-up `chore: remove release-as after v1.0.0` PR. If you leave `release-as` in place, release-please will keep proposing 1.0.0.
+v1.0.0 was released on 2026-10-04 and `release-as` has since been removed, so versions now follow Conventional Commits (`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE` → major). Only re-add `release-as` when you deliberately want to force a specific version, and remove it again after that release. `"bootstrap-sha"` is kept but ignored now that a release tag exists.
 
 ### CHANGELOG.md layout
 
@@ -101,6 +101,8 @@ Dompetku is an application that every user deploys for themselves with their own
 - On the repository page click **Watch → Custom → Releases → Apply** to get a notification for each new version.
 - Or subscribe to the Atom feed `https://github.com/ilramdhan/fintrack/releases.atom`.
 - Before updating, read the release notes for any new `supabase/schema.sql` section to run.
+- The app itself shows the running version (sidebar, Settings → **Tentang aplikasi**, landing footer) and, once a day at most, checks `https://api.github.com/repos/<owner>/<repo>/releases/latest` (repo from Settings `github_url`, else upstream). When a newer release exists it shows **Update tersedia: vX.Y.Z**; on a fork click **Sync fork → Update branch** and Vercel redeploys.
+- The version comes from `package.json` `"version"` (bumped by release-please), so the badge updates automatically with each release build; the commit SHA comes from `VERCEL_GIT_COMMIT_SHA` (or `git` locally, empty when unavailable).
 
 ## One-time repository setting
 

@@ -388,6 +388,15 @@ All server errors go through `logError()` (`monitoring.server.ts`): one JSON lin
 logs (Vercel → Logs) and, if `SENTRY_DSN` is set, a Sentry envelope sent with `fetch`. It never
 throws. `server.ts` and `start.ts` catch SSR failures and return a friendly error page.
 
+### App version and update check
+
+`vite.config.ts` injects `__APP_VERSION__` (package.json), `__APP_COMMIT__` (`VERCEL_GIT_COMMIT_SHA`
+or `git rev-parse`, empty if unavailable) and `__APP_BUILD_DATE__` via `define` (declared in
+`src/version.d.ts`). Pure helpers in `version.ts` (semver compare, repo parsing, release URLs) fall
+back safely under vitest. `getLatestRelease` (public, `version.server.ts`) asks the GitHub releases
+API with a 3 s timeout and caches 6 h in memory; any failure returns `null`. `<VersionBadge>` renders
+it in the sidebar, Settings → About and the landing page.
+
 ### Privacy mode
 
 Privacy mode hides money on screen (for example when sharing your screen). The eye icon or

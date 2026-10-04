@@ -28,6 +28,7 @@ import { AppLogo, AppName, useTagline } from "@/components/app-logo";
 import { togglePrivate, usePrivacy } from "@/lib/privacy";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { VersionBadge, VersionRailLabel, useVersionText } from "@/components/version-badge";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -149,6 +150,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
   const sideItem =
     "flex items-center justify-center gap-3 rounded-lg p-2.5 text-sm transition-colors hover:bg-sidebar-accent lg:justify-start lg:px-3 lg:py-2";
+  const versionText = useVersionText();
   const sideTool =
     "flex w-full justify-center gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent lg:justify-start";
   return (
@@ -204,6 +206,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <LogOut className="size-4" /> <span className="hidden lg:inline">{t("Keluar")}</span>
             </Button>
+            <VersionBadge variant="sidebar" className="mt-2 hidden px-3 lg:flex" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <VersionRailLabel className="mx-auto mt-2 lg:hidden" />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="lg:hidden">
+                {versionText}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </aside>
         <div className="min-w-0 md:col-start-2">

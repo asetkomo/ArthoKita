@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Github, Languages, Menu, Moon, Sun } from "lucide-react";
 import { AppLogo, AppName } from "@/components/app-logo";
 import { Button } from "@/components/ui/button";
@@ -11,13 +11,45 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useI18n } from "@/lib/i18n";
+import { useScrolledPast } from "./use-scrolled-past";
 import { cn } from "@/lib/utils";
 
 export const LANDING_NAV = [
-  { href: "#fitur", label: "Fitur" },
-  { href: "#cara-kerja", label: "Cara kerja" },
-  { href: "#self-host", label: "Self-host" },
+  { hash: "fitur", label: "Fitur" },
+  { hash: "cara-kerja", label: "Cara kerja" },
+  { hash: "self-host", label: "Self-host" },
 ] as const;
+
+/**
+ * In-page section link: a plain `#hash` anchor on the landing page itself (smooth CSS scroll),
+ * a router link to `/#hash` from the legal pages.
+ */
+export function SectionLink({
+  hash,
+  onLanding,
+  className,
+  onClick,
+  children,
+}: {
+  hash: string;
+  onLanding: boolean;
+  className?: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  if (onLanding) {
+    return (
+      <a href={`#${hash}`} className={className} onClick={onClick}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to="/" hash={hash} className={className} onClick={onClick}>
+      {children}
+    </Link>
+  );
+}
 
 /** Small, dependency-free theme switch (same `dk-theme` contract as the app shell). */
 function ThemeButton() {
@@ -85,25 +117,27 @@ export function AuthButton({
   );
 }
 
-export function LandingHeader({ authenticated, repo }: { authenticated: boolean; repo: string }) {
+export function LandingHeader({
+  authenticated,
+  repo,
+  onLanding = true,
+}: {
+  authenticated: boolean;
+  repo: string;
+  onLanding?: boolean;
+}) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 8);
-    on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
-  }, []);
+  const scrolled = useScrolledPast(() => 8);
   const link =
     "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b transition-colors",
+        "sticky top-0 z-40 border-b pt-[env(safe-area-inset-top)] transition-[background-color,border-color,box-shadow] duration-200",
         scrolled
-          ? "border-border bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70"
-          : "border-transparent bg-transparent",
+          ? "border-border bg-background/85 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/70"
+          : "border-transparent bg-transparent shadow-none",
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
@@ -116,9 +150,9 @@ export function LandingHeader({ authenticated, repo }: { authenticated: boolean;
         </Link>
         <nav aria-label={t("Navigasi halaman")} className="ml-6 hidden items-center lg:flex">
           {LANDING_NAV.map((n) => (
-            <a key={n.href} href={n.href} className={link}>
+            <SectionLink key={n.hash} hash={n.hash} onLanding={onLanding} className={link}>
               {t(n.label)}
-            </a>
+            </SectionLink>
           ))}
           <a href={repo} target="_blank" rel="noreferrer" className={link}>
             GitHub
@@ -141,19 +175,23 @@ export function LandingHeader({ authenticated, repo }: { authenticated: boolean;
                 <Menu />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 max-w-[85vw]">
+            <SheetContent
+              side="right"
+              className="w-72 max-w-[85vw] overflow-y-auto overscroll-contain pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+            >
               <SheetTitle className="font-display">{t("Menu")}</SheetTitle>
               <SheetDescription className="sr-only">{t("Navigasi halaman")}</SheetDescription>
               <nav aria-label={t("Navigasi halaman")} className="mt-6 flex flex-col gap-1">
                 {LANDING_NAV.map((n) => (
-                  <a
-                    key={n.href}
-                    href={n.href}
+                  <SectionLink
+                    key={n.hash}
+                    hash={n.hash}
+                    onLanding={onLanding}
                     onClick={() => setOpen(false)}
                     className={cn(link, "text-base")}
                   >
                     {t(n.label)}
-                  </a>
+                  </SectionLink>
                 ))}
                 <a
                   href={repo}

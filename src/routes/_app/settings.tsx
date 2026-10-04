@@ -10,6 +10,7 @@ import { CsvImport } from "@/components/csv-import";
 import { BackupRestore } from "@/components/backup-restore";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { AppSettingsCard } from "@/components/app-settings-card";
+import { AboutCard } from "@/components/about-card";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -291,6 +292,7 @@ function SettingsPage() {
         },
         { name: "color", label: t("Warna"), type: "color", half: true },
       ])}
+      <AboutCard />
     </>
   );
 }
