@@ -9,6 +9,7 @@ import { RouteError } from "@/components/route-error";
 import { CsvImport } from "@/components/csv-import";
 import { BackupRestore } from "@/components/backup-restore";
 import { TwoFactorCard } from "@/components/two-factor-card";
+import { AppSettingsCard } from "@/components/app-settings-card";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -238,6 +239,8 @@ function SettingsPage() {
           <p className="mt-3 text-sm text-muted-foreground">{t("Belum ada aktivitas.")}</p>
         )}
       </Card>
+
+      <AppSettingsCard />
 
       <TwoFactorCard />
 

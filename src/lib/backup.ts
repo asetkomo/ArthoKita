@@ -30,6 +30,7 @@ export const RESTORE_TABLES = [
   "recurring_transactions",
   "budget_alerts",
   "account_reconciliations",
+  "app_settings",
 ] as const;
 export type RestoreTable = (typeof RESTORE_TABLES)[number];
 
@@ -61,6 +62,7 @@ export const CONFLICT_KEYS: Record<RestoreTable, string[]> = {
   recurring_transactions: ["id"],
   budget_alerts: ["id"],
   account_reconciliations: ["id"],
+  app_settings: ["id"],
 };
 
 /**
@@ -85,6 +87,7 @@ export const FK_COLUMNS: Record<string, RestoreTable> = {
   transaction_id: "transactions",
   receivable_id: "receivables",
   budget_id: "budgets",
+  bot_default_account_id: "accounts",
 };
 
 /**

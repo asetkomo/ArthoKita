@@ -14,6 +14,7 @@ This guide is written for **first-time contributors** as well as experienced dev
 - [Project rules (the short version)](#project-rules-the-short-version)
 - [Commit messages](#commit-messages)
 - [Pull request process](#pull-request-process)
+- [Releases](#releases)
 - [AI-assisted contributions](#ai-assisted-contributions)
 - [Labels](#labels)
 - [Licensing](#licensing)
@@ -202,6 +203,10 @@ Several small, logical commits are better than one giant commit.
 - [ ] New UI text uses `t(...)` and has an English entry
 - [ ] Docs updated if behaviour changed
 - [ ] No secrets, personal data or real API keys in code, screenshots or logs
+
+## Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please): your **PR title** (used as the squash-merge commit) decides whether the change shows up in the changelog and how the version is bumped — `fix` → patch, `feat` → minor, `!`/`BREAKING CHANGE` → major. You don't need to touch `package.json` `version` or `CHANGELOG.md` versioned entries; the maintainer merges the generated Release PR. Details: [`docs/RELEASING.md`](docs/RELEASING.md).
 
 ## AI-assisted contributions
 

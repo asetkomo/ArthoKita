@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local demo database (scripts/dev-db, Supabase CLI state)
+scripts/dev-db/supabase/.branches
+scripts/dev-db/supabase/.temp
+scripts/dev-db/supabase/snippets
+.env.demo

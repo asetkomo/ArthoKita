@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
+import { AppLogo, AppName, useTagline } from "@/components/app-logo";
 
 export const Route = createFileRoute("/login")({
   head: () => pageHead("Masuk", "Masuk ke Dompetku — pelacak keuangan pribadi."),
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { t } = useI18n();
+  const tagline = useTagline();
   const run = useServerFn(login);
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState<string | null>(null);
@@ -90,12 +92,13 @@ function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-sidebar px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-sidebar px-4 py-8">
       <Card className="w-full max-w-sm p-6 sm:p-8">
-        <p className="font-display text-3xl font-bold">
-          Dompetku<span className="text-sidebar-primary">.</span>
+        <p className="flex items-center gap-3 font-display text-3xl font-bold">
+          <AppLogo className="size-10" />
+          <AppName className="min-w-0 truncate" />
         </p>
-        <p className="mt-1 text-sm text-ink-muted">{t("buku kas pribadi")}</p>
+        <p className="mt-1 text-sm text-ink-muted">{tagline}</p>
         {challenge ? (
           <form className="mt-6 space-y-4" onSubmit={submitCode}>
             <div className="space-y-1.5">
@@ -157,6 +160,12 @@ function LoginPage() {
           </form>
         )}
       </Card>
+      <Link
+        to="/"
+        className="mt-4 rounded-sm text-sm text-sidebar-foreground/70 transition-colors hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+      >
+        ← {t("Kembali ke beranda")}
+      </Link>
     </div>
   );
 }

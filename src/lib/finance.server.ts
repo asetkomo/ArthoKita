@@ -1,4 +1,5 @@
 import { db } from "./db.server";
+import { cachedAppSettings, getAppSettings } from "./app-settings.server";
 import { dueMonthlyFees, feeDate, FEE_CATEGORY, withTax } from "./fees";
 import { addDays, addMonthsKeepDay, diffDays, monthRange, shiftMonth, todayStr } from "./dates";
 import type { ExternalTx, TransactionInput } from "./schemas";
@@ -53,7 +54,8 @@ function must<T = never, R extends Res = Res>(
   return res.data as [T] extends [never] ? NonNullable<R["data"]> : T;
 }
 
-export const today = () => todayStr(process.env["APP_TIMEZONE"] || "Asia/Jakarta");
+/** "Today" in the Settings time zone (v14), else APP_TIMEZONE, else Asia/Jakarta. */
+export const today = () => todayStr(cachedAppSettings().timezone);
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** True when PostgREST reports a table that has not been created yet (schema v3 not run). */
@@ -335,9 +337,21 @@ export async function updateTransaction(id: string, input: TransactionInput) {
   return data;
 }
 
-/** Account used by the bot when none is mentioned (env BOT_DEFAULT_ACCOUNT, matched by name). */
+/**
+ * Account used by the bot when none is mentioned: the account chosen in Settings (v14) when it
+ * still exists, else env BOT_DEFAULT_ACCOUNT matched by name.
+ */
 export async function defaultAccountId(): Promise<string | null> {
-  return findAccount(process.env["BOT_DEFAULT_ACCOUNT"] || null);
+  const s = await getAppSettings();
+  if (s.bot_default_account_id) {
+    const r = await db()
+      .from("accounts")
+      .select("id")
+      .eq("id", s.bot_default_account_id)
+      .maybeSingle();
+    if (r.data) return r.data.id;
+  }
+  return findAccount(s.bot_default_account_name);
 }
 
 export async function findByExternalId(externalId: string): Promise<TxRow | null> {
@@ -961,6 +975,7 @@ export function remindersText(list: Reminder[]): string {
 /* ---------------- Dashboard ---------------- */
 /** Record due monthly account fees once per month (idempotent via notes marker). */
 export async function applyMonthlyFees(): Promise<number> {
+  await getAppSettings(); // warm the settings cache so today() uses the Settings time zone
   const t = today();
   // Both reads are independent; fetch them together to save a round trip.
   const [accRes, existing] = await Promise.all([
@@ -1616,6 +1631,7 @@ export async function exportBackup() {
     "recurring_transactions",
     "budget_alerts",
     "account_reconciliations",
+    "app_settings",
   ] as const;
   const data: Record<string, any[]> = {};
   // Tables keyed without an `id` column (fx_rates, gold_prices) use their composite primary key for stable paging.
@@ -1655,6 +1671,7 @@ function fmtMoney(n: number, c: string) {
 
 export async function botCommand(text: string): Promise<{ message: string; type: string }> {
   const { classifyBotCommand, botHelp, botSearchToken, clampMessage } = await import("./bot");
+  const { reminderDays } = await import("./app-settings");
   const bot = await import("./bot.server");
   const cmd = classifyBotCommand(text);
   let message: string;
@@ -1689,7 +1706,11 @@ export async function botCommand(text: string): Promise<{ message: string; type:
       break;
     }
     case "reminders":
-      message = remindersText(await computeReminders(cmd.days));
+      message = remindersText(
+        await computeReminders(
+          cmd.days ?? reminderDays(null, (await getAppSettings()).reminder_days, 14),
+        ),
+      );
       break;
     case "pay":
       message = await botPay(cmd.target, botSearchToken);

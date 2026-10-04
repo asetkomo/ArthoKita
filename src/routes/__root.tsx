@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
 import { PrivacySync } from "@/lib/privacy-sync";
+import { BrandingSync } from "@/components/app-logo";
 
 function NotFoundComponent() {
   const { t } = useI18n();
@@ -83,7 +84,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/icons/og-image.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/icons/og-image.png" },
     ],
     links: [
       // Self-hosted fonts (@font-face in styles.css); preload the latin subsets used on every page.
@@ -99,9 +104,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         crossOrigin: "anonymous" as const,
       })),
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/icons/favicon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "48x48", href: "/icons/favicon-48.png" },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -137,6 +145,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <PrivacySync />
+        <BrandingSync />
         <Outlet />
         <Toaster richColors position="top-center" />
       </LanguageProvider>

@@ -693,6 +693,146 @@ const DICT: Record<string, string> = {
   cocok: "matched",
   "hanya di aplikasi": "only in app",
   "hanya di bank": "only in bank",
+  /* App settings (v14) */
+  Aplikasi: "App",
+  "Nama, logo, zona waktu, halaman depan, dan default bot. Kosongkan untuk memakai default.":
+    "Name, logo, time zone, landing page and bot defaults. Leave empty to use the default.",
+  "Jalankan bagian v14 di supabase/schema.sql untuk menyimpan pengaturan ini. Sampai saat itu nilai env dipakai.":
+    "Run the v14 section of supabase/schema.sql to save these settings. Until then env values are used.",
+  "Nama aplikasi": "App name",
+  Tagline: "Tagline",
+  Logo: "Logo",
+  "Unggah logo": "Upload logo",
+  "Pakai logo bawaan": "Use default logo",
+  "PNG/JPEG/WebP, diperkecil otomatis ke 512 px (maks. 200 KB).":
+    "PNG/JPEG/WebP, resized to 512 px automatically (max 200 KB).",
+  "Pilih berkas gambar": "Choose an image file",
+  "Logo terlalu besar (maks. 200 KB)": "Logo is too large (max 200 KB)",
+  "Gambar tidak bisa dibaca": "Could not read the image",
+  "Zona waktu": "Time zone",
+  "Env APP_TIMEZONE:": "Env APP_TIMEZONE:",
+  "Mata uang utama": "Base currency",
+  "Hanya preferensi tampilan; laporan tetap dihitung dalam IDR.":
+    "Display preference only; reports are still calculated in IDR.",
+  "Akun default bot": "Bot default account",
+  "Dari env": "From env",
+  "Tidak ada": "None",
+  "Hari pengingat default": "Default reminder days",
+  "bot 14 · n8n 7": "bot 14 · n8n 7",
+  "Tampilkan halaman depan (landing)": "Show landing page",
+  "Tagline halaman depan": "Landing page tagline",
+  "URL GitHub": "GitHub URL",
+  "Pengaturan aplikasi diubah": "App settings changed",
+  /* Landing page */
+  "Buka Dashboard": "Open dashboard",
+  "Buka menu": "Open menu",
+  Menu: "Menu",
+  Fitur: "Features",
+  "Cara kerja": "How it works",
+  "Self-host": "Self-host",
+  "Lewati ke konten": "Skip to content",
+  "Kembali ke beranda": "Back to home",
+  "Open source · MIT · Self-hosted": "Open source · MIT · Self-hosted",
+  "Catat setiap rupiah.": "Track every rupiah.",
+  "Kendalikan semuanya.": "Stay in control.",
+  "Pelacak keuangan pribadi yang Anda host sendiri — transaksi, budget, hutang, emas, dan bot Telegram dalam satu aplikasi privat.":
+    "A personal finance tracker you host yourself — transactions, budgets, debts, gold and a Telegram bot in one private app.",
+  "Self-host gratis": "Self-host for free",
+  "Data di database Anda sendiri": "Data in your own database",
+  "Gratis di tier free": "Runs on free tiers",
+  "Bahasa Indonesia & English": "Indonesian & English",
+  "aplikasi-anda.vercel.app": "your-app.vercel.app",
+  "Tampilan dashboard: saldo, arus kas, dan kekayaan bersih":
+    "Dashboard view: balances, cash flow and net worth",
+  "Tampilan dashboard di ponsel": "Dashboard on a phone",
+  "Dashboard dengan grafik arus kas": "Dashboard with cash flow charts",
+  "Percakapan dengan bot Telegram": "Chat with the Telegram bot",
+  "Halaman laporan dan rekap tahunan": "Reports and yearly recap page",
+  "Semua yang Anda perlukan untuk mengatur uang": "Everything you need to manage your money",
+  "Dari catatan harian sampai laporan tahunan — dirancang untuk rupiah, cicilan, dan kebiasaan keuangan di Indonesia.":
+    "From daily entries to yearly reports — built for rupiah, installments and the way money works in Indonesia.",
+  "Dashboard & kekayaan bersih": "Dashboard & net worth",
+  "Saldo semua akun, arus kas 6 bulan, pengeluaran per kategori, dan tren kekayaan bersih — termasuk emas dan piutang.":
+    "Every account balance, 6-month cash flow, spending by category and your net worth trend — gold and receivables included.",
+  "Budget dengan rollover": "Budgets with rollover",
+  "Sisa budget bisa dibawa ke bulan berikutnya, dengan peringatan saat mencapai 80% dan 100%.":
+    "Carry unused budget into next month, with alerts when you hit 80% and 100%.",
+  Makan: "Food",
+  Transportasi: "Transport",
+  Hiburan: "Entertainment",
+  "Privat sejak awal": "Private by design",
+  "Mode privasi menyembunyikan angka, login bisa dengan 2FA, dan data tersimpan di database Supabase milik Anda sendiri.":
+    "Privacy mode hides amounts, login supports 2FA, and your data lives in your own Supabase database.",
+  "Bot Telegram + OCR struk": "Telegram bot + receipt OCR",
+  "Ketik “kopi 25rb” atau kirim foto struk; bot menampilkan pratinjau, Anda tinggal tekan ✅.":
+    "Type “coffee 25k” or send a receipt photo; the bot shows a preview and you just tap ✅.",
+  "Transaksi berulang & split": "Recurring & split transactions",
+  "Gaji, cicilan, dan langganan tercatat otomatis. Satu struk bisa dipecah ke beberapa kategori.":
+    "Salary, installments and subscriptions are recorded automatically. Split one receipt across several categories.",
+  "3 kategori": "3 categories",
+  "Emas, piutang & target": "Gold, receivables & goals",
+  "Harga emas Antam harian, piutang yang terhubung ke akun, dan proyeksi kapan target tabungan tercapai.":
+    "Daily Antam gold prices, receivables linked to accounts, and a projection of when you'll reach each savings goal.",
+  "Laporan & rekonsiliasi akun": "Reports & account reconciliation",
+  "Rekap tahunan, tren per kategori, laporan per akun, dan cocokkan saldo dengan mutasi bank dalam beberapa klik.":
+    "Yearly recap, category trends, per-account reports, and match balances against your bank statement in a few clicks.",
+  "Detail kecil yang membuatnya nyaman": "Small details that make it a joy",
+  "Semua hal yang Anda harapkan dari aplikasi modern, tanpa langganan.":
+    "Everything you expect from a modern app, without a subscription.",
+  "Backup & restore JSON": "JSON backup & restore",
+  "Bisa di-install (PWA)": "Installable (PWA)",
+  "Catat dari chat, rapi di aplikasi": "Log from chat, tidy in the app",
+  "Bot Telegram opsional. Tanpa bot pun, aplikasi web sudah lengkap.":
+    "The Telegram bot is optional. The web app is complete without it.",
+  "Anda mengetik atau mengirim foto struk ke bot.": "You type or send a receipt photo to the bot.",
+  "n8n meneruskan pesan ke aplikasi dengan API key.":
+    "n8n forwards the message to the app with an API key.",
+  "Aplikasi membaca, menebak kategori, lalu menyimpan setelah Anda konfirmasi.":
+    "The app reads it, suggests a category and saves once you confirm.",
+  "Punya Anda sendiri dalam 4 langkah": "Your own copy in 4 steps",
+  "Sekitar 20–30 menit, tanpa biaya. Panduan langkah demi langkah tersedia untuk pemula.":
+    "About 20–30 minutes, free of charge. A step-by-step guide is written for beginners.",
+  "Fork repo": "Fork the repo",
+  "Salin kode ke akun GitHub Anda.": "Copy the code to your GitHub account.",
+  "Buat Supabase": "Create Supabase",
+  "Jalankan schema.sql di database gratis.": "Run schema.sql on a free database.",
+  "Deploy ke Vercel": "Deploy to Vercel",
+  "Isi beberapa environment variable.": "Fill in a few environment variables.",
+  Selesai: "Done",
+  "Masuk dan mulai mencatat.": "Sign in and start tracking.",
+  "Baca panduan self-host": "Read the self-hosting guide",
+  "Lihat di GitHub": "View on GitHub",
+  "Dibangun dengan": "Built with",
+  "Pertanyaan yang sering diajukan": "Frequently asked questions",
+  "Apakah benar-benar gratis?": "Is it really free?",
+  "Ya. Kodenya open source (MIT) dan semua layanan yang dibutuhkan punya tier gratis. Biaya kecil hanya muncul bila Anda memakai AI berbayar untuk OCR struk.":
+    "Yes. The code is open source (MIT) and every required service has a free tier. Small costs only appear if you use a paid AI for receipt OCR.",
+  "Siapa yang bisa melihat data saya?": "Who can see my data?",
+  "Hanya Anda. Data tersimpan di proyek Supabase milik Anda dan hanya diakses lewat server aplikasi Anda sendiri — pembuat aplikasi pun tidak bisa melihatnya.":
+    "Only you. Data is stored in your own Supabase project and only accessed through your own app server — not even the author can see it.",
+  "Apakah saya perlu bisa coding?": "Do I need to know how to code?",
+  "Tidak. Panduan self-host menjelaskan setiap klik, dari membuat akun sampai aplikasi online.":
+    "No. The self-hosting guide explains every click, from creating accounts to having the app online.",
+  "Apakah bot Telegram wajib?": "Is the Telegram bot required?",
+  "Tidak. Bot, OCR, pengingat, dan backup terjadwal semuanya opsional dan bisa ditambahkan kapan saja.":
+    "No. The bot, OCR, reminders and scheduled backups are all optional and can be added any time.",
+  "Bisakah dipakai di ponsel?": "Does it work on my phone?",
+  "Bisa. Tampilannya responsif dan bisa di-install ke layar utama sebagai PWA.":
+    "Yes. The layout is responsive and you can install it to your home screen as a PWA.",
+  "Mulai rapikan keuangan Anda hari ini": "Start organising your finances today",
+  "Gratis, privat, dan sepenuhnya milik Anda.": "Free, private and entirely yours.",
+  "Pelacak keuangan pribadi open source yang Anda host sendiri.":
+    "An open-source personal finance tracker you host yourself.",
+  Halaman: "Pages",
+  Dokumentasi: "Documentation",
+  "Panduan self-host": "Self-hosting guide",
+  "Bot Telegram & n8n": "Telegram bot & n8n",
+  "Environment variable": "Environment variables",
+  "FAQ lengkap": "Full FAQ",
+  "Lisensi MIT": "MIT License",
+  "Dibuat dengan": "Made with",
+  cinta: "love",
+  "di Indonesia": "in Indonesia",
 };
 
 const LangContext = createContext<{

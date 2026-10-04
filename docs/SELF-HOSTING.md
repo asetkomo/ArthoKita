@@ -145,7 +145,7 @@ A **fork** is your own copy of the project on GitHub. Vercel will build the webs
 **What success looks like:** the result panel says **Success. No rows returned** (you may also see a small table from the last statement). In **Table Editor** you now see tables such as `accounts`, `categories`, `transactions`, `debts`, `subscriptions`, `budgets`, `goals` … and the `categories` table already has default categories.
 
 <details>
-<summary><strong>What are the sections v1 … v13?</strong></summary>
+<summary><strong>What are the sections v1 … v14?</strong></summary>
 
 The file grew with the app. Every section uses `if not exists` / `on conflict do nothing` / `create or replace`, so **the whole file is idempotent: running it again is always safe** and never deletes data. Run the whole file each time you update.
 
@@ -164,6 +164,7 @@ The file grew with the app. Every section uses `if not exists` / `on conflict do
 | v11       | Budget rollover and 80%/100% alerts                                                                                                      |
 | v12       | Split transactions, up to 5 receipt photos, item search                                                                                  |
 | v13       | Per-account report and bank reconciliation                                                                                               |
+| v14       | App settings (name, logo, time zone, landing page, bot defaults)                                                                         |
 
 If a later section has not been run, the related page shows a hint instead of crashing, and the rest of the app keeps working.
 
@@ -384,6 +385,17 @@ Open <http://localhost:8080> (the dev server port set by the Vite config).
 | Regenerate DB types | `SUPABASE_PROJECT_ID=<ref> bun run gen:types` (needs the Supabase CLI: `npx supabase login`) |
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, test and build on every pull request and push to `main` — keep all four green. Architecture and conventions: [ARCHITECTURE.md](ARCHITECTURE.md) and [AGENTS.md](../AGENTS.md).
+
+### Regenerating screenshots
+
+The README and landing page images in `public/screenshots/` are captured from the local demo stack
+(fictional data only, see [DEMO-DATA.md](DEMO-DATA.md)). With the dev server running on port 8080:
+
+```sh
+npm run db:up && npm run seed:demo -- --reset && npm run screenshots
+```
+
+Details: [DEMO-DATA.md → Regenerating screenshots](DEMO-DATA.md#regenerating-screenshots).
 
 ---
 

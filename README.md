@@ -43,19 +43,39 @@ time), and amounts support **IDR and USD**.
 
 ## Screenshots
 
-<!--
-TODO (maintainers): add screenshots to docs/screenshots/ and replace the "coming soon" cells, e.g.
-<img src="docs/screenshots/dashboard.png" alt="Dashboard" width="400">
-Suggested files: dashboard.png, transactions.png, reports.png, telegram-bot.png, dark-mode.png, mobile.png
--->
+All screenshots use the fictional [demo data](docs/DEMO-DATA.md) and follow your GitHub theme (light
+or dark). Regenerate them with `npm run screenshots` (see [Regenerating screenshots](docs/DEMO-DATA.md#regenerating-screenshots)).
 
-| Dashboard   | Transactions | Reports     |
-| ----------- | ------------ | ----------- |
-| Coming soon | Coming soon  | Coming soon |
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/dashboard-dark.png"><img src="public/screenshots/dashboard.png" alt="Dashboard: balances, assets, cash flow and spending per category"></picture>
+</p>
 
-| Telegram bot | Dark mode   | Mobile      |
-| ------------ | ----------- | ----------- |
-| Coming soon  | Coming soon | Coming soon |
+<table>
+  <tr>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/transactions-dark.png"><img src="public/screenshots/transactions.png" alt="Transactions"></picture><br><b>Transactions</b>: Search, filter and sort every transaction; CSV import/export and PDF.</td>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/reports-dark.png"><img src="public/screenshots/reports.png" alt="Reports"></picture><br><b>Reports</b>: Category trends over 6 or 12 months and a yearly recap.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/budgets-dark.png"><img src="public/screenshots/budgets.png" alt="Budgets"></picture><br><b>Budgets</b>: Monthly budgets with rollover and 80% / 100% alerts.</td>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/accounts-detail-dark.png"><img src="public/screenshots/accounts-detail.png" alt="Account detail"></picture><br><b>Account detail</b>: 12-month balance, spending per category and reconciliation.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/goals-dark.png"><img src="public/screenshots/goals.png" alt="Savings goals"></picture><br><b>Savings goals</b>: Progress, monthly target and projected completion date.</td>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/gold-dark.png"><img src="public/screenshots/gold.png" alt="Gold"></picture><br><b>Gold</b>: Antam and world gold prices with unrealised profit.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/recurring-dark.png"><img src="public/screenshots/recurring.png" alt="Recurring transactions"></picture><br><b>Recurring transactions</b>: Salary, rent and top-ups posted automatically when due.</td>
+    <td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/settings-dark.png"><img src="public/screenshots/settings.png" alt="Settings"></picture><br><b>Settings</b>: Categories, app settings and optional two-factor login.</td>
+  </tr>
+</table>
+
+**On your phone and in Telegram**
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/dashboard-mobile-dark.png"><img src="public/screenshots/dashboard-mobile.png" alt="Dashboard on mobile" width="240"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/transactions-mobile-dark.png"><img src="public/screenshots/transactions-mobile.png" alt="Transactions on mobile" width="240"></picture>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="public/screenshots/telegram-bot-dark.png"><img src="public/screenshots/telegram-bot.png" alt="Telegram bot: preview with Save/Cancel, budget alert and /saldo" width="240"></picture>
+</p>
 
 ## Features
 
