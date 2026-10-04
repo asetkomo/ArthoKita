@@ -287,3 +287,67 @@ html.privacy:not(.privacy-live) main {
 html.privacy .num-sensitive {
   filter: blur(6px);
 }
+
+/* Landing page (`/`): decorative backgrounds + entrance motion, disabled for reduced motion. */
+html:has(.landing) {
+  scroll-behavior: smooth;
+}
+.landing-glow {
+  background:
+    radial-gradient(
+      60% 50% at 85% 10%,
+      color-mix(in oklch, var(--color-accent) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 45% at 10% 30%,
+      color-mix(in oklch, var(--color-primary) 16%, transparent),
+      transparent 70%
+    );
+}
+.landing-cta {
+  background-image: radial-gradient(
+    70% 90% at 100% 0%,
+    color-mix(in oklch, var(--color-sidebar-primary) 22%, transparent),
+    transparent 60%
+  );
+}
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes landing-shimmer {
+  50% {
+    opacity: 0.65;
+  }
+}
+@keyframes landing-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+.landing-rise {
+  animation: landing-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.landing-delay {
+  animation-delay: 0.12s;
+}
+.landing-shimmer {
+  animation: landing-shimmer 2.4s ease-in-out infinite;
+}
+.landing-bar {
+  transform-origin: left;
+  animation: landing-grow 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing) {
+    scroll-behavior: auto;
+  }
+  .landing-rise,
+  .landing-shimmer,
+  .landing-bar {
+    animation: none;
+  }
+}

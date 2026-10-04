@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -92,7 +92,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-sidebar px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-sidebar px-4 py-8">
       <Card className="w-full max-w-sm p-6 sm:p-8">
         <p className="flex items-center gap-3 font-display text-3xl font-bold">
           <AppLogo className="size-10" />
@@ -160,6 +160,12 @@ function LoginPage() {
           </form>
         )}
       </Card>
+      <Link
+        to="/"
+        className="mt-4 rounded-sm text-sm text-sidebar-foreground/70 transition-colors hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+      >
+        ← {t("Kembali ke beranda")}
+      </Link>
     </div>
   );
 }
