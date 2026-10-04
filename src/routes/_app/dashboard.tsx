@@ -32,6 +32,8 @@ import { money } from "@/lib/format";
 import { usePrivacy } from "@/lib/privacy";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
+import { formatPercent, monthChange, previousOf, savingsRate } from "@/lib/ratio";
+import { IncomeRatioCard } from "@/components/income-ratio-card";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const Route = createFileRoute("/_app/dashboard")({
@@ -59,6 +61,8 @@ function Dashboard() {
     draft: newTxDraft(),
   });
   if (!d) return <DashboardSkeleton />;
+  const prev = previousOf<{ income: number; expense: number }>(d.trend);
+  const rate = savingsRate(d.net, d.income);
 
   return (
     <>
@@ -104,10 +108,10 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="min-w-0 bg-ink p-5 text-ink-foreground">
+        <Card className="flex min-w-0 flex-col bg-ink p-5 text-ink-foreground">
           <p className="text-xs uppercase tracking-wider text-ink-muted">{t("Total saldo")}</p>
           <p className="num mt-2 break-words text-2xl font-semibold">{money(d.totalBalanceIdr)}</p>
-          <p className="mt-1 text-xs text-ink-muted">
+          <p className="mt-auto pt-3 text-xs text-ink-muted">
             {d.balances.length} {t("akun aktif")}
           </p>
         </Card>
@@ -116,14 +120,16 @@ function Dashboard() {
           value={d.income}
           tone="income"
           icon={<ArrowDownRight className="size-4" />}
+          footer={<MonthDelta current={d.income} previous={prev?.income} goodWhenUp />}
         />
         <Stat
           label={t("Pengeluaran")}
           value={d.expense}
           tone="expense"
           icon={<ArrowUpRight className="size-4" />}
+          footer={<MonthDelta current={d.expense} previous={prev?.expense} goodWhenUp={false} />}
         />
-        <Card className="min-w-0 p-5">
+        <Card className="flex min-w-0 flex-col p-5">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">
             {t("Selisih bulan ini")}
           </p>
@@ -132,17 +138,35 @@ function Dashboard() {
           >
             {money(d.net)}
           </p>
-          <p className="mt-1 break-words text-xs text-muted-foreground">
-            {t("Hutang")} {money(d.debtOutstandingIdr)} · {t("Langganan")} {money(d.subsMonthlyIdr)}
-            /{t("bln")}
-          </p>
-          {d.feesIdr > 0 ? (
-            <p className="num text-xs text-muted-foreground">
-              {t("Biaya admin bulan ini")} {money(d.feesIdr)}
+          <div className="mt-auto space-y-0.5 pt-3 text-xs text-muted-foreground">
+            {rate !== null ? (
+              <p>
+                <span className={`num font-medium ${rate >= 0 ? "text-income" : "text-expense"}`}>
+                  {formatPercent(rate)}
+                </span>{" "}
+                {t("dari pemasukan")}
+              </p>
+            ) : null}
+            <p className="break-words">
+              {t("Hutang")} <span className="num">{money(d.debtOutstandingIdr)}</span> ·{" "}
+              {t("Langganan")} <span className="num">{money(d.subsMonthlyIdr)}</span>/{t("bln")}
+              {d.feesIdr > 0 ? (
+                <>
+                  {" "}
+                  · {t("Admin")} <span className="num">{money(d.feesIdr)}</span>
+                </>
+              ) : null}
             </p>
-          ) : null}
+          </div>
         </Card>
       </div>
+
+      <IncomeRatioCard
+        className="mt-4"
+        income={d.income}
+        expense={d.expense}
+        categories={d.byCategory}
+      />
 
       <AssetsOverview />
 
@@ -419,15 +443,17 @@ function Stat({
   value,
   tone,
   icon,
+  footer,
 }: {
   label: string;
   value: number;
   tone: "income" | "expense";
   icon: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   usePrivacy();
   return (
-    <Card className="min-w-0 p-5">
+    <Card className="flex min-w-0 flex-col p-5">
       <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
         <span className={tone === "income" ? "text-income" : "text-expense"}>{icon}</span>
         {label}
@@ -437,7 +463,36 @@ function Stat({
       >
         {money(value)}
       </p>
+      {footer ? <div className="mt-auto pt-3 text-xs text-muted-foreground">{footer}</div> : null}
     </Card>
+  );
+}
+
+/** "▲ 12% vs bulan lalu" — tone follows whether the direction is good for this metric. */
+function MonthDelta({
+  current,
+  previous,
+  goodWhenUp,
+}: {
+  current: number;
+  previous: number | undefined;
+  goodWhenUp: boolean;
+}) {
+  const { t } = useI18n();
+  const pct = monthChange(current, previous);
+  if (pct === null) return <p>{t("Belum ada data bulan lalu")}</p>;
+  const flat = Math.round(pct) === 0;
+  const up = pct > 0;
+  const tone = flat ? "" : up === goodWhenUp ? "text-income" : "text-expense";
+  return (
+    <p>
+      <span className={`num font-medium ${tone}`}>
+        <span aria-hidden="true">{flat ? "=" : up ? "▲" : "▼"}</span>
+        <span className="sr-only">{flat ? t("Tetap") : up ? t("Naik") : t("Turun")}</span>{" "}
+        {formatPercent(Math.abs(pct))}
+      </span>{" "}
+      {t("vs bulan lalu")}
+    </p>
   );
 }
 
