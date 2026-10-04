@@ -2,7 +2,9 @@
 
 All notable changes to Dompetku are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dompetku has no numbered releases yet: it is deployed straight from `main`, so entries are grouped by date and by the pull request that introduced them.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/) from **v1.0.0** on.
+
+Starting with v1.0.0, versioned entries (`## [x.y.z]`) are generated automatically by [release-please](https://github.com/googleapis/release-please) from [Conventional Commits](https://www.conventionalcommits.org) and inserted directly below this header — please don't edit them by hand; see [`docs/RELEASING.md`](docs/RELEASING.md). The `[Unreleased]` section and the dated entries below it were written manually before numbered releases existed and are grouped by the pull request that introduced them; everything in them is part of v1.0.0.
 
 > [!NOTE]
 > When an entry mentions a **schema section** (`v2`…`v13`), self-hosters must run that section of [`supabase/schema.sql`](supabase/schema.sql) on their Supabase project. Every section is safe to run more than once, and the app keeps working (with the feature disabled) until you do.
