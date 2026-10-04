@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { useBranding } from "@/components/app-logo";
 import { getLatestRelease } from "@/lib/version.functions";
 import { useI18n } from "@/lib/i18n";
@@ -102,8 +102,11 @@ export function VersionBadge(props: { variant: VersionBadgeVariant; className?: 
   );
 }
 
-/** Icon-rail variant: tiny "v1.0" label with the full text in a tooltip-friendly title. */
-export function VersionRailLabel({ className }: { className?: string }) {
+/**
+ * Icon-rail variant: tiny "v1.0" label; spreads extra props/ref so it can sit inside a Radix
+ * `TooltipTrigger asChild` that shows the full text.
+ */
+export function VersionRailLabel({ className, ...rest }: ComponentProps<"a">) {
   const repo = useRepo();
   const latest = useLatestRelease();
   const version = appVersion();
@@ -111,12 +114,13 @@ export function VersionRailLabel({ className }: { className?: string }) {
   const full = useVersionText();
   return (
     <a
+      {...rest}
       href={newer ? newer.url : releaseUrl(repo, version)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={full}
       className={cn(
-        "num relative inline-flex items-center justify-center text-[10px] text-muted-foreground hover:text-foreground",
+        "num relative inline-flex min-h-6 items-center justify-center text-[10px] text-muted-foreground hover:text-foreground",
         className,
       )}
     >
