@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
 import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
@@ -52,6 +54,16 @@ const AppRoute = AppRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAccountsRoute = AppAccountsRouteImport.update({
@@ -196,6 +208,8 @@ const ApiPublicN8nTransactionsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/accounts': typeof AppAccountsRoute
   '/budgets': typeof AppBudgetsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -227,6 +241,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/accounts': typeof AppAccountsRoute
   '/budgets': typeof AppBudgetsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -260,6 +276,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/_app/accounts': typeof AppAccountsRoute
   '/_app/budgets': typeof AppBudgetsRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -293,6 +311,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/accounts'
     | '/budgets'
     | '/dashboard'
@@ -324,6 +344,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/accounts'
     | '/budgets'
     | '/dashboard'
@@ -356,6 +378,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/privacy'
+    | '/terms'
     | '/_app/accounts'
     | '/_app/budgets'
     | '/_app/dashboard'
@@ -389,6 +413,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   ApiPublicAppIconRoute: typeof ApiPublicAppIconRoute
   ApiPublicN8nBackupRoute: typeof ApiPublicN8nBackupRoute
   ApiPublicN8nBotRoute: typeof ApiPublicN8nBotRoute
@@ -424,6 +450,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/accounts': {
@@ -660,6 +700,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   ApiPublicAppIconRoute: ApiPublicAppIconRoute,
   ApiPublicN8nBackupRoute: ApiPublicN8nBackupRoute,
   ApiPublicN8nBotRoute: ApiPublicN8nBotRoute,

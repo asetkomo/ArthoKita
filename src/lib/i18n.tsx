@@ -833,6 +833,77 @@ const DICT: Record<string, string> = {
   "Dibuat dengan": "Made with",
   cinta: "love",
   "di Indonesia": "in Indonesia",
+  /* Legal pages (/privacy, /terms) */
+  "Kebijakan Privasi": "Privacy Policy",
+  "Syarat & Ketentuan": "Terms of Service",
+  Privasi: "Privacy",
+  Ketentuan: "Terms",
+  Legal: "Legal",
+  "Terakhir diperbarui": "Last updated",
+  "Daftar isi": "Contents",
+  "Kembali ke atas": "Back to top",
+  'Dompetku adalah aplikasi open source yang di-host sendiri. Kebijakan ini menjelaskan data apa yang disimpan instance ini, di mana disimpan, dan siapa yang bisa mengaksesnya. "Pemilik instance" adalah orang yang memasang dan menjalankan salinan aplikasi ini.':
+    'Dompetku is self-hosted open-source software. This policy explains what data this instance stores, where it lives and who can access it. The "instance owner" is the person who deployed and runs this copy of the app.',
+  "Dengan memakai instance Dompetku ini, Anda menyetujui ketentuan singkat berikut. Ketentuan ini melengkapi, bukan menggantikan, lisensi MIT dari kode sumbernya.":
+    "By using this Dompetku instance you agree to the short terms below. They complement, and do not replace, the MIT license of the source code.",
+  "Data yang disimpan": "Data we store",
+  "Data keuangan yang Anda masukkan — akun, transaksi, budget, hutang, piutang, emas, target, foto struk, dan pengaturan — disimpan di proyek Supabase (PostgreSQL dan Storage) milik pemilik instance.":
+    "The financial data you enter — accounts, transactions, budgets, debts, receivables, gold, goals, receipt photos and settings — is stored in the instance owner's own Supabase project (PostgreSQL and Storage).",
+  "Database hanya diakses oleh server aplikasi ini; browser tidak pernah terhubung langsung ke database. Pembuat Dompetku tidak memiliki akses ke instance ini.":
+    "The database is only accessed by this app's server; the browser never connects to it directly. The authors of Dompetku have no access to this instance.",
+  "Tidak dijual, tidak dibagikan": "Not sold, not shared",
+  "Pemilik instance tidak menjual, menyewakan, atau membagikan data Anda untuk iklan. Data hanya dikirim ke layanan pihak ketiga yang diaktifkan pemilik instance, sebatas yang dibutuhkan fitur tersebut (lihat di bawah).":
+    "The instance owner does not sell, rent or share your data for advertising. Data is only sent to third-party services the owner has enabled, and only as far as that feature needs (see below).",
+  "Cookie & penyimpanan browser": "Cookies & browser storage",
+  "Satu cookie sesi httpOnly yang ditandatangani, hanya untuk menjaga Anda tetap masuk.":
+    "One signed httpOnly session cookie, used only to keep you signed in.",
+  "localStorage untuk preferensi tema, bahasa, dan mode privasi.":
+    "localStorage for your theme, language and privacy-mode preferences.",
+  "Tidak ada analitik, piksel pelacak, atau cookie pihak ketiga.":
+    "No analytics, tracking pixels or third-party cookies.",
+  "Layanan pihak ketiga (bila dikonfigurasi)": "Third-party services (when configured)",
+  "Bergantung pada konfigurasi pemilik instance, layanan berikut dapat menerima data:":
+    "Depending on how the instance owner configured it, these services may receive data:",
+  "Supabase — menyimpan database dan foto struk.":
+    "Supabase — hosts the database and receipt photos.",
+  "Vercel atau penyedia hosting lain — menjalankan server dan menerima permintaan HTTP beserta log standar.":
+    "Vercel or another host — runs the server and receives HTTP requests with standard logs.",
+  "Penyedia AI (API yang kompatibel dengan OpenAI) — menerima foto struk atau teks transaksi untuk dibaca, beserta daftar nama kategori.":
+    "AI provider (OpenAI-compatible API) — receives receipt photos or transaction text to read, along with your category names.",
+  "Telegram dan n8n — meneruskan pesan bot, ringkasan, dan pengingat antara Anda dan aplikasi.":
+    "Telegram and n8n — relay bot messages, summaries and reminders between you and the app.",
+  "Resend — mengirim email pengingat ke alamat yang diatur pemilik instance.":
+    "Resend — sends reminder emails to the address set by the instance owner.",
+  "Sentry — menerima laporan error teknis (pesan error dan konteks permintaan), bukan isi data keuangan Anda.":
+    "Sentry — receives technical error reports (error message and request context), not your financial records.",
+  "Google Drive — menyimpan file backup bila backup terjadwal diaktifkan.":
+    "Google Drive — stores backup files when scheduled backups are enabled.",
+  "Backup & penghapusan data": "Backup & data deletion",
+  "Anda dapat mengekspor seluruh data sebagai backup JSON dan memulihkannya kapan saja dari Pengaturan. Data yang dihapus di aplikasi dihapus dari database; untuk menghapus semuanya, pemilik instance dapat menghapus proyek Supabase dan deployment-nya.":
+    "You can export all data as a JSON backup and restore it at any time from Settings. Data deleted in the app is removed from the database; to erase everything, the instance owner can delete the Supabase project and the deployment.",
+  Kontak: "Contact",
+  "Pertanyaan tentang data di instance ini ditujukan kepada pemilik instance yang mengoperasikannya. Masalah pada kode sumber dapat dilaporkan di repositori GitHub proyek.":
+    "Questions about data on this instance go to the instance owner who operates it. Issues with the source code can be reported on the project's GitHub repository.",
+  Lisensi: "License",
+  "Kode sumber Dompetku dirilis di bawah Lisensi MIT. Anda bebas memakai, menyalin, mengubah, dan mendistribusikannya selama pemberitahuan hak cipta dan lisensi tetap disertakan.":
+    "Dompetku's source code is released under the MIT License. You may use, copy, modify and distribute it as long as the copyright and license notice are kept.",
+  "Tanpa jaminan": "No warranty",
+  'Perangkat lunak ini disediakan "apa adanya", tanpa jaminan apa pun, tersurat maupun tersirat. Pembuat dan kontributor tidak bertanggung jawab atas kehilangan data, kerugian, atau kerusakan yang timbul dari penggunaannya.':
+    'The software is provided "as is", without warranty of any kind, express or implied. The authors and contributors are not liable for any data loss, loss or damage arising from its use.',
+  "Bukan nasihat keuangan": "Not financial advice",
+  "Dompetku adalah alat pencatatan. Angka, proyeksi, harga emas, dan hasil pembacaan AI bisa keliru dan bukan nasihat keuangan, investasi, atau pajak. Selalu periksa ulang sebelum mengambil keputusan.":
+    "Dompetku is a record-keeping tool. Figures, projections, gold prices and AI readings can be wrong and are not financial, investment or tax advice. Always double-check before making decisions.",
+  "Tanggung jawab Anda": "Your responsibilities",
+  "Pemilik instance bertanggung jawab atas deployment, keamanan server, kunci API, kata sandi, dan backup-nya sendiri.":
+    "The instance owner is responsible for their own deployment, server security, API keys, passwords and backups.",
+  "Pemilik instance wajib mematuhi ketentuan layanan pihak ketiga yang dipakai (Supabase, Vercel, penyedia AI, Telegram, dan lainnya).":
+    "The instance owner must follow the terms of the third-party services they use (Supabase, Vercel, AI providers, Telegram and others).",
+  "Penggunaan yang wajar": "Acceptable use",
+  "Jangan memakai aplikasi ini untuk aktivitas yang melanggar hukum, untuk mengakses data orang lain tanpa izin, atau untuk mengganggu layanan pihak ketiga yang terhubung.":
+    "Do not use the app for unlawful activity, to access other people's data without permission, or to disrupt the connected third-party services.",
+  Perubahan: "Changes",
+  'Ketentuan dan kebijakan ini dapat diperbarui seiring perkembangan proyek. Tanggal "terakhir diperbarui" di atas menunjukkan versi terbaru; terus memakai aplikasi berarti menerima versi tersebut.':
+    'These terms and policy may be updated as the project evolves. The "last updated" date above shows the current version; continuing to use the app means accepting it.',
   "Update tersedia": "Update available",
   "Catatan rilis": "Release notes",
   Commit: "Commit",
