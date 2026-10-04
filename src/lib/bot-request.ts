@@ -6,7 +6,13 @@ export const BOT_IMAGE_MIME = ["image/jpeg", "image/png", "image/webp"] as const
 
 // "image/jpg" bukan MIME resmi tapi sering dikirim klien; samakan ke image/jpeg.
 const mimeType = z.preprocess(
-  (v) => (typeof v === "string" ? v.trim().toLowerCase().replace(/^image\/jpg$/, "image/jpeg") : v),
+  (v) =>
+    typeof v === "string"
+      ? v
+          .trim()
+          .toLowerCase()
+          .replace(/^image\/jpg$/, "image/jpeg")
+      : v,
   z.enum(BOT_IMAGE_MIME),
 );
 
@@ -28,7 +34,8 @@ export const botUpdateSchema = z
     path: ["mime_type"],
   });
 
-export type BodyResult = { ok: true; value: unknown } | { ok: false; status: 400 | 413; error: string };
+export type BodyResult =
+  { ok: true; value: unknown } | { ok: false; status: 400 | 413; error: string };
 
 const tooLarge = (): BodyResult => ({
   ok: false,
@@ -40,7 +47,10 @@ const tooLarge = (): BodyResult => ({
  * Reads a JSON body without ever buffering more than `max` bytes: a declared Content-Length above
  * the cap is refused up front, and a body without one is streamed with a running size check.
  */
-export async function readJsonBody(request: Request, max = MAX_BOT_BODY_BYTES): Promise<BodyResult> {
+export async function readJsonBody(
+  request: Request,
+  max = MAX_BOT_BODY_BYTES,
+): Promise<BodyResult> {
   const declared = request.headers.get("content-length");
   if (declared != null && declared.trim() !== "") {
     const n = Number(declared);

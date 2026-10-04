@@ -17,10 +17,12 @@ import {
   type InlineKeyboard,
 } from "./bot";
 import { addDays } from "./dates";
+import type { Tables } from "./database.types";
 import { withTax } from "./fees";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fin = () => import("./finance.server");
+type TxKind = Tables<"transactions">["kind"];
 const DRAFT_TTL_HOURS = 48;
 const BOT_SOURCES = ["telegram", "whatsapp", "ocr"];
 
@@ -127,14 +129,14 @@ async function existingDraft(externalId: string): Promise<DraftRow | null> {
     if ((await fin()).isMissingTable(r.error)) return null;
     throw new Error(r.error.message);
   }
-  return (r.data as DraftRow) ?? null;
+  return (r.data as unknown as DraftRow | null) ?? null;
 }
 
 async function storeDraft(
   externalId: string,
   chatId: string,
   payload: DraftPayload,
-  source: string,
+  source: "telegram" | "whatsapp" | "ocr",
   receiptPath: string | null,
 ): Promise<DraftRow> {
   const res = await db()
@@ -164,7 +166,7 @@ async function storeDraft(
     .delete()
     .lt("created_at", new Date(Date.now() - 10 * 86400000).toISOString())
     .then(() => undefined);
-  return res.data as DraftRow;
+  return res.data as unknown as DraftRow;
 }
 
 async function previewReply(row: DraftRow, asEdit = false): Promise<BotReply> {
@@ -178,7 +180,7 @@ async function historyCategory(description: string, kind: string): Promise<strin
   const r = await db()
     .from("transactions")
     .select("category:categories(name)")
-    .eq("kind", kind)
+    .eq("kind", kind as TxKind)
     .ilike("description", description.replace(/[%_]/g, ""))
     .not("category_id", "is", null)
     .order("created_at", { ascending: false })
@@ -291,7 +293,8 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
       .eq("chat_id", chatId)
       .limit(1)
       .maybeSingle();
-    if (link.error && !(await fin()).isMissingTable(link.error)) throw new Error(link.error.message);
+    if (link.error && !(await fin()).isMissingTable(link.error))
+      throw new Error(link.error.message);
     if (!link.data)
       return edit("⚠️ Hanya transaksi yang disimpan lewat bot yang bisa di-undo.", null, "Gagal");
     const r = await undoTransaction(cb.id);
@@ -304,8 +307,7 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
   }
   const row = found.data as DraftRow | null;
   // A draft belongs to the chat it was created in; never act on another chat's draft.
-  if (!row || String(row.chat_id) !== chatId)
-    return edit("⚠️ Pratinjau tidak ditemukan.", null);
+  if (!row || String(row.chat_id) !== chatId) return edit("⚠️ Pratinjau tidak ditemukan.", null);
   if (row.status === "saved")
     return edit(
       "✅ Sudah tersimpan sebelumnya.",
@@ -346,8 +348,7 @@ async function handleCallback(data: string, chatId: string): Promise<BotReply> {
         .eq("id", row.id)
         .eq("status", "pending")
         .select("id");
-      if (!c.error && !(c.data ?? []).length)
-        return edit("ℹ️ Pratinjau ini sudah diproses.", null);
+      if (!c.error && !(c.data ?? []).length) return edit("ℹ️ Pratinjau ini sudah diproses.", null);
       if (row.receipt_path)
         await (await import("./receipt.server")).removeReceipt(row.receipt_path);
       return edit("❌ Dibatalkan, tidak ada yang disimpan.", null, "Dibatalkan");
@@ -408,7 +409,14 @@ async function saveDraft(row: DraftRow): Promise<BotReply> {
     ? (await db().from("accounts").select("name").eq("id", r.transaction.account_id).maybeSingle())
         .data?.name
     : null;
-  return edit(`${r.message}${acc ? ` • ${acc}` : ""}`, undoKeyboard(r.transaction.id), "Tersimpan");
+  // v11: append budget threshold alerts (never throws; "" when none or on failure).
+  const { budgetAlertsFor, budgetAlertLines } = await import("./budget.server");
+  const alerts = r.duplicate ? "" : budgetAlertLines(await budgetAlertsFor(r.transaction));
+  return edit(
+    `${r.message}${acc ? ` • ${acc}` : ""}${alerts}`,
+    undoKeyboard(r.transaction.id),
+    "Tersimpan",
+  );
 }
 
 /* ---------------- Undo ---------------- */
@@ -448,7 +456,9 @@ export async function undoTransaction(id: string): Promise<{ ok: boolean; messag
   await db().from("transactions").delete().like("notes", `[fee:${tx.id}]`);
   const del = await db().from("transactions").delete().eq("id", tx.id);
   if (del.error) return { ok: false, message: `⚠️ Gagal undo: ${del.error.message}` };
-  if (tx.receipt_path) await (await import("./receipt.server")).removeReceipt(tx.receipt_path);
+  // All photos (receipt_paths, v12) — only those no other transaction (e.g. a split sibling made
+  // on the web) still references. Undo removes just this row, never its whole split group.
+  await (await import("./split.server")).removeOrphanPhotos([tx], [tx.id]);
   await db().from("bot_drafts").update({ status: "undone" }).eq("transaction_id", tx.id);
   const f = await fin();
   await f.logActivity("transaction.delete", "transactions", {
@@ -491,7 +501,8 @@ type TxLite = {
 /** PostgREST caps a response at 1000 rows by default; page through it, up to a hard cap. */
 export const TX_PAGE_SIZE = 1000;
 export const TX_HARD_CAP = 50_000;
-export const TRUNCATED_NOTE = "⚠️ (data terpotong) Terlalu banyak transaksi; total di atas tidak lengkap, lihat di web.";
+export const TRUNCATED_NOTE =
+  "⚠️ (data terpotong) Terlalu banyak transaksi; total di atas tidak lengkap, lihat di web.";
 
 /** Transactions in [start, end) newest first, with `truncated` when the hard cap was hit. */
 async function txIn(
@@ -506,7 +517,7 @@ async function txIn(
       .gte("occurred_at", start)
       .lt("occurred_at", end)
       .neq("kind", "transfer");
-    if (kind) q = q.eq("kind", kind);
+    if (kind) q = q.eq("kind", kind as TxKind);
     // Tie-break on id so pages are stable when many rows share a date.
     return q.order("occurred_at", { ascending: false }).order("id").range(from, to);
   };
@@ -536,6 +547,7 @@ export async function reportData(spec: string) {
   const p = resolvePeriod(spec, today);
   if (!p) return null;
   await f.applyMonthlyFees();
+  await f.applyRecurringLazy();
   const prev = previousRange(p);
   const [cur, prevRes] = await Promise.all([
     txIn(p.start, p.end),

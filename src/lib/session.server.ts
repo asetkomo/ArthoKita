@@ -38,7 +38,9 @@ const cookieOpts = {
 };
 
 export function createSession(username: string): void {
-  const payload = Buffer.from(JSON.stringify({ u: username, exp: Date.now() + MAX_AGE * 1000 })).toString("base64url");
+  const payload = Buffer.from(
+    JSON.stringify({ u: username, exp: Date.now() + MAX_AGE * 1000 }),
+  ).toString("base64url");
   setCookie(COOKIE, `${payload}.${sign(payload)}`, { ...cookieOpts, maxAge: MAX_AGE });
 }
 
@@ -48,7 +50,10 @@ export function readSession(): { u: string } | null {
   const [payload, sig] = raw.split(".");
   if (!payload || !sig || !safeEq(sig, sign(payload))) return null;
   try {
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as { u: string; exp: number };
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
+      u: string;
+      exp: number;
+    };
     if (typeof data.exp !== "number" || data.exp < Date.now()) return null;
     return { u: data.u };
   } catch {
@@ -58,4 +63,33 @@ export function readSession(): { u: string } | null {
 
 export function destroySession(): void {
   deleteCookie(COOKIE, cookieOpts);
+}
+
+// Two-step login: short-lived proof that the password step passed. The HMAC is
+// domain-separated so a challenge can never validate as a session cookie.
+const CHALLENGE_TTL = 5 * 60_000;
+const CHALLENGE_TAG = "totp-challenge.";
+
+export function createLoginChallenge(username: string, now = Date.now()): string {
+  const payload = Buffer.from(JSON.stringify({ u: username, exp: now + CHALLENGE_TTL })).toString(
+    "base64url",
+  );
+  return `${payload}.${sign(CHALLENGE_TAG + payload)}`;
+}
+
+/** Returns the username when the challenge is authentic and unexpired. */
+export function readLoginChallenge(token: string, now = Date.now()): string | null {
+  const [payload, sig, extra] = token.split(".");
+  if (!payload || !sig || extra !== undefined) return null;
+  if (!safeEq(sig, sign(CHALLENGE_TAG + payload))) return null;
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
+      u: unknown;
+      exp: unknown;
+    };
+    if (typeof data.u !== "string" || typeof data.exp !== "number" || data.exp < now) return null;
+    return data.u;
+  } catch {
+    return null;
+  }
 }

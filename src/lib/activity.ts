@@ -10,6 +10,7 @@ const ENTITY: Record<string, string> = {
   goals: "Target",
   gold_purchases: "Emas",
   receivables: "Piutang",
+  recurring_transactions: "Transaksi Berulang",
 };
 
 const VERB: Record<string, string> = {
@@ -29,16 +30,23 @@ const SPECIAL: Record<string, string> = {
   "goal.funds": "Dana target diperbarui",
   import: "Impor CSV",
   "backup.export": "Cadangan diunduh",
+  "backup.restore": "Cadangan dipulihkan",
   "auth.login": "Login berhasil",
   "auth.login_failed": "Login gagal",
   "auth.logout": "Logout",
   "bot.command": "Perintah bot",
+  "account.reconcile": "Akun direkonsiliasi",
+  "transaction.split": "Transaksi split ditambahkan",
+  "recurring.post": "Transaksi berulang dicatat",
+  "recurring.pause": "Transaksi berulang dijeda",
+  "recurring.resume": "Transaksi berulang dilanjutkan",
 };
 
 export function activityLabel(action: string, t: (s: string) => string = (s) => s): string {
   if (SPECIAL[action]) return t(SPECIAL[action]!);
   const [entity, verb] = action.split(".");
-  if (entity && verb && ENTITY[entity] && VERB[verb]) return `${t(ENTITY[entity]!)} ${t(VERB[verb]!)}`;
+  if (entity && verb && ENTITY[entity] && VERB[verb])
+    return `${t(ENTITY[entity]!)} ${t(VERB[verb]!)}`;
   return action;
 }
 
@@ -50,8 +58,12 @@ export function activityDetail(detail: unknown, fmt: (n: number, c: string) => s
   const name = d["name"] ?? d["description"] ?? d["text"];
   if (typeof name === "string" && name) parts.push(name);
   const amt = Number(d["amount"]);
-  if (Number.isFinite(amt) && amt > 0 && d["amount"] != null) parts.push(fmt(amt, typeof d["currency"] === "string" ? (d["currency"] as string) : "IDR"));
-  if (typeof d["from"] === "string" && typeof d["to"] === "string") parts.push(`${d["from"]} → ${d["to"]}`);
+  if (Number.isFinite(amt) && amt > 0 && d["amount"] != null)
+    parts.push(fmt(amt, typeof d["currency"] === "string" ? (d["currency"] as string) : "IDR"));
+  if (typeof d["from"] === "string" && typeof d["to"] === "string")
+    parts.push(`${d["from"]} → ${d["to"]}`);
   if (typeof d["imported"] === "number") parts.push(`${d["imported"]} baris`);
+  if (typeof d["restored"] === "number") parts.push(`${d["restored"]} baris`);
+  if (typeof d["rows"] === "number") parts.push(`${d["rows"]} baris`);
   return parts.join(" · ");
 }

@@ -294,3 +294,158 @@ alter table public.bot_drafts enable row level security;
 -- ============ v8: target tabungan tertaut ke akun tabungan (aman dijalankan ulang) ============
 -- Setor/tarik dana target dicatat sebagai transfer antar akun (bukan pengeluaran).
 alter table public.goals add column if not exists account_id uuid references public.accounts(id) on delete set null;
+
+-- ============ v9: agregasi laporan di Postgres (aman dijalankan ulang) ============
+-- Fungsi ringkasan agar dashboard/laporan tidak perlu mengunduh semua transaksi. Opsional:
+-- tanpa bagian ini aplikasi otomatis memakai perhitungan lama (hasil identik).
+-- Bulan = to_char(occurred_at,'YYYY-MM') (occurred_at bertipe date, tanpa zona waktu).
+create or replace function public.dk_month_totals(p_start date, p_end date)
+returns table (month text, kind text, total numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month, t.kind, sum(t.amount_idr) as total
+  from public.transactions t
+  where t.occurred_at >= p_start and t.occurred_at < p_end and t.kind <> 'transfer'
+  group by 1, 2;
+$$;
+
+create or replace function public.dk_category_totals(p_start date, p_end date, p_kind text)
+returns table (category_id uuid, name text, color text, total numeric)
+language sql stable security invoker set search_path = public as $$
+  select t.category_id, c.name, c.color, sum(t.amount_idr) as total
+  from public.transactions t
+  left join public.categories c on c.id = t.category_id
+  where t.occurred_at >= p_start and t.occurred_at < p_end and t.kind = p_kind
+  group by t.category_id, c.name, c.color;
+$$;
+
+create or replace function public.dk_month_category_totals(p_start date, p_end date)
+returns table (month text, category_id uuid, name text, color text, total numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month, t.category_id, c.name, c.color,
+    sum(t.amount_idr) as total
+  from public.transactions t
+  left join public.categories c on c.id = t.category_id
+  where t.occurred_at >= p_start and t.occurred_at < p_end and t.kind = 'expense'
+  group by 1, t.category_id, c.name, c.color;
+$$;
+
+create or replace function public.dk_monthly_net(p_end date)
+returns table (month text, net numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month,
+    sum(case when t.kind = 'income' then t.amount_idr else -t.amount_idr end) as net
+  from public.transactions t
+  where t.occurred_at < p_end and t.kind <> 'transfer'
+  group by 1;
+$$;
+
+-- Hanya server (service_role) yang boleh memanggil.
+revoke all on function public.dk_month_totals(date, date) from public, anon, authenticated;
+revoke all on function public.dk_category_totals(date, date, text) from public, anon, authenticated;
+revoke all on function public.dk_month_category_totals(date, date) from public, anon, authenticated;
+revoke all on function public.dk_monthly_net(date) from public, anon, authenticated;
+grant execute on function public.dk_month_totals(date, date) to service_role;
+grant execute on function public.dk_category_totals(date, date, text) to service_role;
+grant execute on function public.dk_month_category_totals(date, date) to service_role;
+grant execute on function public.dk_monthly_net(date) to service_role;
+-- Muat ulang cache skema PostgREST agar fungsi baru langsung terlihat.
+notify pgrst, 'reload schema';
+
+-- ============ v10: transaksi berulang — gaji, sewa, transfer rutin (aman dijalankan ulang) ============
+-- Item auto_post dicatat otomatis saat dashboard/pengingat dibuka (idempoten lewat penanda di notes
+-- "[auto:recurring:<id>:<tanggal>]" dan external_id "recurring:<id>:<tanggal>").
+create table if not exists public.recurring_transactions (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  kind text not null check (kind in ('income','expense','transfer')),
+  amount numeric(18,2) not null check (amount > 0),
+  currency text not null default 'IDR' check (currency in ('IDR','USD')),
+  account_id uuid references public.accounts(id) on delete set null,
+  to_account_id uuid references public.accounts(id) on delete set null,
+  category_id uuid references public.categories(id) on delete set null,
+  description text,
+  merchant text,
+  cycle text not null default 'monthly' check (cycle in ('weekly','monthly','yearly')),
+  "interval" int not null default 1 check ("interval" >= 1),
+  day_of_month int check (day_of_month between 1 and 31),
+  start_date date not null default current_date,
+  next_due date not null,
+  end_date date,
+  auto_post boolean not null default true,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists recurring_transactions_due_idx on public.recurring_transactions (active, next_due);
+revoke all on public.recurring_transactions from anon, authenticated;
+grant all on public.recurring_transactions to service_role;
+alter table public.recurring_transactions enable row level security;
+notify pgrst, 'reload schema';
+
+-- ============ v11: budget rollover & peringatan instan 80%/100% (aman dijalankan ulang) ============
+-- rollover: sisa (atau kelebihan) budget bulan lalu dibawa ke bulan ini (maks. 12 bulan ke belakang).
+alter table public.budgets add column if not exists rollover boolean not null default false;
+-- Catatan ambang yang sudah diperingatkan agar tiap level hanya sekali per bulan.
+create table if not exists public.budget_alerts (
+  id uuid primary key default gen_random_uuid(),
+  budget_id uuid not null references public.budgets(id) on delete cascade,
+  month text not null,
+  level int not null check (level in (80, 100)),
+  created_at timestamptz not null default now(),
+  unique (budget_id, month, level)
+);
+revoke all on public.budget_alerts from anon, authenticated;
+grant all on public.budget_alerts to service_role;
+alter table public.budget_alerts enable row level security;
+notify pgrst, 'reload schema';
+
+-- ============ v12: split transaksi, banyak foto nota & cari item nota (aman dijalankan ulang) ============
+-- Split: satu nota dibagi ke beberapa kategori = beberapa transaksi pengeluaran biasa dengan
+-- split_group yang sama (budget/laporan/agregasi tetap benar tanpa perubahan).
+alter table public.transactions add column if not exists split_group uuid;
+create index if not exists transactions_split_group_idx on public.transactions (split_group)
+  where split_group is not null;
+-- Banyak foto per transaksi (receipt_path tetap = foto pertama untuk kompatibilitas).
+alter table public.transactions add column if not exists receipt_paths text[];
+-- Teks item nota (huruf kecil) agar pencarian transaksi juga mencocokkan nama item.
+alter table public.transactions add column if not exists items_search text
+  generated always as (lower(coalesce(items::text, ''))) stored;
+notify pgrst, 'reload schema';
+
+-- ============ v13: laporan per akun & rekonsiliasi mutasi bank (aman dijalankan ulang) ============
+-- Opsional: tanpa bagian ini halaman akun memakai perhitungan JS (hasil identik) dan
+-- kartu "terakhir direkonsiliasi" disembunyikan.
+-- Logika sama dengan view account_balances: masuk = pemasukan di akun + transfer ke akun;
+-- keluar = pengeluaran + transfer dari akun (memakai kolom amount, mata uang akun).
+create or replace function public.dk_account_monthly(p_account uuid, p_end date)
+returns table (month text, inflow numeric, outflow numeric)
+language sql stable security invoker set search_path = public as $$
+  select to_char(t.occurred_at, 'YYYY-MM') as month,
+    sum(case
+      when t.account_id = p_account and t.kind = 'income' then t.amount
+      when t.account_id = p_account then 0
+      when t.to_account_id = p_account and t.kind = 'transfer' then t.amount
+      else 0 end) as inflow,
+    sum(case
+      when t.account_id = p_account and t.kind in ('expense','transfer') then t.amount
+      else 0 end) as outflow
+  from public.transactions t
+  where (t.account_id = p_account or t.to_account_id = p_account) and t.occurred_at < p_end
+  group by 1;
+$$;
+revoke all on function public.dk_account_monthly(uuid, date) from public, anon, authenticated;
+grant execute on function public.dk_account_monthly(uuid, date) to service_role;
+
+create table if not exists public.account_reconciliations (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid not null references public.accounts(id) on delete cascade,
+  as_of date not null,
+  statement_balance numeric(18,2) not null,
+  app_balance numeric(18,2) not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists account_reconciliations_account_idx
+  on public.account_reconciliations (account_id, as_of desc, created_at desc);
+revoke all on public.account_reconciliations from anon, authenticated;
+grant all on public.account_reconciliations to service_role;
+alter table public.account_reconciliations enable row level security;
+notify pgrst, 'reload schema';

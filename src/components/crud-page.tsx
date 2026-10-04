@@ -8,7 +8,6 @@ import { errMsg, useCrud } from "@/lib/queries";
 import { useI18n } from "@/lib/i18n";
 import type { CrudTable } from "@/lib/schemas";
 
-
 type Values = Record<string, unknown>;
 
 /** Shared add/edit/delete state for simple CRUD pages. */
@@ -16,13 +15,29 @@ export function useCrudDialog(table: CrudTable, defaults: Values) {
   const { t } = useI18n();
   const crud = useCrud(table);
   const ask = useConfirm();
-  const [state, setState] = useState<{ open: boolean; id: string | null; initial: Values }>({ open: false, id: null, initial: defaults });
+  const [state, setState] = useState<{ open: boolean; id: string | null; initial: Values }>({
+    open: false,
+    id: null,
+    initial: defaults,
+  });
   return {
-    openNew: (extra?: Values) => setState({ open: true, id: null, initial: { ...defaults, ...extra } }),
+    openNew: (extra?: Values) =>
+      setState({ open: true, id: null, initial: { ...defaults, ...extra } }),
     openEdit: (row: Values & { id: string }) => setState({ open: true, id: row.id, initial: row }),
     remove: async (id: string, label = "data ini") => {
-      if (!(await ask.confirm(`${t("Hapus ")}${label}${t("?")}`, { confirmLabel: t("Ya, hapus"), destructive: true }))) return;
-      try { await crud.remove(id); toast.success(t("Dihapus")); } catch (e) { toast.error(errMsg(e)); }
+      if (
+        !(await ask.confirm(`${t("Hapus ")}${label}${t("?")}`, {
+          confirmLabel: t("Ya, hapus"),
+          destructive: true,
+        }))
+      )
+        return;
+      try {
+        await crud.remove(id);
+        toast.success(t("Dihapus"));
+      } catch (e) {
+        toast.error(errMsg(e));
+      }
     },
 
     dialog: (title: string, fields: FieldDef[] | ((v: Values) => FieldDef[])) => (
@@ -45,13 +60,20 @@ export function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete:
   const { t } = useI18n();
   return (
     <div className="flex shrink-0">
-      <Button size="icon" variant="ghost" aria-label={t("Ubah")} onClick={onEdit}><Pencil className="size-4" /></Button>
-      <Button size="icon" variant="ghost" aria-label={t("Hapus")} onClick={onDelete}><Trash2 className="size-4" /></Button>
+      <Button size="icon" variant="ghost" aria-label={t("Ubah")} onClick={onEdit}>
+        <Pencil className="size-4" />
+      </Button>
+      <Button size="icon" variant="ghost" aria-label={t("Hapus")} onClick={onDelete}>
+        <Trash2 className="size-4" />
+      </Button>
     </div>
   );
 }
 
-
 export function Empty({ text }: { text: string }) {
-  return <p className="rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">{text}</p>;
+  return (
+    <p className="rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+      {text}
+    </p>
+  );
 }

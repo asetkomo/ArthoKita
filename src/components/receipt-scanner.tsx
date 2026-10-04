@@ -11,7 +11,6 @@ import { useI18n } from "@/lib/i18n";
 import type { Category } from "@/lib/schemas";
 import type { TxDraft } from "./transaction-dialog";
 
-
 export async function resize(file: File, max = 1600): Promise<string> {
   const bmp = await createImageBitmap(file);
   const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
@@ -22,7 +21,13 @@ export async function resize(file: File, max = 1600): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
-export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: TxDraft) => void; variant?: "outline" | "default" | "secondary" }) {
+export function ReceiptScanner({
+  onDraft,
+  variant = "outline",
+}: {
+  onDraft: (d: TxDraft) => void;
+  variant?: "outline" | "default" | "secondary";
+}) {
   const { t } = useI18n();
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -36,8 +41,18 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
 
     try {
       const image = await resize(file);
-      const [d, up] = await Promise.all([scan({ data: { image } }), upload({ data: { image } }).catch(() => null)]);
-      const cat = d.category ? categories.find((c) => c.kind === d.kind && c.name.toLowerCase() === d.category!.toLowerCase().replace(/\s*\((income|expense)\)$/, "")) : undefined;
+      const [d, up] = await Promise.all([
+        scan({ data: { image } }),
+        upload({ data: { image } }).catch(() => null),
+      ]);
+      const cat = d.category
+        ? categories.find(
+            (c) =>
+              c.kind === d.kind &&
+              c.name.toLowerCase() ===
+                d.category!.toLowerCase().replace(/\s*\((income|expense)\)$/, ""),
+          )
+        : undefined;
       onDraft({
         kind: d.kind,
         amount: d.amount || "",
@@ -53,7 +68,6 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
       toast.success(t("Nota terbaca — periksa lalu simpan"), { id: tid });
     } catch (e) {
       toast.error(t("Gagal membaca nota"), { id: tid, description: errMsg(e) });
-
     } finally {
       setBusy(false);
       if (ref.current) ref.current.value = "";
@@ -62,7 +76,17 @@ export function ReceiptScanner({ onDraft, variant = "outline" }: { onDraft: (d: 
 
   return (
     <>
-      <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); }} />
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+        }}
+      />
       <Button variant={variant} disabled={busy} onClick={() => ref.current?.click()}>
         <ScanLine className="size-4" /> {busy ? t("Membaca…") : t("Scan nota")}
       </Button>

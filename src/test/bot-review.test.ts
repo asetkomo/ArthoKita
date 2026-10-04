@@ -83,7 +83,10 @@ describe("tanggal & periode", () => {
     expect(isValidDate("2026-13-01")).toBe(false);
     expect(resolvePeriod("2026-13", T)).toBeNull();
     expect(resolvePeriod("2026-02-31", T)).toBeNull();
-    expect(resolvePeriod("2026-02-28", T)).toMatchObject({ start: "2026-02-28", end: "2026-03-01" });
+    expect(resolvePeriod("2026-02-28", T)).toMatchObject({
+      start: "2026-02-28",
+      end: "2026-03-01",
+    });
   });
 });
 
@@ -91,7 +94,10 @@ describe("batas Telegram", () => {
   const id = "ffffffff-ffff-ffff-ffff-ffffffffffff";
   const bytes = (s: string) => Buffer.byteLength(s, "utf8");
   it("callback_data ≤ 64 byte (UTF-8) di semua keyboard", () => {
-    const names = Array.from({ length: 60 }, (_, i) => `Kategori 🍜 sangat panjang sekali nomor ${i}`);
+    const names = Array.from(
+      { length: 60 },
+      (_, i) => `Kategori 🍜 sangat panjang sekali nomor ${i}`,
+    );
     const all = [
       ...previewKeyboard(id).inline_keyboard.flat(),
       ...pickerKeyboard(id, "C", names, { text: "x", idx: 999 }).inline_keyboard.flat(),
@@ -107,7 +113,9 @@ describe("batas Telegram", () => {
     expect(kb.inline_keyboard[0]![0]!.text).toBe("🍜".repeat(30));
   });
   it("pesan dipotong ≤ 4096 karakter di batas baris", () => {
-    const long = Array.from({ length: 500 }, (_, i) => `• baris ${i} — Rp 25.000 [Makanan]`).join("\n");
+    const long = Array.from({ length: 500 }, (_, i) => `• baris ${i} — Rp 25.000 [Makanan]`).join(
+      "\n",
+    );
     const out = clampMessage(long);
     expect(out.length).toBeLessThanOrEqual(TELEGRAM_TEXT_MAX);
     expect(out).toContain("terpotong");

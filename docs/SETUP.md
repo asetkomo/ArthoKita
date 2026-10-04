@@ -5,6 +5,16 @@
 2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu Run.
 3. Ambil **Project URL** dan **service_role / secret key** (Project Settings → API).
 
+**Sudah punya database lama?** Jalankan bagian baru di `supabase/schema.sql` berurutan (semua aman dijalankan ulang, semuanya opsional — fitur terkait tersembunyi/memakai cara lama sampai dijalankan):
+1. **v8** — target tabungan tertaut akun (`goals.account_id`)
+2. **v9** — fungsi agregasi laporan di Postgres
+3. **v10** — transaksi berulang (`recurring_transactions`)
+4. **v11** — budget rollover & peringatan (`budgets.rollover`, `budget_alerts`)
+5. **v12** — split transaksi, banyak foto nota, cari item (`split_group`, `receipt_paths`, `items_search`)
+6. **v13** — laporan per akun & rekonsiliasi (`dk_account_monthly`, `account_reconciliations`)
+
+Detail tiap bagian ada di bawah (v8–v13).
+
 ## 2. Environment variables (Vercel → Settings → Environment Variables)
 | Nama | Isi |
 |---|---|
@@ -13,6 +23,7 @@
 | `APP_USERNAME` | username login |
 | `APP_PASSWORD` | password login (panjang & unik) |
 | `SESSION_SECRET` | string acak ≥ 32 karakter (`openssl rand -hex 32`) |
+| `APP_TOTP_SECRET` | opsional, kunci base32 untuk login 2 langkah (TOTP, kode 6 digit). Kosong = login seperti biasa. Lihat bagian *Login 2 langkah* |
 | `N8N_API_KEY` | string acak ≥ 24 karakter, dipakai n8n di header `x-api-key` |
 | `AI_API_KEY` | API key untuk OCR / parsing chat (OpenAI-compatible) |
 | `AI_API_URL` | opsional, default Lovable AI gateway. Contoh OpenAI: `https://api.openai.com/v1/chat/completions` |
@@ -26,6 +37,10 @@
 | `RESEND_API_KEY` | opsional, untuk kirim email pengingat langsung (resend.com) |
 | `EMAIL_FROM` | opsional, pengirim terverifikasi di Resend, mis. `Dompetku <pengingat@domainanda.com>` |
 | `EMAIL_TO` | opsional, penerima (pisahkan koma untuk beberapa) |
+| `SENTRY_DSN` | opsional, kirim error server ke Sentry. Lihat *Monitoring error* |
+| `SUPABASE_PROJECT_ID` | hanya untuk developer lokal: `npm run gen:types` (bukan untuk Vercel). Lihat *Tipe database* |
+
+Backup otomatis mingguan: impor workflow `n8n/05-dompetku-backup.json` ke n8n (memakai `N8N_API_KEY` yang sama), lihat bagian *Cadangan data*.
 
 ## 3. Deploy ke Vercel
 Import repo → Framework preset **Other** → Build command `bun run build` (atau `npm run build`).
@@ -65,6 +80,19 @@ Pengaturan → **Impor CSV transaksi**. Kolom: `tanggal` (YYYY-MM-DD atau DD/MM/
 
 ## 7. Cadangan data
 Pengaturan → **Cadangan data** → *Unduh cadangan (JSON)*: satu berkas berisi seluruh tabel (akun, kategori, transaksi, hutang, pembayaran cicilan, langganan, budget, target, kurs). Simpan berkas ini sebagai cadangan rutin.
+
+**Pulihkan dari backup** (Pengaturan): pilih berkas JSON (maks. 20 MB) → isi dicek di browser dan jumlah baris per tabel ditampilkan → pilih mode:
+- *Gabungkan* (default): upsert per `id` (fx_rates/gold_prices per kunci tanggal), urutan aman FK. Kategori/budget/cicilan yang sudah ada dengan nama/kunci sama dipakai ulang (ID di berkas dipetakan otomatis).
+- *Ganti semua*: ketik `GANTI`; seluruh data sekarang dihapus (urutan FK terbalik) lalu diisi dari berkas.
+Berkas dikirim per potongan ≤ 500 baris / ≤ 2 MB (batas body Vercel 4,5 MB), sehingga cadangan besar tetap aman. Tabel yang belum ada di database (schema belum dijalankan) dan kolom yang tidak dikenal dilewati. `bot_drafts` dan `activity_log` tidak pernah dipulihkan. Pemulihan dicatat di Catatan aktivitas.
+
+**Backup otomatis via n8n:** `GET /api/public/n8n/backup` (header `x-api-key`) mengembalikan JSON yang sama + `filename`. Workflow `n8n/05-dompetku-backup.json` menyimpannya ke Google Drive tiap Minggu 02:00 (lihat `n8n/README.md`).
+
+## 7b. Monitoring error
+Error server (SSR, middleware, semua endpoint `/api/public/n8n/*`) dicatat sebagai **satu baris JSON** di log Vercel: `{"level":"error","scope":"n8n:bot","message":…,"stack":…,"path":…,"timestamp":…}`. Cari di Vercel → Logs dengan filter `"level":"error"` atau `scope`. Query string tidak dicatat.
+- Opsional `SENTRY_DSN` (Sentry → Settings → Client Keys): event juga dikirim ke Sentry lewat endpoint envelope (tanpa SDK, timeout 3 detik, tidak pernah menggagalkan request). Atur notifikasi email/Slack di Sentry → Alerts.
+- Notifikasi Telegram langsung dari web **tidak** tersedia: token bot hanya ada di n8n. Untuk kegagalan workflow pakai `n8n/03-dompetku-error-handler.json`.
+- Error di browser (gagal memuat halaman) muncul di console browser dengan `scope: "client:route"`.
 
 ## 8. PWA & bahasa
 - Aplikasi bisa dipasang di layar utama HP (ikon aplikasi, tampilan penuh layar) — buka di browser HP → "Tambahkan ke layar utama". Tidak ada mode luring.
@@ -123,3 +151,39 @@ tarik - Tarik tunai, mis. /tarik 500rb dari BCA
 undo - Hapus transaksi terakhir dari bot
 help - Bantuan
 ```
+
+## Login 2 langkah (TOTP)
+1. Login, buka **Pengaturan → Verifikasi dua langkah (2FA)** → **Buat kunci rahasia**.
+2. Tambahkan kunci itu di Google Authenticator / Aegis (tambah akun → masukkan kunci manual, berbasis waktu) atau impor URI `otpauth://`.
+3. Simpan kunci yang sama sebagai `APP_TOTP_SECRET` di Vercel → redeploy. Setelah itu login meminta kode 6 digit setelah password.
+4. Menonaktifkan / ganti HP: hapus atau ganti `APP_TOTP_SECRET` lalu redeploy. Simpan cadangan kunci; kalau hilang, akses Vercel adalah jalan pemulihannya.
+
+Catatan: toleransi jam ±30 detik; kode yang sudah dipakai ditolak (per instance server); salah kode ikut dihitung batas percobaan login (8 gagal / 15 menit).
+
+## Tipe database (TypeScript)
+`src/lib/database.types.ts` berisi tipe `Database` (format `supabase gen types`) yang dipakai `db()` sehingga nama kolom yang salah tertangkap saat `npm run typecheck`. File ini ditulis manual dari `supabase/schema.sql`; kolom dari bagian skema opsional ditandai opsional.
+Untuk membuat ulang dari project Supabase Anda: login Supabase CLI (`npx supabase login`), lalu `SUPABASE_PROJECT_ID=<ref> npm run gen:types` (perlu CLI `supabase` di PATH, mis. `npm i -g supabase`). Setelah regenerate, jalankan `npm run typecheck`. Bila mengubah tabel di `schema.sql`, perbarui juga file tipe ini.
+
+## v9 — Agregasi laporan di Postgres (opsional)
+Jalankan bagian **v9** di `supabase/schema.sql`. Bagian ini menambah fungsi `dk_month_totals`, `dk_category_totals`, `dk_month_category_totals`, dan `dk_monthly_net` (hanya bisa dipanggil service_role) sehingga dashboard, laporan, rekap tahunan, budget, dan kekayaan bersih dihitung di database, bukan dengan mengunduh semua transaksi.
+Tanpa v9 aplikasi tetap berjalan dengan perhitungan lama (hasil sama). Bila fungsi belum terlihat setelah dijalankan, tunggu sebentar atau jalankan `notify pgrst, 'reload schema';`.
+
+## v10 — Transaksi berulang (opsional)
+Jalankan bagian **v10** di `supabase/schema.sql` (tabel `recurring_transactions`). Setelah itu menu **Transaksi Berulang** bisa dipakai untuk gaji, sewa, atau transfer rutin (mingguan/bulanan/tahunan, dengan interval dan tanggal tetap; tanggal 31 otomatis menjadi akhir bulan pada bulan pendek).
+Item dengan "Catat otomatis" dicatat sendiri saat dashboard/pengingat dibuka (maks. 12 kejadian terlewat per item, idempoten). Item tanpa "Catat otomatis" muncul di Pengingat (juga teks bot/n8n) dengan tombol **Catat**. Sebelum v10 dijalankan, halaman menampilkan petunjuk dan fitur lain tetap berjalan.
+
+## v11 — Budget rollover & peringatan instan (opsional)
+Jalankan bagian **v11** di `supabase/schema.sql` (kolom `budgets.rollover` + tabel `budget_alerts`). Sebelum itu aplikasi tetap berjalan: tombol rollover diabaikan dan peringatan tetap muncul, hanya saja tanpa pencegahan duplikat.
+- **Sisa bulan lalu dibawa (rollover)**: sisa budget (atau kelebihan pengeluaran, sebagai nilai negatif) dibawa ke bulan berikutnya. Rantai dihitung sejak bulan budget dibuat, maksimal 12 bulan ke belakang, memakai nominal budget saat ini. Persentase dihitung terhadap batas efektif (nominal + bawaan).
+- **Peringatan instan**: saat pengeluaran tercatat (web atau bot ✅) dan budget kategorinya melewati ambang peringatan (default 80%) atau 100% bulan ini, web menampilkan toast dan bot menambahkan baris peringatan di balasan. Tiap ambang hanya diperingatkan sekali per bulan (`budget_alerts`).
+
+## v12 — Split transaksi, banyak foto nota & cari item (opsional)
+Jalankan bagian **v12** di `supabase/schema.sql` (kolom `transactions.split_group`, `receipt_paths`, dan kolom hasil `items_search`).
+- **Split**: di dialog Catat (pengeluaran baru) aktifkan "Bagi ke beberapa kategori". Tiap baris menjadi transaksi pengeluaran terpisah dengan `split_group` yang sama, sehingga budget, laporan, dan agregasi tetap benar. Biaya admin hanya dicatat sekali. Mengubah satu baris split hanya mengubah baris itu; saat menghapus Anda bisa memilih menghapus seluruh grup.
+- **Banyak foto**: hingga 5 foto nota per transaksi; `receipt_path` tetap berisi foto pertama.
+- **Cari item**: pencarian transaksi juga mencocokkan nama item dari nota.
+Sebelum v12 dijalankan: split tetap tersimpan sebagai transaksi terpisah (tanpa penanda grup), hanya foto pertama yang disimpan, dan pencarian item dilewati.
+
+## v13 — Laporan per akun & rekonsiliasi (opsional)
+Jalankan bagian **v13** di `supabase/schema.sql`. Menambah fungsi `dk_account_monthly` (ringkasan masuk/keluar per bulan untuk satu akun, dihitung di database) dan tabel `account_reconciliations` (titik rekonsiliasi dengan rekening koran).
+Buka **Akun → klik nama akun** untuk melihat saldo awal/akhir bulan, grafik saldo 12 bulan, pengeluaran per kategori, daftar transaksi, dan kartu **Rekonsiliasi** (isi saldo rekening koran atau impor CSV mutasi: tanggal, keterangan, jumlah ±). Tanpa v13 halaman tetap berjalan (perhitungan JS, hasil sama) dan riwayat rekonsiliasi tidak disimpan.

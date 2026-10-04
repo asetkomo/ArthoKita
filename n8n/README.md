@@ -8,6 +8,7 @@ Arsitektur: **n8n = orkestrator tipis**, **web Dompetku = otak**. n8n menerima u
 | `02-dompetku-jadwal.json` | Pengingat tagihan 08:00, rekap harian 21:00, laporan mingguan (Senin) & bulanan (tgl 1) |
 | `03-dompetku-error-handler.json` | Notifikasi Telegram saat workflow gagal |
 | `04-dompetku-setup-commands.json` | Sekali jalan: daftarkan menu `/` di Telegram + cek webhook |
+| `05-dompetku-backup.json` | Backup mingguan (Minggu 02:00) → Google Drive (alternatif: lampiran email) |
 
 Endpoint yang dipanggil workflow (semua dengan header `x-api-key`; daftar lengkap di `docs/SETUP.md` §4):
 
@@ -16,6 +17,7 @@ Endpoint yang dipanggil workflow (semua dengan header `x-api-key`; daftar lengka
 | 01 | `POST /api/public/n8n/bot` body `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` (`mime_type` wajib bila ada `image_base64`: `image/jpeg`\|`image/png`\|`image/webp`; body maks 4,5 MB, lebih besar → 413) | `method`, `text`, `reply_markup`, `toast` |
 | 02 | `GET /api/public/n8n/reminders?days=3` | `count`, `message` |
 | 02 | `GET /api/public/n8n/report?period=today\|lastweek\|lastmonth` | `message` |
+| 05 | `GET /api/public/n8n/backup` (respons JSON cadangan penuh + header `Content-Disposition` nama berkas) | seluruh body disimpan sebagai berkas |
 
 ## 1. Siapkan web (Vercel)
 1. Merge branch `feat/telegram-bot-v2`, lalu jalankan bagian **v7** di `supabase/schema.sql`.
@@ -90,6 +92,14 @@ Telegram Trigger butuh URL **HTTPS publik**. Jangan expose port 5678 langsung ta
 |---|---|
 | Tombol ✅/❌ tidak bereaksi, tidak ada eksekusi di n8n | Telegram Trigger v1.2 hanya mengenali `chatIds` untuk pesan, sehingga callback tombol dibuang diam-diam. Hapus **Restrict to Chat IDs** di node Telegram Trigger. Allow-list tetap dijaga oleh `Normalize & Guard` dan server. Setelah mengubah trigger, nonaktifkan lalu aktifkan lagi workflow 01. |
 | `Gagal membaca dengan AI [400]` | Biasanya `AI_API_KEY` tidak valid, nama `AI_MODEL` salah, atau `AI_API_URL` tidak sesuai. Pesan bot sekarang menyertakan alasan dari penyedia AI. |
+
+## Backup mingguan (workflow 05)
+1. Buat credential **Google Drive OAuth2** di n8n (Google Cloud Console → OAuth client, scope Drive). Buat folder tujuan di Drive, salin ID-nya dari URL (`drive.google.com/drive/folders/<ID>`).
+2. Impor `05-dompetku-backup.json`, pilih credential `Fintrack x-api-key` di node *Ambil backup* dan credential Google di node *Upload ke Google Drive*, lalu ganti `REPLACE_ME_FOLDER_ID`.
+3. Jalankan manual sekali (*Test workflow*), cek berkas `dompetku-cadangan-YYYY-MM-DD.json` muncul di Drive, lalu aktifkan. Set **Error Workflow** = `Dompetku – Error Handler` agar kegagalan dikabari ke Telegram.
+4. Tanpa Google Drive: aktifkan node *Kirim via email* (credential SMTP; env n8n `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO`) dan nonaktifkan node Drive.
+5. Data eksekusi tidak disimpan (`saveDataSuccessExecution`/`saveDataErrorExecution: none`) agar salinan data keuangan tidak menumpuk di DB n8n. Hapus berkas lama di Drive secara berkala bila perlu.
+6. Memulihkan: web → Pengaturan → **Pulihkan dari backup** → pilih berkas → cek jumlah baris per tabel → *Gabungkan* (default, upsert per ID) atau *Ganti semua* (ketik `GANTI`; data sekarang dihapus dulu).
 
 ## Hemat token
 - Perintah `/…` dan tombol: **0 token**.

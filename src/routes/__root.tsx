@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
+import { PrivacySync } from "@/lib/privacy-sync";
 
 function NotFoundComponent() {
   const { t } = useI18n();
@@ -22,9 +23,14 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">{t("Halaman tidak ditemukan")}</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          {t("Halaman tidak ditemukan")}
+        </h2>
         <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
             {t("Kembali")}
           </Link>
         </div>
@@ -44,8 +50,12 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("Halaman gagal dimuat")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          {t("Halaman gagal dimuat")}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             onClick={() => {
@@ -67,15 +77,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Dompetku — Pelacak Keuangan Pribadi" },
-      { name: "description", content: "Catat pemasukan, pengeluaran, cicilan, dan langganan dalam satu tempat." },
+      {
+        name: "description",
+        content: "Catat pemasukan, pengeluaran, cicilan, dan langganan dalam satu tempat.",
+      },
       { name: "robots", content: "noindex, nofollow" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" },
+      // Self-hosted fonts (@font-face in styles.css); preload the latin subsets used on every page.
+      ...[
+        "figtree-latin-wght-normal",
+        "bricolage-grotesque-latin-opsz-normal",
+        "jetbrains-mono-latin-wght-normal",
+      ].map((f) => ({
+        rel: "preload",
+        href: `/fonts/${f}.woff2`,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous" as const,
+      })),
       { rel: "stylesheet", href: appCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
@@ -96,7 +118,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <meta name="theme-color" content="#1d3b2f" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('dk-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('dk-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');if(localStorage.getItem('dk-privacy')==='1')document.documentElement.classList.add('privacy')}catch(e){}`,
           }}
         />
       </head>
@@ -114,6 +136,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
+        <PrivacySync />
         <Outlet />
         <Toaster richColors position="top-center" />
       </LanguageProvider>

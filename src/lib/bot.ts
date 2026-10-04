@@ -510,7 +510,8 @@ export type QuickDraft = {
 
 const INCOME =
   /\b(gaji|gajian|bonus|thr|pemasukan|income|masuk|terima|diterima|dapat|dapet|cashback|refund|dividen|bunga|jual|dibayar|transferan|komisi|honor)\b/;
-const INCOME_OR_FILLER = /\b(beli|bayar|buat|untuk|utk|masuk|pemasukan|pengeluaran|topup|top up|isi)\b/gi;
+const INCOME_OR_FILLER =
+  /\b(beli|bayar|buat|untuk|utk|masuk|pemasukan|pengeluaran|topup|top up|isi)\b/gi;
 const AMBIGUOUS =
   /\b(tgl|tanggal|lusa|minggu lalu|bulan lalu|senin|selasa|rabu|kamis|jumat|sabtu|cicil|pinjam|minjem|hutang|utang|transfer ke|tf ke|kirim ke|bagi|split|patungan)\b/;
 const AMOUNT_RE =
@@ -669,9 +670,10 @@ export function pickerKeyboard(
   options: string[],
   extra?: { text: string; idx: number },
 ): InlineKeyboard {
-  const buttons = options
-    .slice(0, 40)
-    .map((o, i) => ({ text: Array.from(o).slice(0, 30).join(""), callback_data: `d:${op}:${id}:${i}` }));
+  const buttons = options.slice(0, 40).map((o, i) => ({
+    text: Array.from(o).slice(0, 30).join(""),
+    callback_data: `d:${op}:${id}:${i}`,
+  }));
   if (extra) buttons.push({ text: extra.text, callback_data: `d:${op}:${id}:${extra.idx}` });
   const rows: { text: string; callback_data: string }[][] = [];
   for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
