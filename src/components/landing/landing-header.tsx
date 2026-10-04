@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useI18n } from "@/lib/i18n";
-import { useScrolledPast } from "./use-scrolled-past";
+import { useScrolledPast } from "@/hooks/use-scrolled-past";
 import { cn } from "@/lib/utils";
 
 export const LANDING_NAV = [

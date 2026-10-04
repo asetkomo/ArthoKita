@@ -261,10 +261,21 @@
 }
 
 @layer base {
+  /* No horizontal page scroll. `hidden` would turn html/body into scroll containers and break
+     `position: sticky` (app + landing headers); `clip` avoids that, `hidden` stays as the
+     fallback for browsers without `clip`. */
   html,
   body {
     max-width: 100%;
     overflow-x: hidden;
+    overflow-x: clip;
+  }
+  /* Smooth in-page/back-to-top scrolling app-wide; route changes and scroll restoration stay
+     instant via `scrollRestorationBehavior` in router.tsx. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   .recharts-responsive-container {
     min-width: 0;
@@ -288,17 +299,7 @@ html.privacy .num-sensitive {
   filter: blur(6px);
 }
 
-/* Landing page (`/`): decorative backgrounds + entrance motion, disabled for reduced motion.
-   `.landing-smooth` is toggled on <html> by LandingShell only while a public page is mounted. */
-html.landing-smooth {
-  scroll-behavior: smooth;
-}
-/* The app-wide `overflow-x: hidden` on html/body turns them into scroll containers, which
-   breaks `position: sticky`; `clip` keeps the no-horizontal-scroll guarantee without that. */
-html:has(.landing),
-html:has(.landing) body {
-  overflow-x: clip;
-}
+/* Landing page (`/`): decorative backgrounds + entrance motion, disabled for reduced motion. */
 /* Keep anchored headings clear of the sticky header (h-16 + safe area + breathing room). */
 .landing [id] {
   scroll-margin-top: calc(5rem + env(safe-area-inset-top));
@@ -382,9 +383,6 @@ html:has(.landing) body {
   animation: landing-grow 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 @media (prefers-reduced-motion: reduce) {
-  html.landing-smooth {
-    scroll-behavior: auto;
-  }
   /* Static, wrapped logo grid instead of the marquee; the duplicate set is hidden. */
   .landing-marquee {
     -webkit-mask-image: none;

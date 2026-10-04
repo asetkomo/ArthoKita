@@ -1,6 +1,6 @@
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
@@ -28,8 +28,10 @@ import { AppLogo, AppName, useTagline } from "@/components/app-logo";
 import { togglePrivate, usePrivacy } from "@/lib/privacy";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BackToTop } from "@/components/back-to-top";
 import { DemoBanner } from "@/components/demo";
 import { VersionBadge, VersionRailLabel, useVersionText } from "@/components/version-badge";
+import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -138,6 +140,49 @@ export function LanguageToggle({ className }: { className?: string }) {
   );
 }
 
+/** Matches the `short` custom variant (landscape phones), where the mobile header is static. */
+const SHORT_QUERY = "(max-height: 500px) and (orientation: landscape)";
+
+/**
+ * Mobile header state: `scrolled` past a few px (border/shadow) and `compact` (brand row
+ * collapsed so only the nav pills stay pinned). Collapsing changes the page height by about
+ * the row (~60 px), and browser scroll anchoring may shift scrollY by that much, so the
+ * thresholds are far apart (collapse past 96 px, expand only back at the very top, where
+ * anchoring never applies) and pages without enough room never collapse, avoiding flicker.
+ */
+function useCompactHeader(): { scrolled: boolean; compact: boolean } {
+  const [state, setState] = useState({ scrolled: false, compact: false });
+  useEffect(() => {
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const y = window.scrollY;
+      const room = document.documentElement.scrollHeight - window.innerHeight;
+      const short =
+        typeof window.matchMedia === "function" && window.matchMedia(SHORT_QUERY).matches;
+      setState((prev) => {
+        const compact = short ? false : prev.compact ? y > 0 : y > 96 && room > 200;
+        const scrolled = y > 4;
+        return prev.compact === compact && prev.scrolled === scrolled
+          ? prev
+          : { scrolled, compact };
+      });
+    };
+    const on = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+  return state;
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const doLogout = useServerFn(logout);
@@ -154,6 +199,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const versionText = useVersionText();
   const sideTool =
     "flex w-full justify-center gap-3 px-3 py-2 text-sm text-ink-muted hover:bg-sidebar-accent lg:justify-start";
+  const { scrolled, compact } = useCompactHeader();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navRef = useRef<HTMLElement>(null);
+  // Keep the active pill visible in the horizontal mobile nav. Only the nav's own scrollLeft
+  // changes (scrollIntoView would also move the page vertically).
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active || nav.scrollWidth <= nav.clientWidth) return;
+    const left = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+    nav.scrollTo({ left: Math.max(0, left), behavior: "instant" });
+  }, [pathname]);
   return (
     <TooltipProvider delayDuration={200}>
       <div className="min-h-screen w-full max-w-full overflow-x-clip md:grid md:grid-cols-[72px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -220,30 +277,51 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
         <div className="min-w-0 md:col-start-2">
           <DemoBanner />
-          <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground short:static md:hidden">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 short:py-1.5">
-              <p className="flex min-w-0 items-center gap-2 font-display text-xl font-bold">
-                <AppLogo className="size-7" />
-                <AppName className="min-w-0 truncate" />
-              </p>
-              <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-                <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />
-                <ThemeToggle className="size-9 shrink-0 p-0" />
-                <PrivacyToggle className="size-9 shrink-0 p-0" />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-9 shrink-0"
-                  onClick={out}
-                  aria-label={t("Keluar")}
-                >
-                  <LogOut className="size-4" />
-                </Button>
+          <header
+            className={cn(
+              "no-print sticky top-0 z-30 border-b bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground transition-[box-shadow,border-color] duration-200 motion-reduce:transition-none short:static short:border-transparent short:shadow-none md:hidden",
+              scrolled ? "border-sidebar-border shadow-md" : "border-transparent",
+            )}
+          >
+            {/* Brand + tools collapse (grid rows 1fr -> 0fr) once scrolled so only the nav stays
+                pinned; `inert` keeps the collapsed controls out of the tab order. */}
+            <div
+              className={cn(
+                "grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none short:grid-rows-[1fr] short:opacity-100",
+                compact ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
+              )}
+              inert={compact}
+            >
+              <div className="min-h-0 overflow-hidden">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 short:py-1.5">
+                  <p className="flex min-w-0 items-center gap-2 font-display text-xl font-bold">
+                    <AppLogo className="size-7" />
+                    <AppName className="min-w-0 truncate" />
+                  </p>
+                  <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+                    <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />
+                    <ThemeToggle className="size-9 shrink-0 p-0" />
+                    <PrivacyToggle className="size-9 shrink-0 p-0" />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="size-9 shrink-0"
+                      onClick={out}
+                      aria-label={t("Keluar")}
+                    >
+                      <LogOut className="size-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
             <nav
-              className="no-scrollbar flex max-w-full gap-1 overflow-x-auto px-3 pb-3 short:pb-2"
+              ref={navRef}
+              className={cn(
+                "no-scrollbar flex max-w-full gap-1 overflow-x-auto px-3 pb-3 transition-[padding] duration-200 motion-reduce:transition-none short:pb-2",
+                compact && "pt-2",
+              )}
               aria-label={t("Menu utama")}
             >
               {NAV.map((n) => (
@@ -260,9 +338,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               ))}
             </nav>
           </header>
-          <main className="mx-auto w-full min-w-0 max-w-6xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+          <main
+            id="app-main"
+            tabIndex={-1}
+            className="mx-auto w-full min-w-0 max-w-6xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] focus:outline-none sm:p-6 lg:p-8"
+          >
             {children}
           </main>
+          <BackToTop focusId="app-main" className="no-print" />
         </div>
       </div>
     </TooltipProvider>
