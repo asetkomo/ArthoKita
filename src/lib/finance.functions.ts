@@ -106,13 +106,10 @@ export const deleteRow = createServerFn({ method: "POST" })
     }
     const { db } = await import("./db.server");
     if (data.table === "transactions") {
-      const old = await db()
-        .from("transactions")
-        .select("receipt_path")
-        .eq("id", data.id)
-        .maybeSingle();
+      const old = await db().from("transactions").select("*").eq("id", data.id).maybeSingle();
       const { removeReceipt } = await import("./receipt.server");
-      await removeReceipt((old.data as any)?.receipt_path);
+      const { receiptPaths } = await import("./receipts");
+      for (const p of receiptPaths(old.data as any)) await removeReceipt(p);
     }
     const prev = await db().from(data.table).select("*").eq("id", data.id).maybeSingle();
     const res = await db().from(data.table).delete().eq("id", data.id);

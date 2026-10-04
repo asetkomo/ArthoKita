@@ -80,6 +80,8 @@ export const transactionSchema = z.object({
   items: z.array(itemSchema).max(200).nullable().default(null),
   notes: optText(1000),
   receipt_path: optText(500),
+  /** v12: up to 5 photos; receipt_path is saved as the first one. */
+  receipt_paths: z.array(z.string().min(1).max(500)).max(5).nullable().optional(),
   fee: z.preprocess(emptyToNull, z.coerce.number().min(0).nullable()).optional(),
 });
 export type TransactionInput = z.output<typeof transactionSchema>;

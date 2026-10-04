@@ -2,6 +2,7 @@ import { db } from "./db.server";
 import { ensureCategory, getUsdIdr, logActivity } from "./finance.server";
 import { FEE_CATEGORY } from "./fees";
 import { missingColumn } from "./backup";
+import { receiptPaths } from "./receipts";
 import { splitDescription, validateSplit, type SplitRow } from "./split";
 import type { TransactionInput } from "./schemas";
 import type { Json, Tables, TablesInsert } from "./database.types";
@@ -105,18 +106,9 @@ export async function saveSplitTransaction(
   return { group, transactions: saved };
 }
 
-/** All paths a row references (receipt_paths when present, else receipt_path). */
-export function rowPaths(row: {
-  receipt_path?: string | null | undefined;
-  receipt_paths?: string[] | null | undefined;
-}) {
-  const list = row.receipt_paths?.length ? row.receipt_paths : [];
-  return [...new Set([...list, ...(row.receipt_path ? [row.receipt_path] : [])])];
-}
-
 /** Removes receipt photos of the given rows that no remaining transaction still references. */
 async function removeOrphanPhotos(rows: TxRow[], deletedIds: string[]) {
-  const paths = [...new Set(rows.flatMap(rowPaths))];
+  const paths = [...new Set(rows.flatMap((r) => receiptPaths(r)))];
   if (!paths.length) return;
   const { removeReceipt } = await import("./receipt.server");
   for (const p of paths) {

@@ -5,6 +5,7 @@ import type { ExternalTx, TransactionInput } from "./schemas";
 import { dupKey } from "./csv";
 import { fetchAll } from "./paginate";
 import { planGoalFunds } from "./goals";
+import { receiptColumns } from "./receipts";
 import { budgetPercent } from "./budget";
 import type { Json, Tables, TablesInsert } from "./database.types";
 import {
@@ -221,9 +222,11 @@ export async function findAccount(name?: string | null): Promise<string | null> 
 
 /* ---------------- Transactions ---------------- */
 function normalizeTx(input: TransactionInput) {
-  const { fee: _fee, ...rest } = input;
+  const { fee: _fee, receipt_paths, ...rest } = input;
   return {
     ...rest,
+    // v12: banyak foto → receipt_path selalu = foto pertama (kompatibel dengan versi lama).
+    ...(receipt_paths !== undefined ? receiptColumns(receipt_paths ?? []) : {}),
     category_id: input.kind === "transfer" ? null : input.category_id,
     to_account_id: input.kind === "transfer" ? input.to_account_id : null,
   };
@@ -234,6 +237,10 @@ function normalizeTx(input: TransactionInput) {
 function isMissingReceiptColumn(err: { message?: string } | null) {
   return !!err?.message && err.message.includes("receipt_path");
 }
+// receipt_paths (v12, banyak foto) dicek lebih dulu karena namanya mengandung "receipt_path".
+function isMissingReceiptPathsColumn(err: { message?: string } | null) {
+  return !!err?.message && err.message.includes("receipt_paths");
+}
 // external_id (v7) juga opsional: bila kolom belum ada, simpan tanpa kolom itu.
 function isMissingExternalColumn(err: { message?: string } | null) {
   return !!err?.message && err.message.includes("external_id");
@@ -241,8 +248,13 @@ function isMissingExternalColumn(err: { message?: string } | null) {
 
 async function insertTxRow(row: TxInsert): Promise<TxRow> {
   let current = row;
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const res = await db().from("transactions").insert(current).select().single();
+    if (res.error && isMissingReceiptPathsColumn(res.error) && "receipt_paths" in current) {
+      const { receipt_paths: _drop, ...rest } = current;
+      current = rest;
+      continue;
+    }
     if (res.error && isMissingReceiptColumn(res.error) && "receipt_path" in current) {
       const { receipt_path: _drop, ...rest } = current;
       current = rest;
@@ -300,8 +312,13 @@ export async function insertTransaction(
 }
 
 export async function updateTransaction(id: string, input: TransactionInput) {
-  const row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
-  const res = await db().from("transactions").update(row).eq("id", id).select().single();
+  let row = { ...normalizeTx(input), amount_idr: await toIdr(input.amount, input.currency) };
+  let res = await db().from("transactions").update(row).eq("id", id).select().single();
+  if (res.error && isMissingReceiptPathsColumn(res.error) && "receipt_paths" in row) {
+    const { receipt_paths: _drop, ...rest } = row;
+    row = rest;
+    res = await db().from("transactions").update(row).eq("id", id).select().single();
+  }
   let data: TxRow;
   if (res.error && isMissingReceiptColumn(res.error)) {
     const { receipt_path: _drop, ...fallback } = row;
