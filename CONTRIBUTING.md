@@ -210,7 +210,7 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 ## AI-assisted contributions
 
-Using AI coding assistants (Claude Code, Copilot, Cursor, Lovable, …) is welcome. [`AGENTS.md`](AGENTS.md) is the instruction file for coding agents — point your agent at it so it follows the same rules. You remain responsible for what you submit: read and understand the code, run the checks, and make sure tests are meaningful.
+Using AI coding assistants (Claude Code, Copilot, Cursor, Lovable, …) is welcome. [`AGENTS.md`](AGENTS.md) is the instruction file for coding agents — point your agent at it so it follows the same rules. Claude Code reads [`CLAUDE.md`](CLAUDE.md), which imports `AGENTS.md` and adds the day-to-day workflow (commands, UI checklist, commit/PR conventions). You remain responsible for what you submit: read and understand the code, run the checks, and make sure tests are meaningful.
 
 ## Labels
 
