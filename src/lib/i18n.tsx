@@ -613,6 +613,31 @@ const DICT: Record<string, string> = {
   "Transaksi berulang dicatat": "Recurring transaction recorded",
   "Transaksi berulang dijeda": "Recurring transaction paused",
   "Transaksi berulang dilanjutkan": "Recurring transaction resumed",
+  /* Split transaction (v12) */
+  "Bagi ke beberapa kategori": "Split across categories",
+  "Pilih kategori": "Choose category",
+  "Hapus baris": "Remove row",
+  "Catatan baris (opsional)": "Row note (optional)",
+  "Tambah baris": "Add row",
+  "Isi dari item nota": "Fill from receipt items",
+  "Sisakan ke baris terakhir": "Put remainder on last row",
+  "Pas dengan total": "Matches total",
+  "Setiap baris disimpan sebagai transaksi terpisah. Mengubah satu baris nanti hanya mengubah baris itu.":
+    "Each row is saved as its own transaction. Editing one later changes only that row.",
+  "Isi jumlah total dulu": "Enter the total amount first",
+  "Split minimal 2 baris": "A split needs at least 2 rows",
+  "Split maksimal 20 baris": "A split can have at most 20 rows",
+  "Setiap baris harus punya jumlah > 0": "Every row needs an amount > 0",
+  "Setiap baris harus punya kategori": "Every row needs a category",
+  "Jumlah baris harus sama dengan total": "Row amounts must add up to the total",
+  Split: "Split",
+  "Bagian dari satu nota yang dibagi ke beberapa kategori":
+    "Part of one receipt split across categories",
+  "Hapus seluruh grup split?": "Delete the whole split group?",
+  "Transaksi ini bagian dari satu nota yang dibagi ke beberapa kategori.":
+    "This transaction is part of one receipt split across categories.",
+  "Ya, hapus semua": "Yes, delete all",
+  "Hapus baris ini saja?": "Delete just this row?",
 };
 
 const LangContext = createContext<{

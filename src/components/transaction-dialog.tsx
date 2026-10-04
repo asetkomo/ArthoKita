@@ -11,6 +11,9 @@ import { todayStr } from "@/lib/dates";
 import { money } from "@/lib/format";
 import { feeOptions } from "@/lib/fees";
 import { useI18n } from "@/lib/i18n";
+import { saveSplitTransaction } from "@/lib/split.functions";
+import { validateSplit, type SplitRow } from "@/lib/split";
+import { SplitEditor, SPLIT_ON, SPLIT_ROWS } from "./split-editor";
 import type { Account, Category } from "@/lib/schemas";
 
 export type TxDraft = Record<string, unknown>;
@@ -34,6 +37,7 @@ export function TransactionDialog({
   const accounts = (useQuery(rowsQuery("accounts")).data ?? []) as Account[];
   const categories = (useQuery(rowsQuery("categories")).data ?? []) as Category[];
   const save = useServerFn(saveTransaction);
+  const saveSplit = useServerFn(saveSplitTransaction);
   const qc = useQueryClient();
   const accOpts = [
     { value: "", label: t("— Tanpa akun —") },
@@ -113,10 +117,29 @@ export function TransactionDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={id ? t("Ubah transaksi") : t("Catat transaksi")}
-      fields={fields}
+      fields={(v) =>
+        splitting(v, id) ? fields(v).filter((f) => f.name !== "category_id") : fields(v)
+      }
       initial={initial}
       onSubmit={async (v) => {
-        notifyBudgetAlerts(await save({ data: { id: id ?? null, values: v as never } }), t);
+        const { [SPLIT_ON]: _on, [SPLIT_ROWS]: rows, ...values } = v;
+        if (splitting(v, id)) {
+          const list = (rows as SplitRow[] | undefined) ?? [];
+          const err = validateSplit(values["amount"] as number, list);
+          if (err) throw new Error(t(err));
+          await saveSplit({
+            data: {
+              values: { ...values, category_id: null } as never,
+              rows: list.map((r) => ({
+                category_id: r.category_id!,
+                amount: Number(r.amount),
+                note: r.note?.trim() || null,
+              })),
+            },
+          });
+        } else {
+          notifyBudgetAlerts(await save({ data: { id: id ?? null, values: values as never } }), t);
+        }
         await invalidateFor(qc, "transactions");
       }}
       extra={(v, set) => (
@@ -159,6 +182,9 @@ export function TransactionDialog({
                 ) : null;
               })()
             : null}
+          {!id && v["kind"] === "expense" ? (
+            <SplitEditor values={v} set={set} categories={categories} />
+          ) : null}
           {(v["items"] as { name: string; qty?: number | null; price?: number | null }[] | null)
             ?.length ? (
             <div className="rounded-lg border bg-muted/50 p-3 text-sm">
@@ -268,6 +294,11 @@ function ReceiptField({
       )}
     </div>
   );
+}
+
+/** Split mode only applies to new expenses. */
+function splitting(v: Record<string, unknown>, id: string | null | undefined) {
+  return !id && v["kind"] === "expense" && !!v[SPLIT_ON];
 }
 
 type BudgetAlertToast = {

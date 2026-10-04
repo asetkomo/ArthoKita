@@ -51,11 +51,11 @@ import {
   type TxFilter,
 } from "@/lib/queries";
 import {
-  deleteRow,
   exportTransactionsCsv,
   getReceiptUrl,
   importTransactionsCsv,
 } from "@/lib/finance.functions";
+import { deleteTransaction } from "@/lib/split.functions";
 import { currentMonth, dateLabel, monthLabel, shiftMonth } from "@/lib/dates";
 import { KIND_LABEL, money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
@@ -108,7 +108,7 @@ function TransactionsPage() {
     draft: newTxDraft(),
     id: null,
   });
-  const del = useServerFn(deleteRow);
+  const delTx = useServerFn(deleteTransaction);
   const exp = useServerFn(exportTransactionsCsv);
   const imp = useServerFn(importTransactionsCsv);
   const receipt = useServerFn(getReceiptUrl);
@@ -161,16 +161,26 @@ function TransactionsPage() {
     { inc: 0, exp: 0 },
   );
 
-  async function remove(id: string) {
+  async function remove(id: string, splitGroup?: string | null) {
+    let wholeGroup = false;
+    if (splitGroup) {
+      // Split row: offer the whole group first, then just this row.
+      wholeGroup = await ask.confirm(t("Hapus seluruh grup split?"), {
+        description: t("Transaksi ini bagian dari satu nota yang dibagi ke beberapa kategori."),
+        confirmLabel: t("Ya, hapus semua"),
+        destructive: true,
+      });
+    }
     if (
-      !(await ask.confirm(t("Hapus transaksi ini?"), {
+      !wholeGroup &&
+      !(await ask.confirm(splitGroup ? t("Hapus baris ini saja?") : t("Hapus transaksi ini?"), {
         confirmLabel: t("Ya, hapus"),
         destructive: true,
       }))
     )
       return;
     try {
-      await del({ data: { table: "transactions", id } });
+      await delTx({ data: { id, wholeGroup } });
       await invalidateFor(qc, "transactions");
       toast.success(t("Dihapus"));
     } catch (e) {
@@ -442,6 +452,15 @@ function TransactionsPage() {
                       : `${tx.category?.name ?? t("Tanpa kategori")}${tx.account?.name ? ` · ${tx.account.name}` : ""}`}
                   </p>
                 </div>
+                {tx.split_group ? (
+                  <Badge
+                    variant="outline"
+                    className="col-start-2 w-fit text-[10px] sm:col-auto"
+                    title={t("Bagian dari satu nota yang dibagi ke beberapa kategori")}
+                  >
+                    {t("Split")}
+                  </Badge>
+                ) : null}
                 {tx.source !== "web" ? (
                   <Badge variant="secondary" className="hidden sm:inline-flex">
                     {tx.source}
@@ -501,7 +520,7 @@ function TransactionsPage() {
                     size="icon"
                     variant="ghost"
                     aria-label={t("Hapus")}
-                    onClick={() => remove(tx.id)}
+                    onClick={() => remove(tx.id, tx.split_group)}
                   >
                     <Trash2 className="size-4" />
                   </Button>
