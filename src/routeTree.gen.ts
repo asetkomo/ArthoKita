@@ -27,6 +27,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubscriptionsRouteImport } from './routes/_app/subscriptions'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as AppAccountsIdRouteImport } from './routes/_app/accounts_.$id'
+import { Route as ApiPublicAppIconRouteImport } from './routes/api/public/app-icon'
 import { Route as ApiPublicN8nBackupRouteImport } from './routes/api/public/n8n/backup'
 import { Route as ApiPublicN8nBotRouteImport } from './routes/api/public/n8n/bot'
 import { Route as ApiPublicN8nCommandRouteImport } from './routes/api/public/n8n/command'
@@ -128,6 +129,11 @@ const AppAccountsIdRoute = AppAccountsIdRouteImport.update({
   path: '/accounts/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicAppIconRoute = ApiPublicAppIconRouteImport.update({
+  id: '/api/public/app-icon',
+  path: '/api/public/app-icon',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicN8nBackupRoute = ApiPublicN8nBackupRouteImport.update({
   id: '/api/public/n8n/backup',
   path: '/api/public/n8n/backup',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
   '/accounts/$id': typeof AppAccountsIdRoute
+  '/api/public/app-icon': typeof ApiPublicAppIconRoute
   '/api/public/n8n/backup': typeof ApiPublicN8nBackupRoute
   '/api/public/n8n/bot': typeof ApiPublicN8nBotRoute
   '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/subscriptions': typeof AppSubscriptionsRoute
   '/transactions': typeof AppTransactionsRoute
   '/accounts/$id': typeof AppAccountsIdRoute
+  '/api/public/app-icon': typeof ApiPublicAppIconRoute
   '/api/public/n8n/backup': typeof ApiPublicN8nBackupRoute
   '/api/public/n8n/bot': typeof ApiPublicN8nBotRoute
   '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/_app/subscriptions': typeof AppSubscriptionsRoute
   '/_app/transactions': typeof AppTransactionsRoute
   '/_app/accounts_/$id': typeof AppAccountsIdRoute
+  '/api/public/app-icon': typeof ApiPublicAppIconRoute
   '/api/public/n8n/backup': typeof ApiPublicN8nBackupRoute
   '/api/public/n8n/bot': typeof ApiPublicN8nBotRoute
   '/api/public/n8n/command': typeof ApiPublicN8nCommandRoute
@@ -299,6 +308,7 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/transactions'
     | '/accounts/$id'
+    | '/api/public/app-icon'
     | '/api/public/n8n/backup'
     | '/api/public/n8n/bot'
     | '/api/public/n8n/command'
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/transactions'
     | '/accounts/$id'
+    | '/api/public/app-icon'
     | '/api/public/n8n/backup'
     | '/api/public/n8n/bot'
     | '/api/public/n8n/command'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/_app/subscriptions'
     | '/_app/transactions'
     | '/_app/accounts_/$id'
+    | '/api/public/app-icon'
     | '/api/public/n8n/backup'
     | '/api/public/n8n/bot'
     | '/api/public/n8n/command'
@@ -377,6 +389,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicAppIconRoute: typeof ApiPublicAppIconRoute
   ApiPublicN8nBackupRoute: typeof ApiPublicN8nBackupRoute
   ApiPublicN8nBotRoute: typeof ApiPublicN8nBotRoute
   ApiPublicN8nCommandRoute: typeof ApiPublicN8nCommandRoute
@@ -518,6 +531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/app-icon': {
+      id: '/api/public/app-icon'
+      path: '/api/public/app-icon'
+      fullPath: '/api/public/app-icon'
+      preLoaderRoute: typeof ApiPublicAppIconRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/n8n/backup': {
       id: '/api/public/n8n/backup'
       path: '/api/public/n8n/backup'
@@ -640,6 +660,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicAppIconRoute: ApiPublicAppIconRoute,
   ApiPublicN8nBackupRoute: ApiPublicN8nBackupRoute,
   ApiPublicN8nBotRoute: ApiPublicN8nBotRoute,
   ApiPublicN8nCommandRoute: ApiPublicN8nCommandRoute,

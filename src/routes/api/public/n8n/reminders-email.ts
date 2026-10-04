@@ -9,11 +9,14 @@ export const Route = createFileRoute("/api/public/n8n/reminders-email")({
         const { checkApiKey, json } = await import("@/lib/api-key.server");
         const denied = checkApiKey(request);
         if (denied) return denied;
-        const days = Math.min(
-          365,
-          Math.max(1, Number(new URL(request.url).searchParams.get("days") ?? 7) || 7),
-        );
         try {
+          const { getAppSettings } = await import("@/lib/app-settings.server");
+          const { reminderDays } = await import("@/lib/app-settings");
+          const days = reminderDays(
+            Number(new URL(request.url).searchParams.get("days")) || null,
+            (await getAppSettings()).reminder_days,
+            7,
+          );
           const { reminderEmail } = await import("@/lib/finance.server");
           const mail = await reminderEmail(days);
           return json({ ok: true, ...mail, message: mail.text });

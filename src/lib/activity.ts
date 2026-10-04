@@ -40,6 +40,7 @@ const SPECIAL: Record<string, string> = {
   "recurring.post": "Transaksi berulang dicatat",
   "recurring.pause": "Transaksi berulang dijeda",
   "recurring.resume": "Transaksi berulang dilanjutkan",
+  "app_settings.update": "Pengaturan aplikasi diubah",
 };
 
 export function activityLabel(action: string, t: (s: string) => string = (s) => s): string {

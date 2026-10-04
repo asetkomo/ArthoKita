@@ -54,15 +54,17 @@ Provider examples (Gemini, OpenAI, OpenRouter, Ollama): [SELF-HOSTING §6.2](SEL
 | Name                   | Required?                   | Example                       | What it does                                                                                                                                                                       |
 | ---------------------- | --------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `BOT_ALLOWED_CHAT_IDS` | **Yes, if you use the bot** | `123456789,987654321`         | Comma-separated Telegram chat IDs allowed to use the bot. **Fails closed:** empty = every chat is refused before any database access, and the bot replies with the chat ID to add. |
-| `BOT_DEFAULT_ACCOUNT`  | No                          | `BCA`                         | Account name used when a message doesn't mention one. Must match an existing account name.                                                                                         |
+| `BOT_DEFAULT_ACCOUNT`  | No                          | `BCA`                         | Account name used when a message doesn't mention one. Must match an existing account name. Can be overridden in Settings → App (v14).                                              |
 | `BOT_TEXT_AI`          | No (default `auto`)         | `auto` \| `always` \| `never` | When chat messages may use AI: only when ambiguous, always, or never (zero AI tokens for chat; receipts still use AI).                                                             |
 
 ## Regional (optional)
 
-| Name               | Default        | Example                          | What it does                                                                                                                                     |
-| ------------------ | -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `APP_TIMEZONE`     | `Asia/Jakarta` | `Asia/Makassar`, `Europe/Berlin` | IANA time zone that defines "today" for new transactions, reminders, reports and recurring items. Use the same zone in n8n (`GENERIC_TIMEZONE`). |
-| `FALLBACK_USD_IDR` | `16000`        | `16250`                          | USD→IDR rate used only when the live rate API (open.er-api.com) fails **and** no rate is stored yet.                                             |
+| Name               | Default        | Example                          | What it does                                                                                                                                                                                |
+| ------------------ | -------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_TIMEZONE`     | `Asia/Jakarta` | `Asia/Makassar`, `Europe/Berlin` | IANA time zone that defines "today" for new transactions, reminders, reports and recurring items. Use the same zone in n8n (`GENERIC_TIMEZONE`). Can be overridden in Settings → App (v14). |
+| `FALLBACK_USD_IDR` | `16000`        | `16250`                          | USD→IDR rate used only when the live rate API (open.er-api.com) fails **and** no rate is stored yet.                                                                                        |
+
+> **Settings override (v14).** After running the v14 section of `supabase/schema.sql`, Settings → **Aplikasi** stores the app name, tagline, logo, time zone, base currency (display preference only — totals stay in IDR), landing page toggle, bot default account and default reminder days in the single-row `app_settings` table. Values set there win over `APP_TIMEZONE` / `BOT_DEFAULT_ACCOUNT`; empty fields (or a missing table) fall back to these env vars and built-in defaults. Changes apply within ~60 s per server instance.
 
 ## Email reminders via Resend (optional)
 

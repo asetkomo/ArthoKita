@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
 import { PrivacySync } from "@/lib/privacy-sync";
+import { BrandingSync } from "@/components/app-logo";
 
 function NotFoundComponent() {
   const { t } = useI18n();
@@ -144,6 +145,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <PrivacySync />
+        <BrandingSync />
         <Outlet />
         <Toaster richColors position="top-center" />
       </LanguageProvider>

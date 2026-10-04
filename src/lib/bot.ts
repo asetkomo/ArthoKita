@@ -8,7 +8,7 @@ export type BotCommand =
   | { type: "summary"; month: string | null }
   | { type: "report"; period: string }
   | { type: "list"; kind: "income" | "expense"; period: string }
-  | { type: "reminders"; days: number }
+  | { type: "reminders"; days: number | null }
   | { type: "debts" }
   | { type: "subscriptions" }
   | { type: "budget" }
@@ -61,9 +61,10 @@ reg(
   (a) => withdraw(a) ?? { type: "withdraw", amount: 0, from: null },
 );
 
-function clampDays(a: string): number {
+/** Explicit day window (≤ 90) or null = use the Settings reminder days (default 14). */
+function clampDays(a: string): number | null {
   const n = Number(a.trim());
-  return Number.isFinite(n) && n > 0 ? Math.min(90, Math.round(n)) : 14;
+  return a.trim() && Number.isFinite(n) && n > 0 ? Math.min(90, Math.round(n)) : null;
 }
 
 function withdraw(rest: string): BotCommand | null {
@@ -87,7 +88,7 @@ export function classifyBotCommand(raw: string): BotCommand {
     const m = text.match(/\d{4}-\d{2}/);
     return { type: "summary", month: m ? m[0]! : null };
   }
-  if (/^(pengingat|reminders?|tagihan)$/.test(text)) return { type: "reminders", days: 14 };
+  if (/^(pengingat|reminders?|tagihan)$/.test(text)) return { type: "reminders", days: null };
   if (/^(bantuan|help|menu)$/.test(text)) return { type: "help" };
   if (/^(undo|batal)$/.test(text)) return { type: "undo" };
   const pay = text.match(/^(sudah dibayar|sudah bayar|bayar|paid|pay)\s+([^\d]+)$/);

@@ -56,6 +56,7 @@ describe("parseBackup", () => {
     expect(i("categories")).toBeLessThan(i("recurring_transactions"));
     expect(i("budgets")).toBeLessThan(i("budget_alerts"));
     expect(i("accounts")).toBeLessThan(i("account_reconciliations"));
+    expect(i("accounts")).toBeLessThan(i("app_settings"));
   });
   it("rejects invalid input", () => {
     expect(parseBackup("{nope").ok).toBe(false);

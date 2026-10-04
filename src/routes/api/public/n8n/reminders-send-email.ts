@@ -4,7 +4,7 @@ import { z } from "zod";
 
 // POST /api/public/n8n/reminders-send-email { days?, to? } — send reminders directly via Resend (optional env).
 const body = z.object({
-  days: z.coerce.number().int().min(1).max(365).default(7),
+  days: z.coerce.number().int().min(1).max(365).optional(),
   to: z.string().email().optional(),
   skipIfEmpty: z.boolean().default(true),
 });
@@ -21,14 +21,17 @@ export const Route = createFileRoute("/api/public/n8n/reminders-send-email")({
           return json({ ok: false, error: "Input tidak valid", issues: parsed.error.issues }, 400);
         try {
           const { computeReminders, sendReminderEmail } = await import("@/lib/finance.server");
-          if (parsed.data.skipIfEmpty && (await computeReminders(parsed.data.days)).length === 0) {
+          const { getAppSettings } = await import("@/lib/app-settings.server");
+          const { reminderDays } = await import("@/lib/app-settings");
+          const days = reminderDays(parsed.data.days, (await getAppSettings()).reminder_days, 7);
+          if (parsed.data.skipIfEmpty && (await computeReminders(days)).length === 0) {
             return json({
               ok: true,
               sent: false,
               message: "Tidak ada pengingat, email tidak dikirim.",
             });
           }
-          const r = await sendReminderEmail(parsed.data.days, parsed.data.to);
+          const r = await sendReminderEmail(days, parsed.data.to);
           return json(
             {
               ok: r.sent,

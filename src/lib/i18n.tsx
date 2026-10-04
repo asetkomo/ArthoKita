@@ -693,6 +693,36 @@ const DICT: Record<string, string> = {
   cocok: "matched",
   "hanya di aplikasi": "only in app",
   "hanya di bank": "only in bank",
+  /* App settings (v14) */
+  Aplikasi: "App",
+  "Nama, logo, zona waktu, halaman depan, dan default bot. Kosongkan untuk memakai default.":
+    "Name, logo, time zone, landing page and bot defaults. Leave empty to use the default.",
+  "Jalankan bagian v14 di supabase/schema.sql untuk menyimpan pengaturan ini. Sampai saat itu nilai env dipakai.":
+    "Run the v14 section of supabase/schema.sql to save these settings. Until then env values are used.",
+  "Nama aplikasi": "App name",
+  Tagline: "Tagline",
+  Logo: "Logo",
+  "Unggah logo": "Upload logo",
+  "Pakai logo bawaan": "Use default logo",
+  "PNG/JPEG/WebP, diperkecil otomatis ke 512 px (maks. 200 KB).":
+    "PNG/JPEG/WebP, resized to 512 px automatically (max 200 KB).",
+  "Pilih berkas gambar": "Choose an image file",
+  "Logo terlalu besar (maks. 200 KB)": "Logo is too large (max 200 KB)",
+  "Gambar tidak bisa dibaca": "Could not read the image",
+  "Zona waktu": "Time zone",
+  "Env APP_TIMEZONE:": "Env APP_TIMEZONE:",
+  "Mata uang utama": "Base currency",
+  "Hanya preferensi tampilan; laporan tetap dihitung dalam IDR.":
+    "Display preference only; reports are still calculated in IDR.",
+  "Akun default bot": "Bot default account",
+  "Dari env": "From env",
+  "Tidak ada": "None",
+  "Hari pengingat default": "Default reminder days",
+  "bot 14 · n8n 7": "bot 14 · n8n 7",
+  "Tampilkan halaman depan (landing)": "Show landing page",
+  "Tagline halaman depan": "Landing page tagline",
+  "URL GitHub": "GitHub URL",
+  "Pengaturan aplikasi diubah": "App settings changed",
 };
 
 const LangContext = createContext<{

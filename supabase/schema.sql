@@ -449,3 +449,26 @@ revoke all on public.account_reconciliations from anon, authenticated;
 grant all on public.account_reconciliations to service_role;
 alter table public.account_reconciliations enable row level security;
 notify pgrst, 'reload schema';
+
+-- ============ v14: pengaturan aplikasi — nama, logo, zona waktu, default bot (aman dijalankan ulang) ============
+-- Opsional: tanpa bagian ini aplikasi memakai env (APP_TIMEZONE, BOT_DEFAULT_ACCOUNT) dan default bawaan.
+-- Satu baris saja (id = 1). Logo disimpan sebagai data URL PNG/JPEG/WebP kecil (≤ 200 KB) agar
+-- favicon & halaman login bisa memuatnya lewat /api/public/app-icon tanpa signed URL Storage.
+create table if not exists public.app_settings (
+  id smallint primary key default 1 check (id = 1),
+  app_name text,
+  tagline text,
+  logo_data text check (logo_data is null or length(logo_data) <= 300000),
+  timezone text,
+  base_currency text check (base_currency is null or base_currency in ('IDR','USD')),
+  landing_enabled boolean not null default true,
+  landing_tagline text,
+  github_url text,
+  bot_default_account_id uuid references public.accounts(id) on delete set null,
+  reminder_days int check (reminder_days is null or reminder_days between 1 and 365),
+  updated_at timestamptz not null default now()
+);
+revoke all on public.app_settings from anon, authenticated;
+grant all on public.app_settings to service_role;
+alter table public.app_settings enable row level security;
+notify pgrst, 'reload schema';

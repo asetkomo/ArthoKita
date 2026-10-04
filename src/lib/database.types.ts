@@ -899,6 +899,60 @@ export type Database = {
           },
         ];
       };
+      /** v14 (optional table): single-row app settings (id = 1) set from the Settings page. */
+      app_settings: {
+        Row: {
+          id: number;
+          app_name: string | null;
+          tagline: string | null;
+          logo_data: string | null;
+          timezone: string | null;
+          base_currency: Currency | null;
+          landing_enabled: boolean;
+          landing_tagline: string | null;
+          github_url: string | null;
+          bot_default_account_id: string | null;
+          reminder_days: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          app_name?: string | null;
+          tagline?: string | null;
+          logo_data?: string | null;
+          timezone?: string | null;
+          base_currency?: Currency | null;
+          landing_enabled?: boolean;
+          landing_tagline?: string | null;
+          github_url?: string | null;
+          bot_default_account_id?: string | null;
+          reminder_days?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          app_name?: string | null;
+          tagline?: string | null;
+          logo_data?: string | null;
+          timezone?: string | null;
+          base_currency?: Currency | null;
+          landing_enabled?: boolean;
+          landing_tagline?: string | null;
+          github_url?: string | null;
+          bot_default_account_id?: string | null;
+          reminder_days?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_bot_default_account_id_fkey";
+            columns: ["bot_default_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       account_balances: {

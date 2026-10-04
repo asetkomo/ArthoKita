@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/lib/auth.functions";
 import { useI18n } from "@/lib/i18n";
+import { AppLogo, AppName, useTagline } from "@/components/app-logo";
 import { togglePrivate, usePrivacy } from "@/lib/privacy";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -138,6 +139,7 @@ export function LanguageToggle({ className }: { className?: string }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const doLogout = useServerFn(logout);
+  const tagline = useTagline();
   const navigate = useNavigate();
   const router = useRouter();
   async function out() {
@@ -154,12 +156,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen w-full max-w-full overflow-x-clip md:grid md:grid-cols-[72px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[72px] flex-col overflow-y-auto bg-sidebar px-2 py-4 text-sidebar-foreground md:flex lg:w-[240px] lg:p-4">
           <div className="mb-6 px-1 pt-2 text-center lg:mb-8 lg:px-2 lg:text-left">
-            <p className="font-display text-2xl font-bold">
-              <span className="lg:hidden">D</span>
-              <span className="hidden lg:inline">Dompetku</span>
-              <span className="text-sidebar-primary">.</span>
+            <p className="flex items-center justify-center gap-2 font-display text-2xl font-bold lg:justify-start">
+              <AppLogo className="size-9 lg:size-8" />
+              <AppName className="hidden min-w-0 truncate lg:inline" />
             </p>
-            <p className="hidden text-xs text-ink-muted lg:block">{t("buku kas pribadi")}</p>
+            <p className="hidden truncate text-xs text-ink-muted lg:block">{tagline}</p>
           </div>
           <nav className="flex flex-1 flex-col gap-1">
             {NAV.map((n) => (
@@ -208,8 +209,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="min-w-0 md:col-start-2">
           <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground short:static md:hidden">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 short:py-1.5">
-              <p className="min-w-0 truncate font-display text-xl font-bold">
-                Dompetku<span className="text-sidebar-primary">.</span>
+              <p className="flex min-w-0 items-center gap-2 font-display text-xl font-bold">
+                <AppLogo className="size-7" />
+                <AppName className="min-w-0 truncate" />
               </p>
               <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
                 <LanguageToggle className="h-9 shrink-0 gap-1.5 px-2" />

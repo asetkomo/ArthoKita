@@ -10,8 +10,15 @@ export const Route = createFileRoute("/api/public/n8n/reminders")({
         const denied = checkApiKey(request);
         if (denied) return denied;
         const url = new URL(request.url);
-        const days = Math.min(365, Math.max(1, Number(url.searchParams.get("days") ?? 7) || 7));
         try {
+          const { getAppSettings } = await import("@/lib/app-settings.server");
+          const { reminderDays } = await import("@/lib/app-settings");
+          // ?days wins; otherwise the Settings reminder days (v14), else 7.
+          const days = reminderDays(
+            Number(url.searchParams.get("days")) || null,
+            (await getAppSettings()).reminder_days,
+            7,
+          );
           const { computeReminders, remindersEmail, remindersText } =
             await import("@/lib/finance.server");
           const reminders = await computeReminders(days);

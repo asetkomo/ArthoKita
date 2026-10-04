@@ -175,6 +175,8 @@ const AFFECTS: Record<string, string[]> = {
   // Posting a recurring item creates transactions, so it touches every money aggregate.
   recurring_transactions: [...MONEY, "rows", "recurring"],
   account_reconciliations: ["account-report", "activity"],
+  // v14 settings: branding (logo/name), the settings card itself, and "today"-based views.
+  app_settings: ["branding", "app-settings", "activity", "dashboard", "reminders"],
 };
 
 export function invalidateFor(qc: QueryClient, table: string) {
