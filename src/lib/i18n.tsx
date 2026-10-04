@@ -833,6 +833,21 @@ const DICT: Record<string, string> = {
   "Dibuat dengan": "Made with",
   cinta: "love",
   "di Indonesia": "in Indonesia",
+  "Update tersedia": "Update available",
+  "Catatan rilis": "Release notes",
+  Commit: "Commit",
+  "Versi aplikasi": "App version",
+  "Tentang aplikasi": "About the app",
+  "Versi yang sedang berjalan dan tautan proyek.": "The running version and project links.",
+  Versi: "Version",
+  "Tanggal build": "Build date",
+  "Tidak diketahui": "Unknown",
+  "Repositori GitHub": "GitHub repository",
+  "Laporkan bug": "Report a bug",
+  "Kamu memakai versi terbaru.": "You are on the latest version.",
+  "Versi baru tersedia": "A new version is available",
+  "Cara update: buka fork kamu di GitHub → Sync fork → Update branch. Vercel otomatis redeploy dalam beberapa menit.":
+    "How to update: open your fork on GitHub → Sync fork → Update branch. Vercel redeploys automatically within a few minutes.",
 };
 
 const LangContext = createContext<{
