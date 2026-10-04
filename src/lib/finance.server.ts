@@ -421,6 +421,15 @@ export type TxFilters = {
   direction?: "asc" | "desc" | undefined;
 };
 
+// v12: items_search (generated, lower(items::text)) lets search match receipt item names.
+// Once PostgREST reports it missing (v12 not run), search skips it for this server instance.
+let itemsSearchMissing = false;
+function retryWithoutItemsSearch(res: Res, f: TxFilters): boolean {
+  if (!f.search || itemsSearchMissing || !res.error?.message.includes("items_search")) return false;
+  itemsSearchMissing = true;
+  return true;
+}
+
 function applyTxFilters(q: any, f: TxFilters) {
   if (f.month) {
     const { start, end } = monthRange(f.month);
@@ -431,7 +440,11 @@ function applyTxFilters(q: any, f: TxFilters) {
   if (f.account_id) q = q.or(`account_id.eq.${f.account_id},to_account_id.eq.${f.account_id}`);
   if (f.search) {
     const s = f.search.replace(/[%,()*]/g, "").trim();
-    if (s) q = q.or(`description.ilike.%${s}%,merchant.ilike.%${s}%,notes.ilike.%${s}%`);
+    if (s)
+      q = q.or(
+        `description.ilike.%${s}%,merchant.ilike.%${s}%,notes.ilike.%${s}%` +
+          (itemsSearchMissing ? "" : `,items_search.ilike.%${s.toLowerCase()}%`),
+      );
   }
   return q;
 }
@@ -453,15 +466,16 @@ function orderedTxList(f: TxFilters) {
 export async function listTransactions(f: TxFilters) {
   const limit = f.limit ?? 500;
   const offset = f.offset ?? 0;
-  const q = orderedTxList(f).range(offset, offset + limit - 1);
-  return must(await applyTxFilters(q, f));
+  const run = () => applyTxFilters(orderedTxList(f).range(offset, offset + limit - 1), f);
+  const res = await run();
+  return must(retryWithoutItemsSearch(res, f) ? await run() : res);
 }
 
 export async function countTransactions(f: TxFilters) {
-  const res = await applyTxFilters(
-    db().from("transactions").select("id", { count: "exact", head: true }),
-    f,
-  );
+  const run = () =>
+    applyTxFilters(db().from("transactions").select("id", { count: "exact", head: true }), f);
+  let res = await run();
+  if (retryWithoutItemsSearch(res, f)) res = await run();
   if (res.error) throw new Error(res.error.message);
   return res.count ?? 0;
 }

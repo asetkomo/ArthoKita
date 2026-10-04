@@ -368,7 +368,7 @@ function TransactionsPage() {
         </Select>
         <Input
           className="min-w-0 flex-1 sm:max-w-xs"
-          placeholder={t("Cari deskripsi / merchant…")}
+          placeholder={t("Cari deskripsi / merchant / item…")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
