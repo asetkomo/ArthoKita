@@ -31,7 +31,8 @@ use them, or these login values, for a real deployment.
 
 ```dotenv
 SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz
+# local-only secret key printed by `npx supabase@2 status` ("Secret key", starts with sb_secret_)
+SUPABASE_SERVICE_ROLE_KEY=<LOCAL_SECRET_KEY_FROM_SUPABASE_STATUS>
 APP_USERNAME=demo
 APP_PASSWORD=demo-password-123
 # any random string of 32+ characters, e.g. `openssl rand -base64 48`
