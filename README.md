@@ -255,6 +255,11 @@ how to report a vulnerability privately.
 
 Released under the [MIT License](LICENSE). Copyright (c) 2026 Ilham Ramadhan.
 
+Every instance also serves short, public [privacy policy](src/components/legal/legal-content.ts)
+(`/privacy`) and terms (`/terms`) pages written for a self-hosted deployment; they are linked from
+the landing page footer. Edit `src/components/legal/legal-content.ts` (and the matching English
+strings in `src/lib/i18n.tsx`) if your instance needs different wording.
+
 ## Acknowledgements
 
 - [TanStack](https://tanstack.com) for Start, Router and Query
@@ -262,6 +267,7 @@ Released under the [MIT License](LICENSE). Copyright (c) 2026 Ilham Ramadhan.
 - [shadcn/ui](https://ui.shadcn.com) and [Radix UI](https://www.radix-ui.com) for UI components,
   [Lucide](https://lucide.dev) for icons and [Recharts](https://recharts.org) for charts
 - [n8n](https://n8n.io) for workflow automation
+- Technology logos on the landing page from [Simple Icons](https://simpleicons.org) (CC0 1.0)
 - Fonts [Bricolage Grotesque](https://github.com/ateliertriay/bricolage),
   [Figtree](https://github.com/erikdkennedy/figtree) and
   [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono), self-hosted via
