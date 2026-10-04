@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
 import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { Empty } from "@/components/crud-page";
+import { Pagination } from "@/components/pagination";
+import { useClientPage } from "@/hooks/use-client-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +32,9 @@ export const Route = createFileRoute("/_app/reminders")({
   component: RemindersPage,
 });
 
+/** Single-column row list. */
+const PAGE_SIZE = 20;
+
 function RemindersPage() {
   usePrivacy();
   const { t, lang } = useI18n();
@@ -40,6 +45,8 @@ function RemindersPage() {
   const ps = useServerFn(paySubscription);
   const pr = useServerFn(postRecurring);
   const qc = useQueryClient();
+  // Back to page 1 whenever the period tab changes.
+  const page = useClientPage(list, PAGE_SIZE, days);
   const total = list.filter((r) => r.type !== "budget").reduce((a, r) => a + r.amount_idr, 0);
 
   async function pay(r: (typeof list)[number]) {
@@ -89,7 +96,7 @@ function RemindersPage() {
         <Empty text={t("Aman! Tidak ada tagihan dalam periode ini.")} />
       ) : (
         <Card className="divide-y">
-          {list.map((r) => (
+          {page.visible.map((r) => (
             <div
               key={r.type + r.id}
               className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
@@ -139,6 +146,13 @@ function RemindersPage() {
           ))}
         </Card>
       )}
+      <Pagination
+        offset={page.offset}
+        pageSize={page.pageSize}
+        total={page.total}
+        visible={page.visible.length}
+        onChange={page.setOffset}
+      />
     </>
   );
 }

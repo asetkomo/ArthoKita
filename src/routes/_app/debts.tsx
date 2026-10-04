@@ -9,6 +9,8 @@ import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { CURRENCY_OPTIONS } from "@/components/entity-dialog";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { useConfirm } from "@/components/confirm-dialog";
+import { Pagination } from "@/components/pagination";
+import { useClientPage } from "@/hooks/use-client-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,9 @@ import { pageHead } from "@/lib/head";
 import type { Account } from "@/lib/schemas";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/** Two-column card grid on desktop: an even size keeps the last row full. */
+const PAGE_SIZE = 10;
+
 export const Route = createFileRoute("/_app/debts")({
   head: () =>
     pageHead("Hutang & Cicilan", "Pantau paylater, pinjaman, dan cicilan beserta jatuh temponya."),
@@ -63,6 +68,7 @@ function DebtsPage() {
     (a, d) => a + (d.currency === "IDR" ? d.remaining_amount : 0),
     0,
   );
+  const page = useClientPage(debts as any[], PAGE_SIZE);
 
   async function doPay(d: any) {
     if (
@@ -114,7 +120,7 @@ function DebtsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {(debts as any[]).map((d) => {
+          {page.visible.map((d) => {
             const pct = (d.paid_count / d.total_installments) * 100;
             return (
               <Card key={d.id} className="min-w-0 p-5">
@@ -229,6 +235,13 @@ function DebtsPage() {
           })}
         </div>
       )}
+      <Pagination
+        offset={page.offset}
+        pageSize={page.pageSize}
+        total={page.total}
+        visible={page.visible.length}
+        onChange={page.setOffset}
+      />
       {crud.dialog(t("hutang / cicilan"), [
         {
           name: "name",

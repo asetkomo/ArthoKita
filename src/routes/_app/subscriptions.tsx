@@ -8,6 +8,8 @@ import { RouteError } from "@/components/route-error";
 import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { CURRENCY_OPTIONS } from "@/components/entity-dialog";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
+import { Pagination } from "@/components/pagination";
+import { useClientPage } from "@/hooks/use-client-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,9 @@ export const Route = createFileRoute("/_app/subscriptions")({
   component: SubsPage,
 });
 
+/** Single-column row list. */
+const PAGE_SIZE = 20;
+
 function SubsPage() {
   usePrivacy();
   const { t, lang } = useI18n();
@@ -52,6 +57,7 @@ function SubsPage() {
   });
   const toIdr = (s: Subscription) =>
     withTax(Number(s.amount), s.tax_percent) * (s.currency === "USD" ? usdIdr : 1);
+  const page = useClientPage(subs, PAGE_SIZE);
   const active = subs.filter((s) => s.active);
   const monthly = active.reduce((a, s) => a + (s.cycle === "yearly" ? toIdr(s) / 12 : toIdr(s)), 0);
   const today = todayStr();
@@ -98,7 +104,7 @@ function SubsPage() {
         <Empty text={t("Belum ada langganan. Tambahkan Netflix, Spotify, iCloud, ChatGPT…")} />
       ) : (
         <Card className="divide-y">
-          {subs.map((s) => {
+          {page.visible.map((s) => {
             const left = diffDays(today, s.next_due);
             return (
               <div
@@ -180,6 +186,13 @@ function SubsPage() {
           })}
         </Card>
       )}
+      <Pagination
+        offset={page.offset}
+        pageSize={page.pageSize}
+        total={page.total}
+        visible={page.visible.length}
+        onChange={page.setOffset}
+      />
       {crud.dialog(t("langganan"), [
         {
           name: "name",
