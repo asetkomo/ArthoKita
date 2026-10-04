@@ -28,6 +28,9 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // styles.css makes `scroll-behavior` smooth app-wide; route changes and restored
+    // positions should still jump instantly instead of animating.
+    scrollRestorationBehavior: "instant",
     // Loaders use ensureQueryData, so React Query owns freshness; this only
     // stops hover-preloaded routes from re-running their loaders right away.
     defaultPreloadStaleTime: 30_000,

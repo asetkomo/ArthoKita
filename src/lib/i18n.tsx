@@ -842,6 +842,22 @@ const DICT: Record<string, string> = {
   "Terakhir diperbarui": "Last updated",
   "Daftar isi": "Contents",
   "Kembali ke atas": "Back to top",
+  /* Dashboard: stat footers & share of income */
+  "Rasio terhadap pemasukan": "Share of income",
+  "Sisa / ditabung": "Left over / saved",
+  "Sisa = pemasukan − pengeluaran. Setoran ke target tabungan dicatat sebagai transfer, jadi tetap terhitung di sini.":
+    "Left over = income − expenses. Deposits to savings goals are transfers, so they still count here.",
+  "Belum ada pemasukan bulan ini.": "No income this month yet.",
+  Terpakai: "Spent",
+  "Pengeluaran melebihi pemasukan": "Expenses exceed income by",
+  "Garis menandai batas pemasukan.": "The line marks where income ends.",
+  "dari pemasukan": "of income",
+  Admin: "Admin fees",
+  "vs bulan lalu": "vs last month",
+  "Belum ada data bulan lalu": "No data for last month",
+  Naik: "Up",
+  Turun: "Down",
+  Tetap: "Unchanged",
   'Dompetku adalah aplikasi open source yang di-host sendiri. Kebijakan ini menjelaskan data apa yang disimpan instance ini, di mana disimpan, dan siapa yang bisa mengaksesnya. "Pemilik instance" adalah orang yang memasang dan menjalankan salinan aplikasi ini.':
     'Dompetku is self-hosted open-source software. This policy explains what data this instance stores, where it lives and who can access it. The "instance owner" is the person who deployed and runs this copy of the app.',
   "Dengan memakai instance Dompetku ini, Anda menyetujui ketentuan singkat berikut. Ketentuan ini melengkapi, bukan menggantikan, lisensi MIT dari kode sumbernya.":

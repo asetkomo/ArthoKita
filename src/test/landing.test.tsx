@@ -175,17 +175,14 @@ describe("landing polish", () => {
     expect(within(first!).getByText("Supabase")).toBeInTheDocument();
   });
 
-  it("links to the legal pages from the footer and scopes smooth scrolling to public pages", async () => {
+  it("links to the legal pages from the footer and offers back-to-top", async () => {
     const router = await load("/");
-    const { unmount } = render(<RouterProvider router={router} />);
+    render(<RouterProvider router={router} />);
     await screen.findByRole("heading", { level: 1 });
-    expect(document.documentElement).toHaveClass("landing-smooth");
     const privacy = screen.getAllByRole("link", { name: "Privasi" });
     expect(privacy[0]).toHaveAttribute("href", "/privacy");
     expect(screen.getAllByRole("link", { name: "Ketentuan" })[0]).toHaveAttribute("href", "/terms");
     expect(screen.getByRole("button", { name: "Kembali ke atas" })).toBeInTheDocument();
-    unmount();
-    expect(document.documentElement).not.toHaveClass("landing-smooth");
   });
 });
 
@@ -199,7 +196,16 @@ describe("marquee reduced-motion fallback", () => {
     expect(block).toMatch(/\.landing-marquee-track\s*{[^}]*animation:\s*none/);
     expect(block).toMatch(/\.landing-marquee-group\s*{[^}]*flex-wrap:\s*wrap/);
     expect(block).toMatch(/\.landing-marquee-group\[aria-hidden="true"\]\s*{[^}]*display:\s*none/);
-    expect(block).toMatch(/html\.landing-smooth\s*{[^}]*scroll-behavior:\s*auto/);
+  });
+
+  it("scrolls smoothly app-wide only without reduced motion, with sticky-safe overflow", async () => {
+    const { readFileSync } = await import("node:fs");
+    const css = readFileSync(`${process.cwd()}/src/styles.css`, "utf8");
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\)\s*{\s*html\s*{[^}]*scroll-behavior:\s*smooth/,
+    );
+    // `clip` must come after the `hidden` fallback so html/body do not break position: sticky.
+    expect(css).toMatch(/overflow-x:\s*hidden;\s*overflow-x:\s*clip;/);
   });
 });
 

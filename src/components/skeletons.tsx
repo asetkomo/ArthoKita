@@ -76,6 +76,7 @@ export function DashboardSkeleton() {
       <HeaderSkeleton actions={3} />
       <MonthSwitcherSkeleton />
       <StatCardsSkeleton />
+      <ChartCardSkeleton className="mt-4" height="h-16" />
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ChartCardSkeleton className="lg:col-span-2" height="h-64 short:h-48" />
         <ChartCardSkeleton height="h-64 short:h-48" />

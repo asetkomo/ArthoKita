@@ -29,3 +29,44 @@ export async function fetchAll<T = any, E = { message: string }>( // eslint-disa
   }
   return { data: rows, error: null };
 }
+
+/* ---------- Client-side pagination of already-loaded lists (pure, client-safe) ---------- */
+
+function toInt(n: number, fallback: number): number {
+  return Number.isFinite(n) ? Math.floor(n) : fallback;
+}
+
+/**
+ * Snaps `offset` onto a page boundary inside `[0, lastPageStart]`. Used when a list shrinks
+ * (e.g. deleting the only row on the last page) so the view falls back to the new last page.
+ */
+export function clampOffset(offset: number, total: number, pageSize: number): number {
+  const size = Math.max(1, toInt(pageSize, 1));
+  const count = Math.max(0, toInt(total, 0));
+  if (count === 0) return 0;
+  const lastStart = Math.floor((count - 1) / size) * size;
+  const aligned = Math.floor(Math.max(0, toInt(offset, 0)) / size) * size;
+  return Math.min(aligned, lastStart);
+}
+
+/** The rows of the page starting at `offset` (offset is clamped first). */
+export function pageSlice<T>(rows: readonly T[], offset: number, pageSize: number): T[] {
+  const size = Math.max(1, toInt(pageSize, 1));
+  const start = clampOffset(offset, rows.length, size);
+  return rows.slice(start, start + size);
+}
+
+/**
+ * Window `scrollY` that brings an element whose top is at `rectTop` (viewport coordinates) to
+ * `gap` px below a sticky header of `headerOffset` px, or null when its top is already visible
+ * below the header (so paging never yanks the view when the list start is on screen).
+ */
+export function scrollTopFor(
+  rectTop: number,
+  scrollY: number,
+  headerOffset = 0,
+  gap = 12,
+): number | null {
+  if (rectTop >= headerOffset) return null;
+  return Math.max(0, Math.round(scrollY + rectTop - headerOffset - gap));
+}

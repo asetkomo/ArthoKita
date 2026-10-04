@@ -9,6 +9,8 @@ import { RouteError } from "@/components/route-error";
 import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
 import { EntityDialog, type FieldDef } from "@/components/entity-dialog";
+import { Pagination } from "@/components/pagination";
+import { useClientPage } from "@/hooks/use-client-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -32,6 +34,9 @@ export const Route = createFileRoute("/_app/goals")({
   component: GoalsPage,
 });
 
+/** Three-column card grid on desktop (2 on tablet): 12 fills both evenly. */
+const PAGE_SIZE = 12;
+
 type Funds = { open: boolean; goal: Goal | null; sign: 1 | -1; initial: Record<string, unknown> };
 
 function GoalsPage() {
@@ -43,6 +48,7 @@ function GoalsPage() {
   const crud = useCrudDialog("goals", { saved_amount: 0, color: "#c99a2e" });
   const add = useServerFn(addGoalFunds);
   const qc = useQueryClient();
+  const page = useClientPage(goals, PAGE_SIZE);
   const [funds, setFunds] = useState<Funds>({ open: false, goal: null, sign: 1, initial: {} });
   const accName = (id: string | null | undefined) =>
     accounts.find((a) => a.id === id)?.name ?? null;
@@ -106,7 +112,7 @@ function GoalsPage() {
         <Empty text={t("Belum ada target tabungan.")} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {goals.map((x) => (
+          {page.visible.map((x) => (
             <GoalCard
               key={x.id}
               g={x}
@@ -118,6 +124,13 @@ function GoalsPage() {
           ))}
         </div>
       )}
+      <Pagination
+        offset={page.offset}
+        pageSize={page.pageSize}
+        total={page.total}
+        visible={page.visible.length}
+        onChange={page.setOffset}
+      />
       {crud.dialog(t("target"), [
         { name: "name", label: t("Nama target"), type: "text" },
         { name: "target_amount", label: t("Target (IDR)"), type: "number", half: true },

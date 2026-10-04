@@ -9,6 +9,8 @@ import { RouteError } from "@/components/route-error";
 import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { CURRENCY_OPTIONS } from "@/components/entity-dialog";
 import { Empty, RowActions, useCrudDialog } from "@/components/crud-page";
+import { Pagination } from "@/components/pagination";
+import { useClientPage } from "@/hooks/use-client-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +45,9 @@ const KIND_LABEL = { income: "Pemasukan", expense: "Pengeluaran", transfer: "Tra
 const CYCLE_LABEL = { weekly: "Mingguan", monthly: "Bulanan", yearly: "Tahunan" } as const;
 const CYCLE_UNIT = { weekly: "minggu", monthly: "bulan", yearly: "tahun" } as const;
 
+/** Single-column row list. */
+const PAGE_SIZE = 20;
+
 function RecurringPage() {
   usePrivacy();
   const { t, lang } = useI18n();
@@ -65,6 +70,8 @@ function RecurringPage() {
     auto_post: true,
     active: true,
   });
+  // Hooks must run before the early return below; a missing table is an empty list.
+  const page = useClientPage((data.ready ? data.rows : []) as unknown as Recurring[], PAGE_SIZE);
 
   if (!data.ready) {
     return (
@@ -158,7 +165,7 @@ function RecurringPage() {
         />
       ) : (
         <Card className="divide-y">
-          {rows.map((r) => {
+          {page.visible.map((r) => {
             const left = diffDays(today, r.next_due);
             const every =
               r.interval > 1
@@ -256,6 +263,13 @@ function RecurringPage() {
           })}
         </Card>
       )}
+      <Pagination
+        offset={page.offset}
+        pageSize={page.pageSize}
+        total={page.total}
+        visible={page.visible.length}
+        onChange={page.setOffset}
+      />
       {crud.dialog(t("transaksi berulang"), (v) => {
         const kind = String(v["kind"] ?? "expense");
         return [
