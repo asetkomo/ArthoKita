@@ -82,11 +82,21 @@ All three are needed for `POST /api/public/n8n/reminders-send-email`. Not needed
 | ------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SENTRY_DSN` | `https://<key>@o000000.ingest.sentry.io/0000000` | Also sends server errors to Sentry (plain fetch, 3 s timeout, never fails a request). Without it errors are still logged as one JSON line in Vercel Logs. From Sentry → Project Settings → Client Keys (DSN). Not highly secret, but keep it private to avoid spam events. |
 
+## Public demo (optional)
+
+See [DEMO.md](DEMO.md).
+
+| Name              | Example                               | What it does                                                                                                                                                                                                                                           | Security                                                                                                      |
+| ----------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `DEMO_MODE`       | `true` (only on a demo instance)      | Turns the instance into a **public demo**: shows `APP_USERNAME`/`APP_PASSWORD` on the login page with one-click sign-in, ignores 2FA, disables AI/uploads/import/restore/settings/n8n routes, caps rows and rate-limits writes. Any other value = off. | **Never** on an instance with real data — it publishes the login. Use a separate, throwaway Supabase project. |
+| `PUBLIC_DEMO_URL` | `https://demo.dompetku.ilramdhan.dev` | On your **main** instance: shows a **Coba demo** button (navbar, hero, final CTA) linking to a public demo. Must be `https://`; empty = hidden.                                                                                                        | Not secret.                                                                                                   |
+
 ## Development only
 
-| Name                  | Where                | What it does                                                                                                                |
-| --------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `SUPABASE_PROJECT_ID` | local shell / `.env` | Project ref (the `abcdefghijkl` in your Supabase URL) for `bun run gen:types`. Not used by the app; don't set it on Vercel. |
+| Name                  | Where                  | What it does                                                                                                                |
+| --------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `DEMO_RESET_CONFIRM`  | GitHub Actions / shell | Must be `yes` (plus `--allow-remote`) before `scripts/seed-demo.mjs` touches a non-local database. Set by `demo-reset.yml`. |
+| `SUPABASE_PROJECT_ID` | local shell / `.env`   | Project ref (the `abcdefghijkl` in your Supabase URL) for `bun run gen:types`. Not used by the app; don't set it on Vercel. |
 
 ## Set by the platform (don't set these)
 

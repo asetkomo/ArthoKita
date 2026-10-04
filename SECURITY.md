@@ -89,5 +89,6 @@ Dompetku is a **single-user** app: whoever knows the login can see all your fina
 **General**
 
 - [ ] Keep your fork up to date with `main` to receive security fixes.
+- [ ] **Never set `DEMO_MODE=true` on an instance with real data.** Demo mode publishes the login credentials on the login page and disables 2FA. Run a public demo only as a separate deployment with its own empty Supabase project (see [docs/DEMO.md](docs/DEMO.md)).
 - [ ] Rotate any key you suspect was exposed: Supabase service-role key (Supabase dashboard → Project Settings → API), `AI_API_KEY`, `RESEND_API_KEY`, `N8N_API_KEY`, `SESSION_SECRET`.
 - [ ] When sharing logs or screenshots in issues, redact keys, chat IDs, domains and amounts.

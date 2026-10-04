@@ -9,6 +9,11 @@
 [![TanStack Start](https://img.shields.io/badge/TanStack-Start-ff4154)](https://tanstack.com/start)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com)
+[![Live demo](https://img.shields.io/badge/Live%20demo-demo.dompetku.ilramdhan.dev-2f7d5b?logo=googlechrome&logoColor=white)](https://demo.dompetku.ilramdhan.dev)
+
+### 🚀 [Live demo → demo.dompetku.ilramdhan.dev](https://demo.dompetku.ilramdhan.dev)
+
+Demo credentials are shown on the login page (one-click **Masuk ke demo**). Fake data, resets daily at 00:00 WIB.
 
 </div>
 
@@ -29,6 +34,7 @@ time), and amounts support **IDR and USD**.
 
 ## Table of contents
 
+- [Live demo](#live-demo)
 - [Screenshots](#screenshots)
 - [Features](#features)
 - [Deploy your own in ~20 minutes](#deploy-your-own-in-20-minutes)
@@ -40,6 +46,15 @@ time), and amounts support **IDR and USD**.
 - [Security](#security)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
+
+## Live demo
+
+Try it without installing anything: **<https://demo.dompetku.ilramdhan.dev>**
+
+- The demo login is shown on the login page — click **Masuk ke demo** to sign in with one click.
+- All data is fake and **resets daily at 00:00 WIB**; feel free to add, edit and delete.
+- AI receipt scanning, photo upload, CSV import, restore, app settings and the Telegram bot are
+  turned off in the demo. Want to run your own public demo? See [docs/DEMO.md](docs/DEMO.md).
 
 ## Screenshots
 
@@ -207,6 +222,7 @@ public/          PWA manifest, icons and self-hosted fonts
 | [n8n, Telegram & email](docs/N8N.md)         | Telegram bot, reminders, reports, weekly backup, Google Drive, Gmail SMTP, Resend |
 | [Architecture](docs/ARCHITECTURE.md)         | Tech stack, directory layout, data flows, contributor rules                       |
 | [FAQ](docs/FAQ.md)                           | Common questions and troubleshooting                                              |
+| [Public demo](docs/DEMO.md)                  | How the live demo works and how to run your own                                   |
 | [n8n templates](n8n/README.md)               | What each workflow file does                                                      |
 | [Changelog](CHANGELOG.md)                    | Notable changes                                                                   |
 | [Contributing](CONTRIBUTING.md)              | How to propose changes                                                            |
