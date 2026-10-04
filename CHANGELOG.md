@@ -9,6 +9,23 @@ Starting with v1.0.0, versioned entries (`## [x.y.z]`) are generated automatical
 > [!NOTE]
 > When an entry mentions a **schema section** (`v2`…`v13`), self-hosters must run that section of [`supabase/schema.sql`](supabase/schema.sql) on their Supabase project. Every section is safe to run more than once, and the app keeps working (with the feature disabled) until you do.
 
+## 1.0.0 (2026-10-04)
+
+
+### Features
+
+* **brand:** new Dompetku wallet logo, icons and og-image ([980cd37](https://github.com/ilramdhan/fintrack/commit/980cd37a6a4a4e98609a8865cbbae6c0a035eccd))
+* landing page, new logo & dynamic app settings (v14), release-please, demo data & screenshots ([237fc98](https://github.com/ilramdhan/fintrack/commit/237fc98e1bf147989a4ecd6804589ba2418001d6))
+* **landing:** public bento landing page at / ([bccc77d](https://github.com/ilramdhan/fintrack/commit/bccc77d10eb757ca0fa7f81f99d0053d2a741e78))
+* **settings:** dynamic app settings (schema v14) ([2ed8f40](https://github.com/ilramdhan/fintrack/commit/2ed8f40f1ae57df7ef0bf8aad2c410fbbbe7c199))
+
+
+### Documentation
+
+* **demo:** read the local secret key from supabase status instead of inlining it ([ea227ff](https://github.com/ilramdhan/fintrack/commit/ea227ff7bfa4cdc2143c5b819894a1338c66526e))
+* screenshot gallery in README and regenerating-screenshots guide ([8919fd3](https://github.com/ilramdhan/fintrack/commit/8919fd35aed02c27c9cb414fe68ebdf1ed10b84d))
+* **screenshots:** add light/dark app, landing and bot screenshots from demo data ([7f2485c](https://github.com/ilramdhan/fintrack/commit/7f2485c3782418818f155764be01353bb095975a))
+
 ## [Unreleased]
 
 ### Added
