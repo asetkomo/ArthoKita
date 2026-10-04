@@ -1,117 +1,22 @@
-# Dompetku × n8n — Panduan Setup
+# n8n workflow templates
 
-Arsitektur: **n8n = orkestrator tipis**, **web Dompetku = otak**. n8n menerima update Telegram, memfilter chat, lalu meneruskannya ke `POST /api/public/n8n/bot`. Web mengembalikan `{ method, text, reply_markup }` yang langsung diteruskan ke Telegram Bot API. Semua logika (parser, OCR, kategori, laporan, tombol) ada di repo dan dites.
+Ready-to-import [n8n](https://n8n.io) workflows for Dompetku: the Telegram bot, scheduled reminders/reports, error alerts and weekly backups. n8n is only a thin relay; all logic lives in the web app (`/api/public/n8n/*`, protected by the `x-api-key` header = `N8N_API_KEY`).
 
-| File | Isi |
-|---|---|
-| `01-dompetku-telegram-bot.json` | Bot utama: chat, foto struk, perintah `/`, tombol inline |
-| `02-dompetku-jadwal.json` | Pengingat tagihan 08:00, rekap harian 21:00, laporan mingguan (Senin) & bulanan (tgl 1) |
-| `03-dompetku-error-handler.json` | Notifikasi Telegram saat workflow gagal |
-| `04-dompetku-setup-commands.json` | Sekali jalan: daftarkan menu `/` di Telegram + cek webhook |
-| `05-dompetku-backup.json` | Backup mingguan (Minggu 02:00) → Google Drive (alternatif: lampiran email) |
+> [!IMPORTANT]
+> **Full step-by-step guide: [docs/N8N.md](../docs/N8N.md)** (hosting n8n, env vars, credentials, Telegram bot, Google Drive OAuth, Gmail/Resend email, troubleshooting).
 
-Endpoint yang dipanggil workflow (semua dengan header `x-api-key`; daftar lengkap di `docs/SETUP.md` §4):
+| File                              | Purpose                                                                                  | Env vars (n8n)                                                    | Credentials                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
+| `01-dompetku-telegram-bot.json`   | Main bot: chat, receipt photos, `/` commands, inline buttons                             | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` | Telegram API, Header Auth `x-api-key`      |
+| `02-dompetku-jadwal.json`         | Bill reminders 08:00, daily recap 21:00, weekly (Mon) & monthly (1st) reports → Telegram | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`    | Header Auth `x-api-key`                    |
+| `03-dompetku-error-handler.json`  | Telegram alert when a workflow fails (set as _Error workflow_ of 01, 02, 05)             | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`                    | —                                          |
+| `04-dompetku-setup-commands.json` | Run once: registers the `/` command menu and shows webhook info                          | `TELEGRAM_BOT_TOKEN`                                              | —                                          |
+| `05-dompetku-backup.json`         | Weekly backup (Sun 02:00) → Google Drive, or email attachment (disabled node)            | `FINTRACK_URL` (+ `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO`)         | Header Auth, Google Drive OAuth2 (or SMTP) |
 
-| Workflow | Method & path | Field respons yang dipakai |
-|---|---|---|
-| 01 | `POST /api/public/n8n/bot` body `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` (`mime_type` wajib bila ada `image_base64`: `image/jpeg`\|`image/png`\|`image/webp`; body maks 4,5 MB, lebih besar → 413) | `method`, `text`, `reply_markup`, `toast` |
-| 02 | `GET /api/public/n8n/reminders?days=3` | `count`, `message` |
-| 02 | `GET /api/public/n8n/report?period=today\|lastweek\|lastmonth` | `message` |
-| 05 | `GET /api/public/n8n/backup` (respons JSON cadangan penuh + header `Content-Disposition` nama berkas) | seluruh body disimpan sebagai berkas |
+Quick start:
 
-## 1. Siapkan web (Vercel)
-1. Merge branch `feat/telegram-bot-v2`, lalu jalankan bagian **v7** di `supabase/schema.sql`.
-2. Pastikan `N8N_API_KEY` sudah diisi (string acak **≥ 24 karakter**; bila kosong/lebih pendek semua endpoint n8n membalas 503).
-   Env Vercel baru: `BOT_DEFAULT_ACCOUNT` (mis. `BCA`), `BOT_ALLOWED_CHAT_IDS` (wajib, chat_id Anda; kosong = semua chat ditolak dan bot membalas dengan chat_id yang perlu ditambahkan), opsional `AI_MODEL_TEXT`, `BOT_TEXT_AI=auto` (`auto` | `always` | `never`), `APP_TIMEZONE` (default `Asia/Jakarta`; samakan dengan zona waktu workflow agar `period=today` tepat).
-3. AI (rekomendasi Gemini via endpoint OpenAI-compatible):
-   ```
-   AI_API_URL=https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
-   AI_API_KEY=<API key dari aistudio.google.com>
-   AI_MODEL=gemini-2.5-flash          # OCR struk (vision)
-   AI_MODEL_TEXT=gemini-2.5-flash-lite  # chat ambigu (lebih murah)
-   ```
-   Tanpa `AI_API_URL` server memakai Lovable AI gateway (nama model berawalan `google/…`, lihat `docs/SETUP.md`). Endpoint Gemini langsung memakai nama model tanpa prefix seperti di atas.
-4. Durasi fungsi Vercel untuk `/api/public/n8n/bot` sudah diset 60 detik lewat `vite.config.ts` (`vercel.functionRules`); pastikan paket Vercel Anda mengizinkan ≥ 60 detik.
+1. Set the env vars above in n8n plus `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`, then restart n8n.
+2. **Workflows → Import from File** for each JSON.
+3. Replace every `REPLACE_ME` credential (and `REPLACE_ME_FOLDER_ID` in 05), save, and activate.
 
-## 2. Buat bot Telegram
-1. @BotFather → `/newbot` → simpan token.
-2. Cari chat_id Anda: kirim pesan ke @userinfobot (atau lihat `message.chat.id` di eksekusi n8n pertama).
-
-## 3. Env n8n (docker compose)
-```yaml
-services:
-  n8n:
-    image: docker.n8n.io/n8nio/n8n:latest
-    restart: unless-stopped
-    ports: ["127.0.0.1:5678:5678"]   # expose via reverse proxy HTTPS (Caddy/Traefik/Cloudflare Tunnel)
-    environment:
-      - N8N_HOST=n8n.domainanda.com
-      - N8N_PROTOCOL=https
-      - WEBHOOK_URL=https://n8n.domainanda.com/
-      - GENERIC_TIMEZONE=Asia/Jakarta
-      - TZ=Asia/Jakarta
-      - N8N_ENCRYPTION_KEY=<openssl rand -hex 32, SIMPAN baik-baik>
-      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false   # workflow membaca $env di bawah
-      - N8N_RUNNERS_ENABLED=true
-      - EXECUTIONS_DATA_PRUNE=true
-      - EXECUTIONS_DATA_MAX_AGE=168          # hapus riwayat eksekusi > 7 hari
-      # Variabel yang dipakai workflow:
-      - FINTRACK_URL=https://dompetku-anda.vercel.app
-      - TELEGRAM_BOT_TOKEN=<token BotFather>
-      - TELEGRAM_ALLOWED_CHAT_IDS=<chat_id Anda>     # pisahkan koma bila >1
-      - TELEGRAM_ADMIN_CHAT_ID=<chat_id Anda>
-    volumes: ["n8n_data:/home/node/.n8n"]
-volumes: { n8n_data: {} }
-```
-Telegram Trigger butuh URL **HTTPS publik**. Jangan expose port 5678 langsung tanpa TLS.
-
-## 4. Credential di n8n
-1. **Telegram API** → nama bebas, isi token bot (dipakai Telegram Trigger).
-2. **Header Auth** → Name: `x-api-key`, Value: nilai `N8N_API_KEY` di Vercel. Beri nama `Fintrack x-api-key` (dipakai node `Fintrack /bot` di workflow 01 dan keempat node HTTP di workflow 02).
-
-## 5. Impor & aktifkan
-1. Impor keempat file JSON (Workflows → Import from file). Pilih ulang credential di node yang bertanda merah.
-2. Buka Settings workflow 01 & 02 → **Error Workflow** = `Dompetku – Error Handler`.
-3. Aktifkan workflow 01, lalu jalankan manual workflow 04 (menu perintah `/` muncul di Telegram).
-4. Aktifkan workflow 02.
-
-## 6. Uji cepat
-| Kirim | Harapan |
-|---|---|
-| `/help` | daftar perintah |
-| `kopi 25rb` | pratinjau ⚡ tanpa AI, kategori Makanan & Minuman, akun default |
-| `makan siang 45rb pakai gopay` | akun GoPay |
-| foto struk (+caption `pakai BCA` opsional) | pratinjau 🧾 dengan item |
-| tekan 🏷 / 🏦 / 🔁 lalu ✅ | pesan berubah jadi ✅ Tercatat + ↩️ Undo |
-| tekan ✅ dua kali | "Sudah tersimpan", tidak dobel |
-| `/minggu`, `/bulan`, `/saldo`, `/paylater`, `/langganan`, `/tagihan 30`, `/budget` | laporan (0 token AI) |
-| chat dari akun lain | diabaikan |
-
-## Troubleshooting
-| Gejala | Penyebab / solusi |
-|---|---|
-| Tombol ✅/❌ tidak bereaksi, tidak ada eksekusi di n8n | Telegram Trigger v1.2 hanya mengenali `chatIds` untuk pesan, sehingga callback tombol dibuang diam-diam. Hapus **Restrict to Chat IDs** di node Telegram Trigger. Allow-list tetap dijaga oleh `Normalize & Guard` dan server. Setelah mengubah trigger, nonaktifkan lalu aktifkan lagi workflow 01. |
-| `Gagal membaca dengan AI [400]` | Biasanya `AI_API_KEY` tidak valid, nama `AI_MODEL` salah, atau `AI_API_URL` tidak sesuai. Pesan bot sekarang menyertakan alasan dari penyedia AI. |
-
-## Backup mingguan (workflow 05)
-1. Buat credential **Google Drive OAuth2** di n8n (Google Cloud Console → OAuth client, scope Drive). Buat folder tujuan di Drive, salin ID-nya dari URL (`drive.google.com/drive/folders/<ID>`).
-2. Impor `05-dompetku-backup.json`, pilih credential `Fintrack x-api-key` di node *Ambil backup* dan credential Google di node *Upload ke Google Drive*, lalu ganti `REPLACE_ME_FOLDER_ID`.
-3. Jalankan manual sekali (*Test workflow*), cek berkas `dompetku-cadangan-YYYY-MM-DD.json` muncul di Drive, lalu aktifkan. Set **Error Workflow** = `Dompetku – Error Handler` agar kegagalan dikabari ke Telegram.
-4. Tanpa Google Drive: aktifkan node *Kirim via email* (credential SMTP; env n8n `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO`) dan nonaktifkan node Drive.
-5. Data eksekusi tidak disimpan (`saveDataSuccessExecution`/`saveDataErrorExecution: none`) agar salinan data keuangan tidak menumpuk di DB n8n. Hapus berkas lama di Drive secara berkala bila perlu.
-6. Memulihkan: web → Pengaturan → **Pulihkan dari backup** → pilih berkas → cek jumlah baris per tabel → *Gabungkan* (default, upsert per ID) atau *Ganti semua* (ketik `GANTI`; data sekarang dihapus dulu).
-
-## Hemat token
-- Perintah `/…` dan tombol: **0 token**.
-- Chat sederhana: parser regex + kata kunci + riwayat kategori → **0 token**. AI hanya untuk pesan ambigu (`BOT_TEXT_AI=never` untuk mematikan total).
-- Foto struk: 1 panggilan vision per foto (±1–2 rb token). Gambar dibatasi ±3 MB.
-- Tidak ada AI Agent/memori percakapan di n8n, sehingga tidak ada token sistem prompt berulang.
-
-## Keamanan
-- Allow-list berlapis: `Normalize & Guard` (fail-closed, juga untuk tombol inline) → `BOT_ALLOWED_CHAT_IDS` di server (wajib, juga fail-closed: kosong = tolak semua, tanpa menyentuh DB).
-- API key tersimpan terenkripsi sebagai credential n8n; perbandingan timing-safe di server.
-- Data eksekusi sukses tidak disimpan (`saveDataSuccessExecution: none`) agar foto struk & data keuangan tidak menumpuk di DB n8n.
-- Undo dibatasi untuk transaksi dari bot berumur ≤ 7 hari.
-
-## Skalabilitas
-Untuk satu pengguna, mode default (SQLite) sudah cukup. Bila beban naik: pakai Postgres (`DB_TYPE=postgresdb`), lalu queue mode (`EXECUTIONS_MODE=queue` + Redis + worker). Workflow tidak perlu diubah karena state disimpan di Supabase (`bot_drafts`), bukan di n8n.
+Node names inside the workflows are in Indonesian (e.g. _Ambil backup_ = "fetch backup", _Kirim via email_ = "send via email"); sticky notes are in English.

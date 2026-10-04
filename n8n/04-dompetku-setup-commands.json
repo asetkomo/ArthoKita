@@ -51,7 +51,7 @@
     },
     {
       "parameters": {
-        "content": "## ⚙️ Setup sekali jalan\nMendaftarkan menu perintah `/` di Telegram, lalu menampilkan info webhook untuk memastikan Telegram Trigger sudah terpasang (aktifkan workflow 01 dulu).",
+        "content": "## ⚙️ One-time setup\nRegisters the `/` command menu in Telegram, then shows the webhook info so you can confirm the Telegram Trigger is installed (activate workflow 01 first).\nEnv: `TELEGRAM_BOT_TOKEN`. Run it manually with *Test workflow*.",
         "height": 180,
         "width": 600,
         "color": "5"

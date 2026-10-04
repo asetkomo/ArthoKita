@@ -3,6 +3,15 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ilramdhan/fintrack.git"
+  },
+  "homepage": "https://github.com/ilramdhan/fintrack#readme",
+  "bugs": {
+    "url": "https://github.com/ilramdhan/fintrack/issues"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",

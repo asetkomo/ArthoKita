@@ -3,9 +3,9 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## 💾 Dompetku — Backup mingguan\nTiap Minggu 02:00 (Asia/Jakarta): `GET /api/public/n8n/backup` → simpan berkas JSON ke **Google Drive**.\n\nEnv: `FINTRACK_URL`. Credential: `Fintrack x-api-key` (Header Auth) + Google Drive OAuth2.\nGanti `REPLACE_ME_FOLDER_ID` di node *Upload ke Google Drive* dengan ID folder tujuan.\n\nAlternatif tanpa Google Drive: aktifkan node *Kirim via email* (lampiran JSON, butuh credential SMTP) lalu nonaktifkan node Drive.\nPulihkan lewat web: Pengaturan → **Pulihkan dari backup**.",
-        "height": 300,
-        "width": 680,
+        "content": "## 💾 Dompetku — Weekly backup\nEvery Sunday 02:00 (Asia/Jakarta): `GET /api/public/n8n/backup` → save the JSON file to **Google Drive**. File name = the server's Content-Disposition filename (`dompetku-cadangan-yyyy-MM-dd.json`), fallback `dompetku-backup-yyyy-MM-dd.json`.\n\nEnv: `FINTRACK_URL`. Credentials: Header Auth `x-api-key` (= `N8N_API_KEY`) + Google Drive OAuth2.\nReplace `REPLACE_ME_FOLDER_ID` in *Upload ke Google Drive* with your folder ID (the part after `/folders/` in the Drive URL).\n\n**Email instead of / in addition to Drive:** select the *Kirim via email* node and press **D** (or right-click → Activate). Create an **SMTP** credential:\n• Gmail: host `smtp.gmail.com`, port 465 + SSL on (or 587 + SSL off), user = your Gmail, password = a 16-char App Password.\n• Resend: host `smtp.resend.com`, user `resend`, password = API key, port 465/2465 + SSL on (or 587/2587 + SSL off).\nSet env `BACKUP_EMAIL_FROM` (must be your Gmail / an address on your verified Resend domain) and `BACKUP_EMAIL_TO`, then restart n8n. Disable the Drive node if you don't use it.\nRestore in the web app: Settings → **Restore from backup**. Guide: docs/N8N.md",
+        "height": 460,
+        "width": 720,
         "color": "6"
       },
       "id": "d5803101-14ac-4f5f-9032-4e1de3fdcf87",
@@ -14,7 +14,7 @@
       "typeVersion": 1,
       "position": [
         -40,
-        -320
+        -500
       ]
     },
     {
@@ -77,7 +77,7 @@
     },
     {
       "parameters": {
-        "name": "=dompetku-cadangan-{{ $now.setZone('Asia/Jakarta').toFormat('yyyy-MM-dd') }}.json",
+        "name": "={{ String(($binary.data && $binary.data.fileName) || \"\").startsWith(\"dompetku-\") ? $binary.data.fileName : \"dompetku-backup-\" + $now.setZone(\"Asia/Jakarta\").toFormat(\"yyyy-MM-dd\") + \".json\" }}",
         "driveId": {
           "__rl": true,
           "mode": "list",
@@ -112,7 +112,7 @@
         "toEmail": "={{ $env.BACKUP_EMAIL_TO }}",
         "subject": "=Backup Dompetku {{ $now.setZone('Asia/Jakarta').toFormat('yyyy-MM-dd') }}",
         "emailFormat": "text",
-        "text": "Backup mingguan Dompetku terlampir. Pulihkan lewat Pengaturan → Pulihkan dari backup.",
+        "text": "Your weekly Dompetku backup is attached. Restore it in the web app: Settings → Restore from backup.",
         "options": {
           "attachments": "data"
         }
