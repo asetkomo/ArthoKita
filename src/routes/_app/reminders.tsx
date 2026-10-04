@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/app-shell";
 import { RouteError } from "@/components/route-error";
@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { errMsg, remindersQuery, invalidateFor } from "@/lib/queries";
 import { payDebt, paySubscription } from "@/lib/finance.functions";
+import { postRecurring } from "@/lib/recurring.functions";
 import { dateLabel } from "@/lib/dates";
 import { money } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
@@ -35,11 +36,18 @@ function RemindersPage() {
   const { data: list } = useSuspenseQuery(remindersQuery(days));
   const pd = useServerFn(payDebt);
   const ps = useServerFn(paySubscription);
+  const pr = useServerFn(postRecurring);
   const qc = useQueryClient();
   const total = list.filter((r) => r.type !== "budget").reduce((a, r) => a + r.amount_idr, 0);
 
   async function pay(r: (typeof list)[number]) {
     try {
+      if (r.type === "recurring") {
+        await pr({ data: { id: r.id } });
+        await invalidateFor(qc, "recurring_transactions");
+        toast.success(t("Tercatat"));
+        return;
+      }
       if (r.type === "debt") await pd({ data: { debt_id: r.id } });
       else await ps({ data: { id: r.id } });
       await Promise.all([invalidateFor(qc, "debt_payments"), invalidateFor(qc, "subscriptions")]);
@@ -89,6 +97,8 @@ function RemindersPage() {
               >
                 {r.type === "budget" ? (
                   <PiggyBank className="size-4" />
+                ) : r.type === "recurring" && !r.overdue ? (
+                  <Repeat2 className="size-4" />
                 ) : r.overdue ? (
                   <AlertTriangle className="size-4" />
                 ) : (
@@ -104,7 +114,16 @@ function RemindersPage() {
                 </p>
               </div>
               <p className="num shrink-0 text-right font-semibold">{money(r.amount, r.currency)}</p>
-              {r.type === "debt" || r.type === "subscription" ? (
+              {r.type === "recurring" ? (
+                <Button
+                  className="col-start-2 col-end-4 justify-self-end"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => pay(r)}
+                >
+                  <CheckCircle2 className="size-4" /> {t("Catat")}
+                </Button>
+              ) : r.type === "debt" || r.type === "subscription" ? (
                 <Button
                   className="col-start-2 col-end-4 justify-self-end"
                   size="sm"
