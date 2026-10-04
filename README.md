@@ -1,37 +1,255 @@
-# Finance Buddy
+<div align="center">
 
-hi saya ingin membuat aplikasi web yg bisa track pemasukan dan pengeluaran beserta cicilan seperti paylater atau hutang dan ada dasboard serta remindernya untuk tiap bulan, dan saya juga ada beberapa subsribtion langganan bulanan dan tahunan ada dalam idr dan usd, apalagi yg ingin anda tahu supaya web appsnya bisa lengkap dan jadi web app expense tracking terbaik? dan fitur unggulan nntinya adalah ocr dari foto nota serta bot @connector:telegram:"Telegram" atau whatsapp untuk laporan langsung income dan expense secara gampang dan akan di record secara detail oleh sistem. rencana saya akan menggunakan n8n tinggal nnti beri tahu saja end pointnya di edit di bagian mana, dan n8n akan saya handling. database gunakan supabase saja yg online, dan pastikan bisa di hosting di vercel langsung. pastikan secure aman scallable dan best practice, untuk login gunakan id password yg didaftarkan di env nntinya.
+# Dompetku
 
-## Fitur utama
+**A private, self-hosted personal finance tracker with a Telegram bot and receipt OCR.**
 
-- Pemasukan, pengeluaran, transfer, cicilan/hutang, langganan IDR/USD, budget, target tabungan, emas & piutang
-- OCR foto nota (hingga 5 foto per transaksi), split satu nota ke beberapa kategori, cari nama item nota
-- Transaksi berulang (gaji, sewa, transfer rutin) yang dicatat otomatis
-- Budget rollover & peringatan instan 80%/100% (web dan bot)
-- Laporan per akun, grafik saldo & rekonsiliasi rekening koran
-- Bot Telegram (pratinjau sebelum simpan, /undo) + otomasi n8n (pengingat, laporan, backup mingguan)
-- Cadangan & pulihkan JSON, login 2 langkah (TOTP), monitoring error (Sentry opsional), PWA, ID/EN, mode gelap
-- Mode privasi (ikon mata / Shift+H): sembunyikan semua nominal, saldo, grafik & gram emas per perangkat
+[![CI](https://github.com/ilramdhan/fintrack/actions/workflows/ci.yml/badge.svg)](https://github.com/ilramdhan/fintrack/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![TanStack Start](https://img.shields.io/badge/TanStack-Start-ff4154)](https://tanstack.com/start)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com)
 
-Panduan pemasangan: [docs/SETUP.md](docs/SETUP.md).
+</div>
 
-This project was built with [Lovable](https://lovable.dev).
+Dompetku ("my wallet" in Indonesian) helps you track income, expenses, transfers, installments,
+subscriptions, budgets, savings goals, gold and money people owe you, all in one place. Log a
+coffee by sending _"kopi 25rb"_ to your own Telegram bot, or snap a photo of a receipt and let AI
+fill in the details. Everything lives in **your own** Supabase database and **your own** Vercel
+deployment, so your financial data stays yours.
 
-## Build with Lovable
+It is built for **one person** (you): a single login defined in environment variables, no sign-up
+pages, no shared servers. The interface is available in **Indonesian and English** (switch any
+time), and amounts support **IDR and USD**.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/4bf32ccd-abed-4404-af2e-9d7728aeedd8).
+> [!NOTE]
+> Dompetku was designed with Indonesian users in mind (Rupiah, local banks and e-wallets, Antam
+> gold prices, chat shortcuts like `25rb` / `2jt`), but it works for anyone who tracks money in
+> IDR and/or USD.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+## Table of contents
 
-## Development
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Deploy your own in ~20 minutes](#deploy-your-own-in-20-minutes)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Documentation](#documentation)
+- [Local development](#local-development)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Screenshots
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+<!--
+TODO (maintainers): add screenshots to docs/screenshots/ and replace the "coming soon" cells, e.g.
+<img src="docs/screenshots/dashboard.png" alt="Dashboard" width="400">
+Suggested files: dashboard.png, transactions.png, reports.png, telegram-bot.png, dark-mode.png, mobile.png
+-->
+
+| Dashboard   | Transactions | Reports     |
+| ----------- | ------------ | ----------- |
+| Coming soon | Coming soon  | Coming soon |
+
+| Telegram bot | Dark mode   | Mobile      |
+| ------------ | ----------- | ----------- |
+| Coming soon  | Coming soon | Coming soon |
+
+## Features
+
+### Money tracking
+
+- **Income, expenses and transfers** between accounts (banks, e-wallets, cash, and so on) with
+  live balances.
+- **IDR and USD** amounts with an automatic daily exchange rate.
+- **Debts and installments** (paylater, loans) with payment tracking.
+- **Subscriptions**, monthly or yearly, in IDR or USD, with optional tax.
+- **Account fees**: transfer, top-up and monthly admin fees recorded as separate expenses.
+- **Recurring transactions** (salary, rent, regular transfers) posted automatically when due.
+- **Split transactions**: split one receipt across several categories.
+- **Up to 5 receipt photos** per transaction, stored privately, plus search by receipt item name.
+- **CSV import** with a preview, duplicate detection and optional creation of new categories or
+  accounts.
+
+### Budgets and goals
+
+- Monthly **budgets per category**, with optional **rollover** of unused amounts.
+- **Instant alerts at 80% and 100%** of a budget, on the web and in the bot.
+- **Savings goals**, optionally linked to a savings account.
+
+### Assets and net worth
+
+- **Gold savings** with daily world (XAU) and Antam prices, optionally linked to an account.
+- **Receivables** (money others owe you) with partial payments.
+- **Net worth** that counts account balances, gold and outstanding receivables.
+
+### Automation
+
+- **Telegram bot**: record transactions by chat (`kopi 25rb`, `gaji masuk 8jt ke BCA`) or by sending
+  a receipt photo. Every entry is shown as a **preview with buttons** before it is saved; `/undo`
+  removes the last one. Slash commands give balances, reports, bills, budgets and more.
+- **Receipt OCR** in the web app and the bot, using any OpenAI-compatible AI provider (for example
+  Google Gemini or OpenAI).
+- **Reminders** for upcoming bills via Telegram or email, plus daily, weekly and monthly reports,
+  all scheduled by ready-to-import [n8n](https://n8n.io) workflows.
+
+### Reports
+
+- Dashboard with cash flow, category breakdowns and net worth charts.
+- Monthly reports, a printable **yearly summary** with CSV export.
+- **Per-account report** with a balance chart and **bank statement reconciliation**.
+- Activity log of every change.
+
+### Security and privacy
+
+- **Your database, your server.** The browser never talks to the database; only server code holds
+  the key, and database row-level security blocks everything else.
+- Single-user login with a signed, `httpOnly` session cookie and a brute-force login limit.
+- Optional **two-factor login (TOTP)** with any authenticator app.
+- **Privacy mode** (eye icon or <kbd>Shift</kbd>+<kbd>H</kbd>) hides every amount, balance and
+  chart value on the current device, handy when sharing your screen.
+- Telegram bot answers **only** the chat IDs you allow.
+
+### Reliability and experience
+
+- **Backup and restore** of all data as one JSON file, plus an optional weekly automatic backup to
+  Google Drive or email via n8n.
+- **Error monitoring**: structured server logs and optional [Sentry](https://sentry.io) reporting.
+- **Installable as an app** (PWA) on phone and desktop.
+- **Indonesian / English** interface and **light / dark** theme.
+- Mobile-first design that works on small screens.
+
+## Deploy your own in ~20 minutes
+
+You need free accounts on [GitHub](https://github.com), [Supabase](https://supabase.com) and
+[Vercel](https://vercel.com). No coding is required.
+
+1. **Fork** this repository to your GitHub account (the **Fork** button at the top right of this
+   page).
+2. **Create a Supabase project**, open **SQL Editor**, paste the contents of
+   [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
+3. **Import your fork into Vercel** (or use the button below).
+4. **Add the required environment variables**: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `APP_USERNAME`, `APP_PASSWORD` and `SESSION_SECRET` (a random string of at least 32
+   characters).
+5. **Deploy, open your site and log in.** Add the Telegram bot, OCR and reminders later if you
+   want them.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ilramdhan/fintrack&env=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,APP_USERNAME,APP_PASSWORD,SESSION_SECRET)
+
+> [!IMPORTANT]
+> The button deploys the app, but you still need to run `supabase/schema.sql` in your Supabase
+> project (step 2) before logging in. Never share your `SUPABASE_SERVICE_ROLE_KEY`: it gives full
+> access to your database.
+
+The complete, beginner-friendly walkthrough (exact clicks, optional features, updating and
+troubleshooting) is in **[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)**.
+Every environment variable is explained in [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+
+## Tech stack
+
+| Layer      | Technology                                                                            |
+| ---------- | ------------------------------------------------------------------------------------- |
+| App        | [TanStack Start](https://tanstack.com/start) (React 19, SSR, server functions)        |
+| Data & UI  | TanStack Router & Query, Tailwind CSS v4, shadcn/ui (Radix), Recharts, zod            |
+| Database   | [Supabase](https://supabase.com) PostgreSQL + private Storage (server-only)           |
+| Hosting    | [Vercel](https://vercel.com) serverless (also runs on [Lovable](https://lovable.dev)) |
+| Automation | [n8n](https://n8n.io) + Telegram Bot API                                              |
+| AI         | Any OpenAI-compatible API (receipt OCR and chat parsing)                              |
+| Extras     | Resend (email, optional), Sentry (errors, optional)                                   |
+| Quality    | Vitest, Testing Library, ESLint, Prettier, GitHub Actions                             |
+
+How it all fits together, with diagrams: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+## Project structure
+
+```text
+src/
+  routes/        Pages (file-based) and the /api/public/n8n/* API used by n8n
+  components/    UI components (shadcn/ui in components/ui, lazy charts in components/charts)
+  lib/           Business logic: *.server.ts = server-only, *.functions.ts = server functions,
+                 other files = pure, tested helpers
+  test/          Vitest test suites
+supabase/        schema.sql — the whole database, in re-runnable sections v1–v13
+n8n/             Importable n8n workflows: Telegram bot, schedules, error alerts, backup
+docs/            Documentation
+public/          PWA manifest, icons and self-hosted fonts
 ```
+
+## Documentation
+
+| Document                                     | What it covers                                                                    |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Self-hosting guide](docs/SELF-HOSTING.md)   | Step-by-step install: Supabase, Vercel, first login, optional features, updates   |
+| [Environment variables](docs/ENVIRONMENT.md) | Reference for every setting                                                       |
+| [n8n, Telegram & email](docs/N8N.md)         | Telegram bot, reminders, reports, weekly backup, Google Drive, Gmail SMTP, Resend |
+| [Architecture](docs/ARCHITECTURE.md)         | Tech stack, directory layout, data flows, contributor rules                       |
+| [FAQ](docs/FAQ.md)                           | Common questions and troubleshooting                                              |
+| [n8n templates](n8n/README.md)               | What each workflow file does                                                      |
+| [Changelog](CHANGELOG.md)                    | Notable changes                                                                   |
+| [Contributing](CONTRIBUTING.md)              | How to propose changes                                                            |
+| [Security policy](SECURITY.md)               | How to report a vulnerability                                                     |
+
+## Local development
+
+You need [Node.js](https://nodejs.org) 22 or newer (or [Bun](https://bun.sh), which CI uses) and
+a Supabase project with the schema applied.
+
+```bash
+git clone https://github.com/<your-username>/fintrack.git
+cd fintrack
+npm install
+cp .env.example .env    # then fill in at least the five required variables
+npm run dev             # open the URL printed in the terminal
+```
+
+| Command             | What it does                                                                 |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `npm run dev`       | Start the development server                                                 |
+| `npm run build`     | Production build                                                             |
+| `npm run lint`      | ESLint                                                                       |
+| `npm run typecheck` | TypeScript check                                                             |
+| `npm test`          | Run all tests once (`npm run test:watch` to keep watching)                   |
+| `npm run format`    | Format the code with Prettier                                                |
+| `npm run gen:types` | Regenerate database types (needs `SUPABASE_PROJECT_ID` and the Supabase CLI) |
+
+More detail is in the [local development section of the self-hosting guide](docs/SELF-HOSTING.md).
+
+## Contributing
+
+Contributions are welcome, from typo fixes and translations to new features. Please read
+[CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) first. Before
+opening a pull request, make sure `npm run lint`, `npm run typecheck`, `npm test` and
+`npm run build` all pass; CI runs the same checks. Contributor rules (schema sections, i18n,
+privacy mode and more) are summarised in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#conventions-and-contributor-rules)
+and listed in full in [AGENTS.md](AGENTS.md).
+
+## Security
+
+Please **do not** open a public issue for security problems. See [SECURITY.md](SECURITY.md) for
+how to report a vulnerability privately.
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Ilham Ramadhan.
+
+## Acknowledgements
+
+- [TanStack](https://tanstack.com) for Start, Router and Query
+- [Supabase](https://supabase.com) for the database and storage
+- [shadcn/ui](https://ui.shadcn.com) and [Radix UI](https://www.radix-ui.com) for UI components,
+  [Lucide](https://lucide.dev) for icons and [Recharts](https://recharts.org) for charts
+- [n8n](https://n8n.io) for workflow automation
+- Fonts [Bricolage Grotesque](https://github.com/ateliertriay/bricolage),
+  [Figtree](https://github.com/erikdkennedy/figtree) and
+  [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono), self-hosted via
+  [Fontsource](https://fontsource.org) under the SIL Open Font License 1.1
+  ([license](public/fonts/LICENSE-OFL.txt))
+- Originally scaffolded with [Lovable](https://lovable.dev)
+
+---
+
+If Dompetku is useful to you, please consider giving it a star. Feedback, ideas and bug reports
+are welcome in [GitHub Issues](https://github.com/ilramdhan/fintrack/issues).
