@@ -26,7 +26,8 @@
     "gen:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID --schema public > src/lib/database.types.ts",
     "db:up": "npx -y supabase@2 start --workdir scripts/dev-db && bash scripts/dev-db/apply-schema.sh",
     "db:down": "npx -y supabase@2 stop --workdir scripts/dev-db --no-backup",
-    "seed:demo": "node --env-file-if-exists=.env.local scripts/seed-demo.mjs"
+    "seed:demo": "node --env-file-if-exists=.env.local scripts/seed-demo.mjs",
+    "screenshots": "npx -y -p playwright@1 -p sharp@0 node --env-file-if-exists=.env.local scripts/screenshots.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
