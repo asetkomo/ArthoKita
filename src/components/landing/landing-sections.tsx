@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -26,6 +26,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { AppLogo, AppName } from "@/components/app-logo";
+import { VersionBadge } from "@/components/version-badge";
 import {
   Accordion,
   AccordionContent,
@@ -36,7 +37,9 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { docsUrl } from "@/lib/landing";
 import { cn } from "@/lib/utils";
-import { AuthButton, LANDING_NAV } from "./landing-header";
+import { Link } from "@tanstack/react-router";
+import { AuthButton, LANDING_NAV, SectionLink } from "./landing-header";
+import { TECH_ICONS, TechLogo, type TechIconName } from "./tech-icons";
 import { BrowserFrame, PhoneFrame, Screenshot } from "./screenshot";
 
 const container = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8";
@@ -177,7 +180,7 @@ function Tile({
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-3xl border p-6 transition-[transform,box-shadow] duration-300 motion-safe:hover:-translate-y-0.5 hover:shadow-lg sm:p-7",
+        "group relative flex flex-col overflow-hidden rounded-3xl border p-6 sm:p-7",
         tone === "card" && "bg-card text-card-foreground",
         tone === "ink" && "border-transparent bg-sidebar text-sidebar-foreground",
         tone === "accent" && "border-transparent bg-secondary text-secondary-foreground",
@@ -288,11 +291,7 @@ export function FeatureBento() {
   // Peek: the screenshot hangs off the bottom/right edge of a large tile.
   const peek = "mt-6 -mr-10 -mb-10 sm:-mr-12 sm:-mb-12";
   return (
-    <section
-      id="fitur"
-      aria-labelledby="fitur-title"
-      className={cn(container, "scroll-mt-20 py-16 sm:py-24")}
-    >
+    <section id="fitur" aria-labelledby="fitur-title" className={cn(container, "py-16 sm:py-24")}>
       <SectionHeading
         id="fitur-title"
         eyebrow="Fitur"
@@ -445,7 +444,7 @@ export function HowItWorks() {
     <section
       id="cara-kerja"
       aria-labelledby="cara-kerja-title"
-      className="scroll-mt-20 border-y bg-muted/40 py-16 sm:py-24"
+      className="border-y bg-muted/40 py-16 sm:py-24"
     >
       <div className={container}>
         <SectionHeading
@@ -494,7 +493,7 @@ export function SelfHost({ repo }: { repo: string }) {
     <section
       id="self-host"
       aria-labelledby="self-host-title"
-      className={cn(container, "scroll-mt-20 py-16 sm:py-24")}
+      className={cn(container, "py-16 sm:py-24")}
     >
       <SectionHeading
         id="self-host-title"
@@ -545,35 +544,66 @@ export function SelfHost({ repo }: { repo: string }) {
 
 /* ---------------------------------------------------------------- Tech stack */
 
-const STACK = [
-  "TanStack Start",
-  "React 19",
-  "TypeScript",
-  "Tailwind CSS",
-  "Supabase",
-  "Vercel",
+const STACK: TechIconName[] = [
+  "react",
+  "tanstack",
+  "typescript",
+  "vite",
+  "tailwindcss",
+  "shadcnui",
+  "radixui",
+  "supabase",
+  "postgresql",
+  "vercel",
   "n8n",
-  "Telegram Bot API",
+  "telegram",
+  "zod",
+  "vitest",
+  "githubactions",
 ];
 
+function StackItems({ duplicate = false }: { duplicate?: boolean }) {
+  return (
+    <ul
+      className="landing-marquee-group"
+      aria-hidden={duplicate || undefined}
+      role={duplicate ? "presentation" : undefined}
+    >
+      {STACK.map((name) => {
+        const icon = TECH_ICONS[name];
+        return (
+          <li
+            key={name}
+            className="landing-tech flex shrink-0 items-center gap-2.5 rounded-full border bg-card/70 px-4 py-2 text-sm font-semibold text-foreground/75 transition-colors hover:text-foreground"
+            style={icon.hex ? ({ "--tech-hex": icon.hex } as CSSProperties) : undefined}
+          >
+            <TechLogo name={name} className="size-5 shrink-0" />
+            <span className="whitespace-nowrap">{icon.title}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Logo marquee: the set is rendered twice and slid by -50% for a seamless loop (CSS only). */
 export function TechStack() {
   const { t } = useI18n();
   return (
     <section aria-labelledby="stack-title" className="border-y bg-muted/40 py-10">
-      <div className={cn(container, "flex flex-col items-center gap-5")}>
+      <div className="flex flex-col items-center gap-6">
         <h2
           id="stack-title"
           className="font-sans text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase"
         >
           {t("Dibangun dengan")}
         </h2>
-        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-3">
-          {STACK.map((s) => (
-            <li key={s} className="font-display text-base font-semibold text-foreground/70">
-              {s}
-            </li>
-          ))}
-        </ul>
+        <div className="landing-marquee w-full" data-testid="tech-marquee">
+          <div className="landing-marquee-track">
+            <StackItems />
+            <StackItems duplicate />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -607,11 +637,7 @@ const FAQ = [
 export function Faq() {
   const { t } = useI18n();
   return (
-    <section
-      id="faq"
-      aria-labelledby="faq-title"
-      className={cn(container, "scroll-mt-20 py-16 sm:py-24")}
-    >
+    <section id="faq" aria-labelledby="faq-title" className={cn(container, "py-16 sm:py-24")}>
       <SectionHeading id="faq-title" eyebrow="FAQ" title="Pertanyaan yang sering diajukan" />
       <Accordion type="single" collapsible className="mx-auto mt-10 max-w-3xl">
         {FAQ.map((f, i) => (
@@ -664,7 +690,12 @@ export function FinalCta({ repo, authenticated }: { repo: string; authenticated:
   );
 }
 
-export function LandingFooter({ repo }: { repo: string }) {
+const LEGAL_LINKS = [
+  { to: "/privacy", label: "Privasi" },
+  { to: "/terms", label: "Ketentuan" },
+] as const;
+
+export function LandingFooter({ repo, onLanding = true }: { repo: string; onLanding?: boolean }) {
   const { t } = useI18n();
   const link =
     "rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -676,8 +707,8 @@ export function LandingFooter({ repo }: { repo: string }) {
   ];
   return (
     <footer className="border-t bg-card/60">
-      <div className={cn(container, "grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4")}>
-        <div className="lg:col-span-2">
+      <div className={cn(container, "grid gap-10 py-12 sm:grid-cols-3 lg:grid-cols-5")}>
+        <div className="sm:col-span-3 lg:col-span-2">
           <p className="flex items-center gap-2.5 font-display text-xl font-bold">
             <AppLogo className="size-8" />
             <AppName className="[&>span]:text-accent-foreground dark:[&>span]:text-accent" />
@@ -690,10 +721,10 @@ export function LandingFooter({ repo }: { repo: string }) {
           <h2 className="font-sans text-sm font-semibold">{t("Halaman")}</h2>
           <ul className="mt-3 space-y-2">
             {LANDING_NAV.map((n) => (
-              <li key={n.href}>
-                <a href={n.href} className={link}>
+              <li key={n.hash}>
+                <SectionLink hash={n.hash} onLanding={onLanding} className={link}>
                   {t(n.label)}
-                </a>
+                </SectionLink>
               </li>
             ))}
             <li>
@@ -715,19 +746,49 @@ export function LandingFooter({ repo }: { repo: string }) {
             ))}
           </ul>
         </nav>
+        <nav aria-label={t("Legal")}>
+          <h2 className="font-sans text-sm font-semibold">{t("Legal")}</h2>
+          <ul className="mt-3 space-y-2">
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.to}>
+                <Link to={l.to} className={link}>
+                  {t(l.label)}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <a href={docsUrl(repo, "LICENSE")} target="_blank" rel="noreferrer" className={link}>
+                {t("Lisensi MIT")}
+              </a>
+            </li>
+          </ul>
+        </nav>
       </div>
       <div className="border-t">
         <div
           className={cn(
             container,
-            "flex flex-col items-center justify-between gap-3 py-6 text-sm text-muted-foreground sm:flex-row",
+            // Extra end/bottom padding keeps the text clear of the floating back-to-top button.
+            "flex flex-col items-center justify-between gap-3 pt-6 pb-20 text-sm text-muted-foreground sm:flex-row sm:pb-6 sm:pr-20 lg:pr-20",
           )}
         >
-          <p>
-            <a href={docsUrl(repo, "LICENSE")} target="_blank" rel="noreferrer" className={link}>
-              {t("Lisensi MIT")}
-            </a>
-          </p>
+          <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <li>
+              <a href={docsUrl(repo, "LICENSE")} target="_blank" rel="noreferrer" className={link}>
+                {t("Lisensi MIT")}
+              </a>
+            </li>
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.to}>
+                <Link to={l.to} className={link}>
+                  {t(l.label)}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <VersionBadge variant="footer" />
+            </li>
+          </ul>
           <p className="flex items-center gap-1.5">
             {t("Dibuat dengan")}
             <Heart className="size-4 fill-expense text-expense" aria-label={t("cinta")} />

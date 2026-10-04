@@ -1,26 +1,13 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { brandingQuery } from "@/components/app-logo";
 import { LandingPage } from "@/components/landing/landing-page";
+import { isAuthenticated } from "@/components/landing/public-session";
 import { DEFAULT_BRANDING } from "@/lib/app-settings";
 import { landingRedirect } from "@/lib/landing";
 
 const TITLE = "Dompetku — Pelacak Keuangan Pribadi Open Source";
 const DESCRIPTION =
   "Pelacak keuangan pribadi yang Anda host sendiri: transaksi, budget, hutang, emas, laporan, dan bot Telegram dengan OCR struk. Gratis dan open source.";
-
-async function isAuthenticated(): Promise<boolean> {
-  const { getCachedSession, setCachedSession } = await import("@/lib/session-cache");
-  const hit = getCachedSession();
-  if (hit) return true;
-  try {
-    const { getSession } = await import("@/lib/auth.functions");
-    const s = await getSession();
-    if (s.authenticated) setCachedSession(s.user);
-    return s.authenticated;
-  } catch {
-    return false;
-  }
-}
 
 export const Route = createFileRoute("/")({
   // Public page: no canonical (each self-hosted copy has its own domain); og:image is relative.
