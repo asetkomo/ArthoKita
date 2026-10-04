@@ -9,6 +9,25 @@ Starting with v1.0.0, versioned entries (`## [x.y.z]`) are generated automatical
 > [!NOTE]
 > When an entry mentions a **schema section** (`v2`…`v13`), self-hosters must run that section of [`supabase/schema.sql`](supabase/schema.sql) on their Supabase project. Every section is safe to run more than once, and the app keeps working (with the feature disabled) until you do.
 
+## [1.3.0](https://github.com/ilramdhan/dompetku/compare/v1.2.0...v1.3.0) (2026-10-04)
+
+
+### Features
+
+* **dashboard:** align stat cards and add share-of-income ratio widget ([dce1664](https://github.com/ilramdhan/dompetku/commit/dce166409859a40005c4ce7d30a943d0ab63bf0a))
+* **lists:** paginate debts, goals, subscriptions, recurring and reminders ([194e876](https://github.com/ilramdhan/dompetku/commit/194e876b8e0dbdfffd8a7b135a3ee9caa505f59a))
+* sticky mobile nav, list pagination, back-to-top and dashboard income-ratio widget ([b85e83b](https://github.com/ilramdhan/dompetku/commit/b85e83b4d1bbe1aca8fdce8c48675e81379a4740))
+
+
+### Bug Fixes
+
+* **shell:** pin mobile nav while scrolling, add app-wide back-to-top and smooth scroll ([8061e16](https://github.com/ilramdhan/dompetku/commit/8061e160269a32a3437000e8a3a71aa11969451c))
+
+
+### Documentation
+
+* add CLAUDE.md and record scroll, pagination and ratio rules ([182f8a3](https://github.com/ilramdhan/dompetku/commit/182f8a3c2aa9779d7119859594e8a17a182adfbb))
+
 ## [1.2.0](https://github.com/ilramdhan/dompetku/compare/v1.1.0...v1.2.0) (2026-10-04)
 
 
