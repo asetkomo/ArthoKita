@@ -919,6 +919,21 @@ const DICT: Record<string, string> = {
   "Versi baru tersedia": "A new version is available",
   "Cara update: buka fork kamu di GitHub → Sync fork → Update branch. Vercel otomatis redeploy dalam beberapa menit.":
     "How to update: open your fork on GitHub → Sync fork → Update branch. Vercel redeploys automatically within a few minutes.",
+  "Tidak tersedia di mode demo": "Not available in demo mode",
+  "Batas data demo tercapai, coba lagi setelah reset":
+    "Demo data limit reached, try again after the reset",
+  "Terlalu banyak permintaan di mode demo, coba lagi sebentar lagi":
+    "Too many requests in demo mode, try again shortly",
+  "Ini instance demo — data palsu, direset setiap hari 00:00 WIB":
+    "This is a demo instance — fake data, reset daily at 00:00 WIB",
+  "Masuk ke demo": "Enter the demo",
+  "Coba demo": "Try the demo",
+  "Atau masuk manual dengan kredensial demo di bawah.":
+    "Or sign in manually with the demo credentials below.",
+  "Mode demo": "Demo mode",
+  "Data direset setiap hari": "Data resets daily",
+  "Install sendiri →": "Install your own →",
+  "Tutup banner demo": "Close demo banner",
 };
 
 const LangContext = createContext<{
@@ -930,6 +945,14 @@ const LangContext = createContext<{
   setLang: () => {},
   t: (s) => s,
 });
+
+// Last language chosen in the provider, for plain (non-React) helpers such as errMsg().
+let activeLang: Lang = "id";
+
+/** Translate outside React (uses the provider's current language). */
+export function translateNow(s: string): string {
+  return activeLang === "en" ? (DICT[s] ?? s) : s;
+}
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("id");
@@ -949,6 +972,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
     setLangState(l);
   };
+  activeLang = lang;
   const t = (s: string) => (lang === "en" ? (DICT[s] ?? s) : s);
   return <LangContext.Provider value={{ lang, setLang, t }}>{children}</LangContext.Provider>;
 }

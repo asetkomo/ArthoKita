@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { errMsg, rowsQuery, invalidateFor } from "@/lib/queries";
 import { saveTransaction, uploadReceiptImage } from "@/lib/finance.functions";
 import { todayStr } from "@/lib/dates";
+import { useIsDemo } from "@/components/demo";
 import { money } from "@/lib/format";
 import { feeOptions } from "@/lib/fees";
 import { useI18n } from "@/lib/i18n";
@@ -227,9 +228,11 @@ export function TransactionDialog({
 function ReceiptField({ paths, onChange }: { paths: string[]; onChange: (p: string[]) => void }) {
   const { t } = useI18n();
   const upload = useServerFn(uploadReceiptImage);
+  const demo = useIsDemo();
   const [busy, setBusy] = useState(false);
   const urls = useReceiptUrls(paths);
-  const full = paths.length >= MAX_RECEIPTS;
+  // Demo mode: photo upload is disabled server-side, so hide the picker too.
+  const full = paths.length >= MAX_RECEIPTS || demo;
 
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = [...(e.target.files ?? [])].slice(0, MAX_RECEIPTS - paths.length);

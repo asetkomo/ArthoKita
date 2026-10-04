@@ -28,6 +28,7 @@ import { AppLogo, AppName, useTagline } from "@/components/app-logo";
 import { togglePrivate, usePrivacy } from "@/lib/privacy";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DemoBanner } from "@/components/demo";
 import { VersionBadge, VersionRailLabel, useVersionText } from "@/components/version-badge";
 
 const NAV = [
@@ -218,6 +219,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <div className="min-w-0 md:col-start-2">
+          <DemoBanner />
           <header className="no-print sticky top-0 z-30 bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground short:static md:hidden">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 short:py-1.5">
               <p className="flex min-w-0 items-center gap-2 font-display text-xl font-bold">

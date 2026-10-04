@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import { pageHead } from "@/lib/head";
 import { AppLogo, AppName, useTagline } from "@/components/app-logo";
+import { useDemoInfo } from "@/components/demo";
+import { FlaskConical, LogIn } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => pageHead("Masuk", "Masuk ke Dompetku — pelacak keuangan pribadi."),
@@ -31,18 +33,18 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const demo = useDemoInfo();
 
   async function submitPassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    await signIn(String(fd.get("username") ?? ""), String(fd.get("password") ?? ""));
+  }
+
+  async function signIn(username: string, password: string) {
     setBusy(true);
     try {
-      const res = await run({
-        data: {
-          username: String(fd.get("username") ?? ""),
-          password: String(fd.get("password") ?? ""),
-        },
-      });
+      const res = await run({ data: { username, password } });
       if (res.ok) {
         window.location.href = "/dashboard";
         return;
@@ -99,6 +101,25 @@ function LoginPage() {
           <AppName className="min-w-0 truncate" />
         </p>
         <p className="mt-1 text-sm text-ink-muted">{tagline}</p>
+        {demo.demo && !challenge ? (
+          <div className="mt-5 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+            <p className="flex items-start gap-2 font-medium">
+              <FlaskConical className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+              {t("Ini instance demo — data palsu, direset setiap hari 00:00 WIB")}
+            </p>
+            <Button
+              type="button"
+              className="mt-3 w-full"
+              disabled={busy}
+              onClick={() => void signIn(demo.username, demo.password)}
+            >
+              <LogIn className="size-4" /> {busy ? t("Memeriksa…") : t("Masuk ke demo")}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t("Atau masuk manual dengan kredensial demo di bawah.")}
+            </p>
+          </div>
+        ) : null}
         {challenge ? (
           <form className="mt-6 space-y-4" onSubmit={submitCode}>
             <div className="space-y-1.5">
@@ -142,7 +163,15 @@ function LoginPage() {
           <form className="mt-6 space-y-4" onSubmit={submitPassword}>
             <div className="space-y-1.5">
               <Label htmlFor="username">{t("Username")}</Label>
-              <Input id="username" name="username" autoComplete="username" required autoFocus />
+              <Input
+                id="username"
+                name="username"
+                autoComplete="username"
+                required
+                autoFocus={!demo.demo}
+                key={demo.demo ? "demo" : "normal"}
+                defaultValue={demo.demo ? demo.username : undefined}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">{t("Password")}</Label>
@@ -152,9 +181,16 @@ function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
+                key={demo.demo ? "demo" : "normal"}
+                defaultValue={demo.demo ? demo.password : undefined}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={busy}>
+            <Button
+              type="submit"
+              variant={demo.demo ? "outline" : "default"}
+              className="w-full"
+              disabled={busy}
+            >
               {busy ? t("Memeriksa…") : t("Masuk")}
             </Button>
           </form>

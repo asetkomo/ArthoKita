@@ -1,5 +1,7 @@
 import { queryOptions, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { DEMO_CAP_REACHED, DEMO_DISABLED, DEMO_RATE_LIMITED } from "./demo";
+import { translateNow } from "./i18n";
 import {
   deleteRow,
   getBalances,
@@ -210,8 +212,12 @@ export function useCrud(table: CrudTable) {
   };
 }
 
+const DEMO_ERRORS = [DEMO_DISABLED, DEMO_CAP_REACHED, DEMO_RATE_LIMITED] as const;
+
 export function errMsg(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
+  // Demo-mode guard errors are plain dictionary keys: show them in the active language.
+  if ((DEMO_ERRORS as readonly string[]).includes(m)) return translateNow(m);
   try {
     const parsed = JSON.parse(m) as any[];
     if (Array.isArray(parsed))
