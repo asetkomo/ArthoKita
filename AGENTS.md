@@ -44,4 +44,4 @@
 - Backup/restore: export in `exportBackup()`, pure validation/FK order/remap in `backup.ts` (RESTORE_TABLES), chunked upserts in `backup.server.ts`; add every new table there in FK order (missing tables are skipped).
 - Server errors go through `logError()` (`monitoring.server.ts`, pure helpers in `monitoring.ts`): one JSON log line plus optional Sentry envelope via `SENTRY_DSN`; it never throws.
 - Fonts are self-hosted in `public/fonts` (@font-face in styles.css, preloaded in `__root.tsx`); Recharts is only imported through lazy wrappers in `src/components/charts`.
-- CI (`.github/workflows/ci.yml`) runs lint, typecheck, test and build on every push/PR; keep all four green.
+- CI (`.github/workflows/ci.yml`) runs lint, typecheck, test and build on PRs and pushes to main; keep all four green.
