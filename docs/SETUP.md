@@ -158,6 +158,11 @@ Tanpa v9 aplikasi tetap berjalan dengan perhitungan lama (hasil sama). Bila fung
 Jalankan bagian **v10** di `supabase/schema.sql` (tabel `recurring_transactions`). Setelah itu menu **Transaksi Berulang** bisa dipakai untuk gaji, sewa, atau transfer rutin (mingguan/bulanan/tahunan, dengan interval dan tanggal tetap; tanggal 31 otomatis menjadi akhir bulan pada bulan pendek).
 Item dengan "Catat otomatis" dicatat sendiri saat dashboard/pengingat dibuka (maks. 12 kejadian terlewat per item, idempoten). Item tanpa "Catat otomatis" muncul di Pengingat (juga teks bot/n8n) dengan tombol **Catat**. Sebelum v10 dijalankan, halaman menampilkan petunjuk dan fitur lain tetap berjalan.
 
+## v11 — Budget rollover & peringatan instan (opsional)
+Jalankan bagian **v11** di `supabase/schema.sql` (kolom `budgets.rollover` + tabel `budget_alerts`). Sebelum itu aplikasi tetap berjalan: tombol rollover diabaikan dan peringatan tetap muncul, hanya saja tanpa pencegahan duplikat.
+- **Sisa bulan lalu dibawa (rollover)**: sisa budget (atau kelebihan pengeluaran, sebagai nilai negatif) dibawa ke bulan berikutnya. Rantai dihitung sejak bulan budget dibuat, maksimal 12 bulan ke belakang, memakai nominal budget saat ini. Persentase dihitung terhadap batas efektif (nominal + bawaan).
+- **Peringatan instan**: saat pengeluaran tercatat (web atau bot ✅) dan budget kategorinya melewati ambang peringatan (default 80%) atau 100% bulan ini, web menampilkan toast dan bot menambahkan baris peringatan di balasan. Tiap ambang hanya diperingatkan sekali per bulan (`budget_alerts`).
+
 ## v12 — Split transaksi, banyak foto nota & cari item (opsional)
 Jalankan bagian **v12** di `supabase/schema.sql` (kolom `transactions.split_group`, `receipt_paths`, dan kolom hasil `items_search`).
 - **Split**: di dialog Catat (pengeluaran baru) aktifkan "Bagi ke beberapa kategori". Tiap baris menjadi transaksi pengeluaran terpisah dengan `split_group` yang sama, sehingga budget, laporan, dan agregasi tetap benar. Biaya admin hanya dicatat sekali. Mengubah satu baris split hanya mengubah baris itu; saat menghapus Anda bisa memilih menghapus seluruh grup.
