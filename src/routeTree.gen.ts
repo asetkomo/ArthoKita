@@ -19,6 +19,7 @@ import { Route as AppDebtsRouteImport } from './routes/_app/debts'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppGoldRouteImport } from './routes/_app/gold'
 import { Route as AppReceivablesRouteImport } from './routes/_app/receivables'
+import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
 import { Route as AppRekapRouteImport } from './routes/_app/rekap'
 import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
@@ -84,6 +85,11 @@ const AppGoldRoute = AppGoldRouteImport.update({
 const AppReceivablesRoute = AppReceivablesRouteImport.update({
   id: '/receivables',
   path: '/receivables',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecurringRoute = AppRecurringRouteImport.update({
+  id: '/recurring',
+  path: '/recurring',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRekapRoute = AppRekapRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof AppGoalsRoute
   '/gold': typeof AppGoldRoute
   '/receivables': typeof AppReceivablesRoute
+  '/recurring': typeof AppRecurringRoute
   '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
   '/reports': typeof AppReportsRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/goals': typeof AppGoalsRoute
   '/gold': typeof AppGoldRoute
   '/receivables': typeof AppReceivablesRoute
+  '/recurring': typeof AppRecurringRoute
   '/rekap': typeof AppRekapRoute
   '/reminders': typeof AppRemindersRoute
   '/reports': typeof AppReportsRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/_app/goals': typeof AppGoalsRoute
   '/_app/gold': typeof AppGoldRoute
   '/_app/receivables': typeof AppReceivablesRoute
+  '/_app/recurring': typeof AppRecurringRoute
   '/_app/rekap': typeof AppRekapRoute
   '/_app/reminders': typeof AppRemindersRoute
   '/_app/reports': typeof AppReportsRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/gold'
     | '/receivables'
+    | '/recurring'
     | '/rekap'
     | '/reminders'
     | '/reports'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/gold'
     | '/receivables'
+    | '/recurring'
     | '/rekap'
     | '/reminders'
     | '/reports'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/_app/goals'
     | '/_app/gold'
     | '/_app/receivables'
+    | '/_app/recurring'
     | '/_app/rekap'
     | '/_app/reminders'
     | '/_app/reports'
@@ -436,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/receivables'
       fullPath: '/receivables'
       preLoaderRoute: typeof AppReceivablesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recurring': {
+      id: '/_app/recurring'
+      path: '/recurring'
+      fullPath: '/recurring'
+      preLoaderRoute: typeof AppRecurringRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/rekap': {
@@ -568,6 +587,7 @@ interface AppRouteChildren {
   AppGoalsRoute: typeof AppGoalsRoute
   AppGoldRoute: typeof AppGoldRoute
   AppReceivablesRoute: typeof AppReceivablesRoute
+  AppRecurringRoute: typeof AppRecurringRoute
   AppRekapRoute: typeof AppRekapRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppReportsRoute: typeof AppReportsRoute
@@ -584,6 +604,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGoalsRoute: AppGoalsRoute,
   AppGoldRoute: AppGoldRoute,
   AppReceivablesRoute: AppReceivablesRoute,
+  AppRecurringRoute: AppRecurringRoute,
   AppRekapRoute: AppRekapRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppReportsRoute: AppReportsRoute,

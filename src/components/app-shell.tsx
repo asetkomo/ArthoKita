@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bell,
+  CalendarClock,
   Coins,
   CreditCard,
   HandCoins,
@@ -32,6 +33,7 @@ const NAV = [
   { to: "/accounts", label: "Akun", icon: Wallet },
   { to: "/debts", label: "Hutang & Cicilan", icon: CreditCard },
   { to: "/subscriptions", label: "Langganan", icon: Repeat },
+  { to: "/recurring", label: "Transaksi Berulang", icon: CalendarClock },
   { to: "/budgets", label: "Budget", icon: PiggyBank },
   { to: "/goals", label: "Target", icon: Target },
   { to: "/gold", label: "Emas", icon: Coins },

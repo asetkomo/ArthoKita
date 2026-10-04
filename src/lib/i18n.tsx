@@ -572,6 +572,42 @@ const DICT: Record<string, string> = {
   Tertinggal: "Behind",
   "Lewat tenggat": "Overdue",
   "Tanpa tenggat": "No deadline",
+  /* Recurring transactions (v10) */
+  "Transaksi Berulang": "Recurring Transactions",
+  "Gaji, sewa, dan transfer rutin yang dicatat otomatis sesuai jadwal.":
+    "Salary, rent and routine transfers recorded automatically on schedule.",
+  "Tabel transaksi berulang belum ada. Jalankan bagian v10 di supabase/schema.sql lewat SQL Editor Supabase.":
+    "The recurring transactions table does not exist yet. Run the v10 section of supabase/schema.sql in the Supabase SQL Editor.",
+  "Sudah tercatat sebelumnya": "Already recorded earlier",
+  Tercatat: "Recorded",
+  Dijeda: "Paused",
+  Dilanjutkan: "Resumed",
+  "Pemasukan rutin / bulan": "Recurring income / month",
+  "Pengeluaran rutin / bulan": "Recurring expenses / month",
+  "Belum ada transaksi berulang. Tambahkan gaji, sewa, atau transfer tabungan…":
+    "No recurring transactions yet. Add your salary, rent or savings transfer…",
+  Tiap: "Every",
+  minggu: "weeks",
+  tahun: "years",
+  Mingguan: "Weekly",
+  Otomatis: "Automatic",
+  Manual: "Manual",
+  Berakhir: "Ends",
+  "Catat sekarang": "Record now",
+  Jeda: "Pause",
+  Lanjutkan: "Resume",
+  "transaksi berulang": "recurring transaction",
+  "Gaji, Sewa kos, Tabungan bulanan…": "Salary, Rent, Monthly savings…",
+  "Setiap (interval)": "Every (interval)",
+  "Tanggal (1–31, opsional)": "Day of month (1–31, optional)",
+  Mulai: "Start",
+  "Jatuh tempo berikutnya (kosong = otomatis)": "Next due (empty = automatic)",
+  "Berakhir (opsional)": "End date (optional)",
+  "Merchant / pihak": "Merchant / party",
+  "Catat otomatis saat jatuh tempo": "Record automatically when due",
+  "Transaksi berulang dicatat": "Recurring transaction recorded",
+  "Transaksi berulang dijeda": "Recurring transaction paused",
+  "Transaksi berulang dilanjutkan": "Recurring transaction resumed",
 };
 
 const LangContext = createContext<{
