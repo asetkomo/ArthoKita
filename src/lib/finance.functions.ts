@@ -105,16 +105,13 @@ export const deleteRow = createServerFn({ method: "POST" })
       return { ok: true };
     }
     const { db } = await import("./db.server");
-    if (data.table === "transactions") {
-      const old = await db().from("transactions").select("*").eq("id", data.id).maybeSingle();
-      const { removeReceipt } = await import("./receipt.server");
-      const { receiptPaths } = await import("./receipts");
-      for (const p of receiptPaths(old.data as any)) await removeReceipt(p);
-    }
     const prev = await db().from(data.table).select("*").eq("id", data.id).maybeSingle();
     const res = await db().from(data.table).delete().eq("id", data.id);
     if (res.error) throw new Error(res.error.message);
     const p = (prev.data ?? {}) as any;
+    // Photos go after the row is gone, and only those no split sibling still references.
+    if (data.table === "transactions" && prev.data)
+      await (await import("./split.server")).removeOrphanPhotos([p], [data.id]);
     if (data.table === "gold_purchases" && p.transaction_id)
       await db().from("transactions").delete().eq("id", p.transaction_id);
     const { logActivity } = await import("./finance.server");
