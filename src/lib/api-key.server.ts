@@ -6,6 +6,8 @@ export function json(body: unknown, status = 200): Response {
 
 /** Validates `x-api-key` (or `Authorization: Bearer`) against N8N_API_KEY. Returns a Response when denied. */
 export function checkApiKey(request: Request): Response | null {
+  // Demo instances (DEMO_MODE=true) have no bot, backup or reminder-email automation.
+  if (process.env["DEMO_MODE"] === "true") return json({ ok: false, error: "demo" }, 403);
   const expected = process.env["N8N_API_KEY"];
   if (!expected || expected.length < 24)
     return json({ ok: false, error: "N8N_API_KEY belum diatur di server" }, 503);

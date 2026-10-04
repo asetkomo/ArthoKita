@@ -277,6 +277,7 @@ export async function insertTransaction(
   raw?: unknown,
   extra?: { external_id?: string | null },
 ) {
+  await (await import("./demo.server")).assertDemoCapacity("transactions");
   const tx = await insertTxRow({
     ...normalizeTx(input),
     amount_idr: await toIdr(input.amount, input.currency),
@@ -1539,6 +1540,8 @@ export async function reminderEmail(days: number) {
 }
 
 export async function sendReminderEmail(days: number, to?: string) {
+  if ((await import("./demo.server")).isDemo())
+    return { sent: false, reason: "Tidak tersedia di mode demo" };
   const key = process.env["RESEND_API_KEY"];
   const from = process.env["EMAIL_FROM"];
   const recipient = to || process.env["EMAIL_TO"];

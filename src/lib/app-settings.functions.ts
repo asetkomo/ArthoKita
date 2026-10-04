@@ -19,6 +19,7 @@ export const saveAppSettingsFn = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => appSettingsInputSchema.parse(d))
   .handler(async ({ data }) => {
+    (await import("./demo.server")).assertNotDemo();
     const { saveAppSettings } = await import("./app-settings.server");
     return saveAppSettings(data);
   });

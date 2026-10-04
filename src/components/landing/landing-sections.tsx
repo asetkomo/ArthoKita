@@ -38,7 +38,8 @@ import { useI18n } from "@/lib/i18n";
 import { docsUrl } from "@/lib/landing";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import { AuthButton, LANDING_NAV, SectionLink } from "./landing-header";
+import { AuthButton, DemoLink, LANDING_NAV, SectionLink } from "./landing-header";
+import { useIsDemo } from "@/components/demo";
 import { TECH_ICONS, TechLogo, type TechIconName } from "./tech-icons";
 import { BrowserFrame, PhoneFrame, Screenshot } from "./screenshot";
 
@@ -84,6 +85,7 @@ export function Hero({
   authenticated: boolean;
 }) {
   const { t } = useI18n();
+  const demo = useIsDemo();
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
       <div aria-hidden="true" className="landing-glow absolute inset-0 -z-10" />
@@ -111,18 +113,36 @@ export function Hero({
                 "Pelacak keuangan pribadi yang Anda host sendiri — transaksi, budget, hutang, emas, dan bot Telegram dalam satu aplikasi privat.",
               )}
           </p>
-          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center lg:justify-start">
-            <Button asChild size="lg" className="h-11 rounded-full px-6 text-base">
+          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-start">
+            {demo ? (
+              <AuthButton
+                authenticated={authenticated}
+                size="lg"
+                className="order-first h-11 rounded-full px-6 text-base"
+              />
+            ) : null}
+            <Button
+              asChild
+              size="lg"
+              variant={demo ? "outline" : "default"}
+              className="h-11 rounded-full px-6 text-base"
+            >
               <a href={docsUrl(repo, "docs/SELF-HOSTING.md")} target="_blank" rel="noreferrer">
                 <Rocket />
                 {t("Self-host gratis")}
               </a>
             </Button>
-            <AuthButton
-              authenticated={authenticated}
+            <DemoLink
               size="lg"
-              className="h-11 rounded-full border border-input bg-card px-6 text-base text-foreground shadow-sm hover:bg-muted"
+              className="h-11 rounded-full border-primary/40 bg-card px-6 text-base shadow-sm"
             />
+            {demo ? null : (
+              <AuthButton
+                authenticated={authenticated}
+                size="lg"
+                className="h-11 rounded-full border border-input bg-card px-6 text-base text-foreground shadow-sm hover:bg-muted"
+              />
+            )}
           </div>
           <ul className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground lg:justify-start">
             {[
@@ -668,7 +688,7 @@ export function FinalCta({ repo, authenticated }: { repo: string; authenticated:
         <p className="mx-auto mt-3 max-w-xl text-sidebar-foreground/75">
           {t("Gratis, privat, dan sepenuhnya milik Anda.")}
         </p>
-        <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+        <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Button
             asChild
             size="lg"
@@ -679,6 +699,11 @@ export function FinalCta({ repo, authenticated }: { repo: string; authenticated:
               {t("Self-host gratis")}
             </a>
           </Button>
+          <DemoLink
+            size="lg"
+            variant="secondary"
+            className="h-11 rounded-full bg-sidebar-accent px-6 text-sidebar-accent-foreground hover:bg-sidebar-accent/80 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          />
           <AuthButton
             authenticated={authenticated}
             size="lg"

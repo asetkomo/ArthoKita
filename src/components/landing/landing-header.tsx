@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Github, Languages, Menu, Moon, Sun } from "lucide-react";
-import { AppLogo, AppName } from "@/components/app-logo";
+import { FlaskConical, Github, Languages, Menu, Moon, Sun } from "lucide-react";
+import { AppLogo, AppName, useBranding } from "@/components/app-logo";
+import { useIsDemo } from "@/components/demo";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -106,13 +107,42 @@ export function AuthButton({
   size?: "sm" | "default" | "lg";
 }) {
   const { t } = useI18n();
+  // On a demo instance (DEMO_MODE=true) the sign-in button leads straight to the one-click demo.
+  const demo = useIsDemo();
   return (
     <Button asChild size={size} className={className}>
       {authenticated ? (
         <Link to="/dashboard">{t("Buka Dashboard")}</Link>
       ) : (
-        <Link to="/login">{t("Masuk")}</Link>
+        <Link to="/login">{demo ? t("Masuk ke demo") : t("Masuk")}</Link>
       )}
+    </Button>
+  );
+}
+
+/**
+ * "Coba demo" link to the public demo instance (env PUBLIC_DEMO_URL via public branding).
+ * Renders nothing when no demo URL is configured, or on the demo instance itself.
+ */
+export function DemoLink({
+  className,
+  size = "sm",
+  variant = "outline",
+}: {
+  className?: string;
+  size?: "sm" | "default" | "lg";
+  variant?: "outline" | "default" | "ghost" | "secondary";
+}) {
+  const { t } = useI18n();
+  const url = useBranding().demo_url;
+  const demo = useIsDemo();
+  if (!url || demo) return null;
+  return (
+    <Button asChild size={size} variant={variant} className={className}>
+      <a href={url} target="_blank" rel="noreferrer">
+        <FlaskConical />
+        {t("Coba demo")}
+      </a>
     </Button>
   );
 }
@@ -163,6 +193,7 @@ export function LandingHeader({
             <LangButton />
             <ThemeButton />
           </div>
+          <DemoLink className="ml-1 hidden rounded-full px-4 sm:inline-flex" />
           <AuthButton authenticated={authenticated} className="ml-1 rounded-full px-4" />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -202,6 +233,7 @@ export function LandingHeader({
                   <Github className="size-4" /> GitHub
                 </a>
               </nav>
+              <DemoLink size="default" className="mt-4 w-full sm:hidden" />
               <div className="mt-6 flex items-center gap-1 border-t pt-4">
                 <LangButton />
                 <ThemeButton />

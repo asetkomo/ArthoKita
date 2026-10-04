@@ -57,8 +57,10 @@ shell first.
 | `npm run db:down`                | Stops the stack and deletes its volumes.                                                                                                                                          |
 
 The seed script refuses to write to any host other than `localhost`/`127.0.0.1` unless you pass
-`--allow-remote`. `--reset` deletes **all** data in the app tables, not only demo rows — never point
-it at a database you care about.
+`--allow-remote` **and** set `DEMO_RESET_CONFIRM=yes`. `--reset` deletes **all** data — every app
+table, app settings, non-default categories and all receipt photos — not only demo rows; never
+point it at a database you care about. The public demo uses the same script daily, see
+[DEMO.md](DEMO.md).
 
 ## What gets seeded
 

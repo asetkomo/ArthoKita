@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { scanReceipt, uploadReceiptImage } from "@/lib/finance.functions";
 import { errMsg, rowsQuery } from "@/lib/queries";
 import { todayStr } from "@/lib/dates";
+import { DemoGate } from "@/components/demo";
 import { useI18n } from "@/lib/i18n";
 import type { Category } from "@/lib/schemas";
 import type { TxDraft } from "./transaction-dialog";
@@ -87,9 +88,17 @@ export function ReceiptScanner({
           if (f) void onFile(f);
         }}
       />
-      <Button variant={variant} disabled={busy} onClick={() => ref.current?.click()}>
-        <ScanLine className="size-4" /> {busy ? t("Membaca…") : t("Scan nota")}
-      </Button>
+      <DemoGate
+        fallback={
+          <Button variant={variant} disabled>
+            <ScanLine className="size-4" /> {t("Scan nota")}
+          </Button>
+        }
+      >
+        <Button variant={variant} disabled={busy} onClick={() => ref.current?.click()}>
+          <ScanLine className="size-4" /> {busy ? t("Membaca…") : t("Scan nota")}
+        </Button>
+      </DemoGate>
     </>
   );
 }

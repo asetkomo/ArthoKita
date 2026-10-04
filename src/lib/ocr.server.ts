@@ -83,6 +83,7 @@ function normalize(d: Draft, ctx: ParseContext): Draft {
 }
 
 export async function parseReceipt(imageDataUrl: string, ctx: ParseContext): Promise<Draft> {
+  (await import("./demo.server")).assertNotDemo();
   const out = await aiJson(
     [
       {
@@ -103,6 +104,7 @@ export async function parseReceipt(imageDataUrl: string, ctx: ParseContext): Pro
 }
 
 export async function parseText(text: string, ctx: ParseContext, today: string): Promise<Draft> {
+  (await import("./demo.server")).assertNotDemo();
   const out = await aiJson(
     [
       {

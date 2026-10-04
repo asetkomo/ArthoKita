@@ -11,6 +11,7 @@ import { BackupRestore } from "@/components/backup-restore";
 import { TwoFactorCard } from "@/components/two-factor-card";
 import { AppSettingsCard } from "@/components/app-settings-card";
 import { AboutCard } from "@/components/about-card";
+import { DemoDisabled } from "@/components/demo";
 import { RowActions, useCrudDialog } from "@/components/crud-page";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -159,7 +160,9 @@ function SettingsPage() {
         ))}
       </div>
 
-      <CsvImport />
+      <DemoDisabled>
+        <CsvImport />
+      </DemoDisabled>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="min-w-0 p-5">
@@ -195,7 +198,9 @@ function SettingsPage() {
         </Card>
       </div>
 
-      <BackupRestore />
+      <DemoDisabled>
+        <BackupRestore />
+      </DemoDisabled>
 
       <Card className="mt-4 min-w-0 p-5">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -241,9 +246,13 @@ function SettingsPage() {
         )}
       </Card>
 
-      <AppSettingsCard />
+      <DemoDisabled>
+        <AppSettingsCard />
+      </DemoDisabled>
 
-      <TwoFactorCard />
+      <DemoDisabled>
+        <TwoFactorCard />
+      </DemoDisabled>
 
       <Card className="mt-4 min-w-0 p-5">
         <h2 className="text-lg font-semibold">

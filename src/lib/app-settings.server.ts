@@ -19,6 +19,7 @@ function env() {
   return {
     APP_TIMEZONE: process.env["APP_TIMEZONE"],
     BOT_DEFAULT_ACCOUNT: process.env["BOT_DEFAULT_ACCOUNT"],
+    PUBLIC_DEMO_URL: process.env["PUBLIC_DEMO_URL"],
   };
 }
 

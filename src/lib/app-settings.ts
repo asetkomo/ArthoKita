@@ -72,6 +72,7 @@ export type AppSettingsRow = {
 export type AppEnv = {
   APP_TIMEZONE?: string | undefined;
   BOT_DEFAULT_ACCOUNT?: string | undefined;
+  PUBLIC_DEMO_URL?: string | undefined;
 };
 
 /** Effective settings after merging the row over env vars and built-in defaults. */
@@ -91,6 +92,8 @@ export type ResolvedSettings = {
   /** Null = each consumer keeps its own default (bot 14 days, n8n 7 days). */
   reminder_days: number | null;
   updated_at: string | null;
+  /** env PUBLIC_DEMO_URL when it is an https URL. */
+  demo_url: string | null;
 };
 
 /** Non-sensitive fields exposed without login (landing, login page, document head). */
@@ -102,6 +105,8 @@ export type Branding = {
   landing_enabled: boolean;
   landing_tagline: string | null;
   github_url: string | null;
+  /** Public demo instance link (env PUBLIC_DEMO_URL, https only); null hides "Coba demo". */
+  demo_url: string | null;
 };
 
 export function isValidTimezone(tz: string | null | undefined): tz is string {
@@ -171,6 +176,7 @@ export function resolveSettings(
     github_url: isHttpsUrl(r.github_url) ? r.github_url : null,
     bot_default_account_id: clean(r.bot_default_account_id),
     bot_default_account_name: clean(env.BOT_DEFAULT_ACCOUNT),
+    demo_url: isHttpsUrl(clean(env.PUBLIC_DEMO_URL)) ? clean(env.PUBLIC_DEMO_URL) : null,
     reminder_days:
       r.reminder_days != null && Number.isInteger(days) && days >= 1 && days <= 365 ? days : null,
     updated_at: r.updated_at ?? null,
@@ -193,6 +199,7 @@ export function brandingOf(s: ResolvedSettings): Branding {
     landing_enabled: s.landing_enabled,
     landing_tagline: s.landing_tagline,
     github_url: s.github_url,
+    demo_url: s.demo_url,
   };
 }
 

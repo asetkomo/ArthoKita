@@ -23,6 +23,7 @@ import { RouteError } from "@/components/route-error";
 import { PageSkeleton, PENDING_MS } from "@/components/skeletons";
 import { TransactionDialog, newTxDraft, type TxDraft } from "@/components/transaction-dialog";
 import { ReceiptScanner } from "@/components/receipt-scanner";
+import { useIsDemo } from "@/components/demo";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -113,6 +114,7 @@ function TransactionsPage() {
   const imp = useServerFn(importTransactionsCsv);
   const [gallery, setGallery] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
+  const demo = useIsDemo();
   const csvRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const ask = useConfirm();
@@ -248,7 +250,8 @@ function TransactionsPage() {
               </Button>
               <Button
                 variant="outline"
-                disabled={importing}
+                disabled={importing || demo}
+                title={demo ? t("Tidak tersedia di mode demo") : undefined}
                 onClick={() => csvRef.current?.click()}
               >
                 <Upload className="size-4" /> {importing ? t("Mengimpor…") : t("Impor CSV")}
@@ -273,7 +276,10 @@ function TransactionsPage() {
                 <DropdownMenuItem onSelect={() => void download()}>
                   <Download className="size-4" /> {t("Excel (CSV)")}
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled={importing} onSelect={() => csvRef.current?.click()}>
+                <DropdownMenuItem
+                  disabled={importing || demo}
+                  onSelect={() => csvRef.current?.click()}
+                >
                   <Upload className="size-4" /> {importing ? t("Mengimpor…") : t("Impor CSV")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => window.print()}>

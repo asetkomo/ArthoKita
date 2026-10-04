@@ -93,6 +93,7 @@ describe("logo & branding", () => {
     expect(b.logo_url).toMatch(/^\/api\/public\/app-icon\?v=/);
     expect(Object.keys(b).sort()).toEqual([
       "app_name",
+      "demo_url",
       "github_url",
       "has_logo",
       "landing_enabled",

@@ -8,7 +8,17 @@ import { docsUrl, landingRedirect, repoUrl, screenshotSrc } from "@/lib/landing"
 import { routeTree } from "@/routeTree.gen";
 
 const session = vi.hoisted(() => ({ authenticated: false }));
-const branding = vi.hoisted(() => ({ landing_enabled: true }));
+const branding = vi.hoisted(() => ({
+  landing_enabled: true,
+  demo_url: null as string | null,
+}));
+const demoMode = vi.hoisted(() => ({ on: false }));
+
+vi.mock("@/lib/demo.functions", () => ({
+  getDemoInfo: vi.fn(async () =>
+    demoMode.on ? { demo: true, username: "demo", password: "demo-pass" } : { demo: false },
+  ),
+}));
 
 vi.mock("@/lib/auth.functions", () => ({
   getSession: vi.fn(async () => ({
@@ -39,6 +49,8 @@ afterEach(async () => {
   cleanup();
   session.authenticated = false;
   branding.landing_enabled = true;
+  branding.demo_url = null;
+  demoMode.on = false;
   const { clearSessionCache } = await import("@/lib/session-cache");
   clearSessionCache();
 });
@@ -96,6 +108,54 @@ describe("landing route", () => {
     branding.landing_enabled = false;
     const router = await load("/");
     expect(router.state.location.pathname).toBe("/login");
+  });
+});
+
+describe("demo links", () => {
+  it("hides 'Coba demo' when PUBLIC_DEMO_URL is not set", async () => {
+    const router = await load("/");
+    render(<RouterProvider router={router} />);
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByRole("link", { name: "Coba demo" })).toBeNull();
+  });
+
+  it("links to the demo from navbar, hero and final CTA when configured", async () => {
+    branding.demo_url = "https://demo.example.com";
+    const router = await load("/");
+    render(<RouterProvider router={router} />);
+    await screen.findByRole("heading", { level: 1 });
+    const links = await screen.findAllByRole("link", { name: "Coba demo" });
+    expect(links.length).toBeGreaterThanOrEqual(3);
+    for (const l of links) expect(l).toHaveAttribute("href", "https://demo.example.com");
+  });
+
+  it("makes 'Masuk ke demo' the hero CTA on a demo instance", async () => {
+    demoMode.on = true;
+    branding.demo_url = "https://demo.example.com";
+    const router = await load("/");
+    render(<RouterProvider router={router} />);
+    const cta = await screen.findAllByRole("link", { name: "Masuk ke demo" });
+    expect(cta[0]).toHaveAttribute("href", "/login");
+    // The demo instance never links to itself.
+    expect(screen.queryByRole("link", { name: "Coba demo" })).toBeNull();
+  });
+
+  it("offers one-click sign-in with prefilled credentials on the demo login page", async () => {
+    demoMode.on = true;
+    const router = await load("/login");
+    render(<RouterProvider router={router} />);
+    expect(await screen.findByRole("button", { name: "Masuk ke demo" })).toBeInTheDocument();
+    expect(screen.getByText(/Ini instance demo/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Username")).toHaveValue("demo");
+    expect(screen.getByLabelText("Password")).toHaveValue("demo-pass");
+  });
+
+  it("shows no demo hints on a normal login page", async () => {
+    const router = await load("/login");
+    render(<RouterProvider router={router} />);
+    await screen.findByRole("button", { name: "Masuk" });
+    expect(screen.queryByRole("button", { name: "Masuk ke demo" })).toBeNull();
+    expect(screen.getByLabelText("Username")).toHaveValue("");
   });
 });
 

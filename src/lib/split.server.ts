@@ -17,6 +17,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Bulk insert (one statement → atomic); drops optional columns the DB does not have yet. */
 async function insertRows(rows: TxInsert[]): Promise<TxRow[]> {
+  await (await import("./demo.server")).assertDemoCapacity("transactions");
   let current = rows as Record<string, unknown>[];
   for (let i = 0; i <= OPTIONAL.length; i++) {
     const res = await db()
