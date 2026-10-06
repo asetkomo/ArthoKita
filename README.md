@@ -1,23 +1,24 @@
 <div align="center">
 
-# Dompetku
+# ArthoKita
 
 **A private, self-hosted personal finance tracker with a Telegram bot and receipt OCR.**
 
-[![CI](https://github.com/ilramdhan/dompetku/actions/workflows/ci.yml/badge.svg)](https://github.com/ilramdhan/dompetku/actions/workflows/ci.yml)
+[![CI](https://github.com/asetkomo/arthokita/actions/workflows/ci.yml/badge.svg)](https://github.com/asetkomo/arthokita/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![TanStack Start](https://img.shields.io/badge/TanStack-Start-ff4154)](https://tanstack.com/start)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com)
-[![Live demo](https://img.shields.io/badge/Live%20demo-demo.dompetku.ilramdhan.dev-2f7d5b?logo=googlechrome&logoColor=white)](https://demo.dompetku.ilramdhan.dev)
+[![Live demo](https://img.shields.io/badge/Live%20demo-demo.Arthokita.ilramdhan.dev-2f7d5b?logo=googlechrome&logoColor=white)]
+(https://artho-kita.vercel.app)
 
-### 🚀 [Live demo → demo.dompetku.ilramdhan.dev](https://demo.dompetku.ilramdhan.dev)
+### 🚀 [Live demo → artho-kita.vercel.app](https://artho-kita.vercel.app/)
 
 Demo credentials are shown on the login page (one-click **Masuk ke demo**). Fake data, resets daily at 00:00 WIB.
 
 </div>
 
-Dompetku ("my wallet" in Indonesian) helps you track income, expenses, transfers, installments,
+Arthokita ("my wallet" in Indonesian) helps you track income, expenses, transfers, installments,
 subscriptions, budgets, savings goals, gold and money people owe you, all in one place. Log a
 coffee by sending _"kopi 25rb"_ to your own Telegram bot, or snap a photo of a receipt and let AI
 fill in the details. Everything lives in **your own** Supabase database and **your own** Vercel
@@ -28,7 +29,7 @@ pages, no shared servers. The interface is available in **Indonesian and English
 time), and amounts support **IDR and USD**.
 
 > [!NOTE]
-> Dompetku was designed with Indonesian users in mind (Rupiah, local banks and e-wallets, Antam
+> Arthokita was designed with Indonesian users in mind (Rupiah, local banks and e-wallets, Antam
 > gold prices, chat shortcuts like `25rb` / `2jt`), but it works for anyone who tracks money in
 > IDR and/or USD.
 
@@ -49,7 +50,7 @@ time), and amounts support **IDR and USD**.
 
 ## Live demo
 
-Try it without installing anything: **<https://demo.dompetku.ilramdhan.dev>**
+Try it without installing anything: **<https://artho-kita.vercel.app/>**
 
 - The demo login is shown on the login page — click **Masuk ke demo** to sign in with one click.
 - All data is fake and **resets daily at 00:00 WIB**; feel free to add, edit and delete.
@@ -172,7 +173,7 @@ You need free accounts on [GitHub](https://github.com), [Supabase](https://supab
 5. **Deploy, open your site and log in.** Add the Telegram bot, OCR and reminders later if you
    want them.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ilramdhan/dompetku&env=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,APP_USERNAME,APP_PASSWORD,SESSION_SECRET)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/asetkomo/arthokita&env=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,APP_USERNAME,APP_PASSWORD,SESSION_SECRET)
 
 > [!IMPORTANT]
 > The button deploys the app, but you still need to run `supabase/schema.sql` in your Supabase
@@ -235,8 +236,8 @@ You need [Node.js](https://nodejs.org) 22 or newer (or [Bun](https://bun.sh), wh
 a Supabase project with the schema applied.
 
 ```bash
-git clone https://github.com/<your-username>/dompetku.git
-cd dompetku
+git clone https://github.com/<your-username>/Arthokita.git
+cd Arthokita
 npm install
 cp .env.example .env    # then fill in at least the five required variables
 npm run dev             # open the URL printed in the terminal
@@ -295,5 +296,5 @@ strings in `src/lib/i18n.tsx`) if your instance needs different wording.
 
 ---
 
-If Dompetku is useful to you, please consider giving it a star. Feedback, ideas and bug reports
-are welcome in [GitHub Issues](https://github.com/ilramdhan/dompetku/issues).
+If Arthokita is useful to you, please consider giving it a star. Feedback, ideas and bug reports
+are welcome in [GitHub Issues](https://github.com/asetkomo/arthokita/issues).
