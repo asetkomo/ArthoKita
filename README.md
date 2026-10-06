@@ -9,8 +9,6 @@
 [![TanStack Start](https://img.shields.io/badge/TanStack-Start-ff4154)](https://tanstack.com/start)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com)
-[![Live demo](https://img.shields.io/badge/Live%20demo-demo.Arthokita.ilramdhan.dev-2f7d5b?logo=googlechrome&logoColor=white)]
-(https://artho-kita.vercel.app)
 
 ### 🚀 Live demo → artho-kita.vercel.app(https://artho-kita.vercel.app/)
 
