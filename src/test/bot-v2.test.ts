@@ -32,7 +32,7 @@ const T = "2026-10-03"; // Sabtu
 describe("perintah slash", () => {
   it("mengenali laporan & daftar", () => {
     expect(classifyBotCommand("/hariini")).toEqual({ type: "report", period: "today" });
-    expect(classifyBotCommand("/minggu@DompetkuBot")).toEqual({ type: "report", period: "week" });
+    expect(classifyBotCommand("/minggu@ArhokitaBot")).toEqual({ type: "report", period: "week" });
     expect(classifyBotCommand("/bulan 2026-05")).toEqual({ type: "report", period: "2026-05" });
     expect(classifyBotCommand("/pengeluaran minggu")).toEqual({
       type: "list",

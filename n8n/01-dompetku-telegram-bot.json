@@ -1,9 +1,9 @@
 {
-  "name": "Dompetku – Telegram Bot",
+  "name": "Arhokita – Telegram Bot",
   "nodes": [
     {
       "parameters": {
-        "content": "## 🤖 Dompetku — Telegram Bot\n\nn8n is only a thin **relay**: all logic (parsing, OCR, categories, reports, buttons) lives in the Dompetku web app (`POST /api/public/n8n/bot`), so it is tested and easy to maintain.\n\n**Required n8n env:** `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` (+ `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`)\n**Credentials:** Telegram API (trigger) & Header Auth — Name `x-api-key`, Value = the web app's `N8N_API_KEY`. Replace every `REPLACE_ME` credential.\n\n🔒 Chats outside the allow-list are silently ignored. Successful executions are not saved (privacy + disk).\nGuide: docs/N8N.md",
+        "content": "## 🤖 Arhokita — Telegram Bot\n\nn8n is only a thin **relay**: all logic (parsing, OCR, categories, reports, buttons) lives in the Arhokita web app (`POST /api/public/n8n/bot`), so it is tested and easy to maintain.\n\n**Required n8n env:** `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` (+ `N8N_BLOCK_ENV_ACCESS_IN_NODE=false`)\n**Credentials:** Telegram API (trigger) & Header Auth — Name `x-api-key`, Value = the web app's `N8N_API_KEY`. Replace every `REPLACE_ME` credential.\n\n🔒 Chats outside the allow-list are silently ignored. Successful executions are not saved (privacy + disk).\nGuide: docs/N8N.md",
         "height": 300,
         "width": 760,
         "color": "6"
@@ -40,7 +40,7 @@
       "credentials": {
         "telegramApi": {
           "id": "REPLACE_ME",
-          "name": "Telegram Dompetku Bot"
+          "name": "Telegram Arhokita Bot"
         }
       }
     },
@@ -297,7 +297,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify(Object.assign({ chat_id: $('Normalize & Guard').item.json.chat_id, text: String($json.text || $json.reply || '⚠️ Server Dompetku sedang bermasalah, coba lagi sebentar.').slice(0, 4000), disable_web_page_preview: true }, $json.reply_markup ? { reply_markup: $json.reply_markup } : {})) }}"
+        "jsonBody": "={{ JSON.stringify(Object.assign({ chat_id: $('Normalize & Guard').item.json.chat_id, text: String($json.text || $json.reply || '⚠️ Server Arhokita sedang bermasalah, coba lagi sebentar.').slice(0, 4000), disable_web_page_preview: true }, $json.reply_markup ? { reply_markup: $json.reply_markup } : {})) }}"
       },
       "id": "f5ac3c50-2f14-4498-9ec4-a0120d88af7e",
       "name": "Send message",

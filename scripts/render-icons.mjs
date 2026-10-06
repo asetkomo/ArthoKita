@@ -66,7 +66,7 @@ const og = {
   <div style="width:1200px;height:630px;background:${GREEN};color:${CREAM};display:flex;align-items:center;gap:56px;padding:0 110px;box-sizing:border-box">
     <img src="${svgData}" width="220" style="border-radius:52px;box-shadow:0 0 0 2px #ffffff22">
     <div>
-      <div style="font:700 112px/1 B;letter-spacing:-3px">Dompetku<span style="color:${GOLD}">.</span></div>
+      <div style="font:700 112px/1 B;letter-spacing:-3px">Arhokita<span style="color:${GOLD}">.</span></div>
       <div style="font:500 36px/1.35 F;margin-top:22px;opacity:.85;max-width:640px">Buku kas pribadi — catat pemasukan, pengeluaran, dan tagihan dalam satu tempat.</div>
     </div>
   </div>`,

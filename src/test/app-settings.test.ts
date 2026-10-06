@@ -19,7 +19,7 @@ const png = (bytes: number) => `data:image/png;base64,${Buffer.alloc(bytes, 1).t
 describe("resolveSettings", () => {
   it("falls back to env then built-in defaults when the table is missing", () => {
     const s = resolveSettings(null, {});
-    expect(s.app_name).toBe("Dompetku");
+    expect(s.app_name).toBe("Arhokita");
     expect(s.timezone).toBe("Asia/Jakarta");
     expect(s.base_currency).toBe("IDR");
     expect(s.landing_enabled).toBe(true);
@@ -62,7 +62,7 @@ describe("resolveSettings", () => {
       { APP_TIMEZONE: "Asia/Jayapura" },
     );
     expect(bad).toMatchObject({
-      app_name: "Dompetku",
+      app_name: "Arhokita",
       timezone: "Asia/Jayapura",
       base_currency: "IDR",
       reminder_days: null,

@@ -456,7 +456,7 @@ export function HowItWorks() {
     },
     {
       icon: Bot,
-      name: "Dompetku",
+      name: "Arhokita",
       body: "Aplikasi membaca, menebak kategori, lalu menyimpan setelah Anda konfirmasi.",
     },
   ];

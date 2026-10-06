@@ -5,7 +5,7 @@ Quick answers for everyday users and developers. Installation: [SELF-HOSTING.md]
 ## General
 
 <details>
-<summary><strong>What is Dompetku?</strong></summary>
+<summary><strong>What is Arhokita?</strong></summary>
 
 A self-hosted personal finance tracker: income, expenses, transfers, debts/pay-later, subscriptions (IDR and USD), budgets, savings goals, gold, receivables, recurring transactions and reports — plus an optional Telegram bot and receipt OCR. You run your own copy; there is no central service.
 
@@ -96,7 +96,7 @@ These are linked transactions so balances stay correct: transfer/top-up/monthly 
 
 - **Download:** **Settings → Data backup → Download backup (JSON)** — one file with all tables.
 - **Restore:** **Settings → Restore from backup** → choose the file (up to 20 MB). _Merge_ (default) updates/inserts by ID; _Replace all_ (type the confirmation word) wipes current data first. Large backups are uploaded in chunks, so Vercel's 4.5 MB request limit is not a problem.
-- **Automatic:** the n8n workflow `n8n/05-dompetku-backup.json` saves a weekly backup to Google Drive (or email). See [N8N.md](N8N.md).
+- **Automatic:** the n8n workflow `n8n/05-arthokito-backup.json` saves a weekly backup to Google Drive (or email). See [N8N.md](N8N.md).
 - Supabase's own daily backups are only on paid plans, so keep your own copies.
 
 </details>
@@ -126,7 +126,7 @@ Download a backup first if you might want the data later.
 On the **free plan**, Supabase pauses projects that have had **no activity for about a week**. While paused, the app shows database errors. Your data is **not deleted**.
 
 - **Unpause:** Supabase dashboard → your project → **Restore project** (or _Resume_). It takes a few minutes. Paused free projects can be restored for a limited time (currently 90 days), so don't wait too long.
-- **Avoid it:** use the app regularly, or let n8n do it for you — the scheduled workflow `02-dompetku-jadwal.json` calls the app (which queries the database) every day, which counts as activity. Upgrading to a paid Supabase plan also removes pausing.
+- **Avoid it:** use the app regularly, or let n8n do it for you — the scheduled workflow `02-arthokito-jadwal.json` calls the app (which queries the database) every day, which counts as activity. Upgrading to a paid Supabase plan also removes pausing.
 
 </details>
 

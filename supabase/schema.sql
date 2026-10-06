@@ -1,4 +1,4 @@
--- Dompetku schema. Jalankan sekali di Supabase SQL Editor.
+-- Arhokita schema. Jalankan sekali di Supabase SQL Editor.
 -- Semua akses data lewat server (service role). RLS aktif tanpa policy =
 -- anon/authenticated tidak bisa membaca apa pun dari browser.
 

@@ -5,7 +5,7 @@ import { isAuthenticated } from "@/components/landing/public-session";
 import { DEFAULT_BRANDING } from "@/lib/app-settings";
 import { landingRedirect } from "@/lib/landing";
 
-const TITLE = "Dompetku — Pelacak Keuangan Pribadi Open Source";
+const TITLE = "Arhokita — Pelacak Keuangan Pribadi Open Source";
 const DESCRIPTION =
   "Pelacak keuangan pribadi yang Anda host sendiri: transaksi, budget, hutang, emas, laporan, dan bot Telegram dengan OCR struk. Gratis dan open source.";
 

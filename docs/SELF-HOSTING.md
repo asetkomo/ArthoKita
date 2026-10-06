@@ -1,6 +1,6 @@
-# Self-hosting Dompetku
+# Self-hosting Arhokita
 
-This guide takes you from zero to your own private copy of **Dompetku** (a personal finance tracker) running on the internet. It is written for complete beginners — every step says exactly where to click and what you should see. Developers can skim the tables and jump to [Running locally](#7-running-locally-for-developers).
+This guide takes you from zero to your own private copy of **Arhokita** (a personal finance tracker) running on the internet. It is written for complete beginners — every step says exactly where to click and what you should see. Developers can skim the tables and jump to [Running locally](#7-running-locally-for-developers).
 
 > [!NOTE]
 > Looking for a specific setting? See [ENVIRONMENT.md](ENVIRONMENT.md). Questions? See [FAQ.md](FAQ.md). Telegram bot, reminders and backups via n8n are covered in [N8N.md](N8N.md).
@@ -31,7 +31,7 @@ This guide takes you from zero to your own private copy of **Dompetku** (a perso
 
 ```mermaid
 flowchart LR
-  You[You - browser / phone] -->|HTTPS + login cookie| Vercel[Dompetku on Vercel]
+  You[You - browser / phone] -->|HTTPS + login cookie| Vercel[Arhokita on Vercel]
   Vercel -->|secret key, server only| Supabase[(Supabase database + receipt photos)]
   Telegram[Telegram bot] -.optional.-> n8n[n8n automation] -.x-api-key.-> Vercel
   Vercel -.optional.-> AI[AI provider for OCR]
@@ -76,10 +76,10 @@ Optional, only for the Full path:
 
 A **fork** is your own copy of the project on GitHub. Vercel will build the website from your fork, and you can pull in future updates with one click.
 
-1. Sign in to GitHub and open <https://github.com/ilramdhan/dompetku>.
+1. Sign in to GitHub and open <https://github.com/asetkomo/arthokito>.
 2. Click **Fork** (top right).
-3. Leave **Owner** as your account and the name as `dompetku` (you can rename it). Keep **Copy the `main` branch only** ticked.
-4. Click **Create fork**. After a few seconds you are on `github.com/<your-username>/dompetku`.
+3. Leave **Owner** as your account and the name as `arthokito` (you can rename it). Keep **Copy the `main` branch only** ticked.
+4. Click **Create fork**. After a few seconds you are on `github.com/<your-username>/arthokito`.
 
 > [!NOTE]
 > **Public or private?** Forks of a public repo are public. That is fine: **your data and secrets never live in the code** — they live in Supabase and in Vercel's environment variables. If you prefer a private repo, use **Use this template** / _Import repository_ (<https://github.com/new/import>) instead of Fork; you then lose the one-click _Sync fork_ button and must pull updates manually.
@@ -93,7 +93,7 @@ A **fork** is your own copy of the project on GitHub. Vercel will build the webs
 ### 2.1 Create a project
 
 1. Go to <https://supabase.com/dashboard> → **New project**.
-2. Pick your organization, enter a **Project name** (e.g. `dompetku`).
+2. Pick your organization, enter a **Project name** (e.g. `arthokito`).
 3. **Database Password**: click **Generate a password** and save it in your password manager (you rarely need it, but you cannot see it again).
 4. **Region**: choose the one closest to you. For Indonesia, choose **Southeast Asia (Singapore)**.
 5. Click **Create new project** and wait 1–2 minutes until the dashboard is ready.
@@ -131,7 +131,7 @@ A **fork** is your own copy of the project on GitHub. Vercel will build the webs
    This becomes `SUPABASE_SERVICE_ROLE_KEY`. Both formats work.
 
 > [!WARNING]
-> The secret / `service_role` key is a **master key** to your database — it bypasses all security rules. Only ever paste it into Vercel environment variables or your local `.env`. Never put it in the browser, in a screenshot, in a GitHub issue, or in a public file. Dompetku only uses it on the server. If it leaks, rotate it in Supabase (API Keys → roll / create new secret key) and update Vercel.
+> The secret / `service_role` key is a **master key** to your database — it bypasses all security rules. Only ever paste it into Vercel environment variables or your local `.env`. Never put it in the browser, in a screenshot, in a GitHub issue, or in a public file. Arhokita only uses it on the server. If it leaks, rotate it in Supabase (API Keys → roll / create new secret key) and update Vercel.
 >
 > Do **not** use the `anon` / _publishable_ key — the app will not work with it.
 
@@ -230,8 +230,8 @@ Keep these four values — plus `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` f
 ### 4.1 Import the project
 
 1. Go to <https://vercel.com/new>.
-2. Under **Import Git Repository**, click **Continue with GitHub** if asked, and allow Vercel to access your `dompetku` repository (you can grant access to only that repo).
-3. Click **Import** next to `dompetku`.
+2. Under **Import Git Repository**, click **Continue with GitHub** if asked, and allow Vercel to access your `arthokito` repository (you can grant access to only that repo).
+3. Click **Import** next to `arthokito`.
 4. **Framework Preset**: choose **Other** if Vercel picked something else. Leave **Root Directory** as `./`.
 5. **Build and Output Settings**: leave them on default. Vercel detects `bun.lock` and runs `bun install` + `bun run build`; the build automatically targets Vercel (it checks the `VERCEL` variable that Vercel sets). If you override anything, the build command is `bun run build` (or `npm run build`) and the output directory must stay empty.
 
@@ -258,7 +258,7 @@ Every variable, with details and security notes: **[ENVIRONMENT.md](ENVIRONMENT.
 
 1. Click **Deploy**. The build takes about 1–3 minutes.
 2. When you see **Congratulations!**, click **Continue to Dashboard**.
-3. Your address is shown under **Domains**, e.g. `https://dompetku-yourname.vercel.app`. Bookmark it.
+3. Your address is shown under **Domains**, e.g. `https://arthokito-yourname.vercel.app`. Bookmark it.
 
 **Check the region:** Project → **Settings → Functions → Function Region** should show the region from `vercel.json` (Singapore `sin1` by default).
 
@@ -347,12 +347,12 @@ Reads receipt photos (web **and** bot) and understands ambiguous chat messages. 
 Two options:
 
 - **Through n8n** (no extra variables): n8n reads `GET /api/public/n8n/reminders-email` and sends it with its own Email/Gmail node. See [N8N.md](N8N.md).
-- **Directly via Resend:** create an account at <https://resend.com>, verify a domain, create an API key, then set `RESEND_API_KEY`, `EMAIL_FROM` (e.g. `Dompetku <noreply@mail.example.com>`) and `EMAIL_TO` in Vercel → redeploy. A scheduler (e.g. n8n) then calls `POST /api/public/n8n/reminders-send-email`.
+- **Directly via Resend:** create an account at <https://resend.com>, verify a domain, create an API key, then set `RESEND_API_KEY`, `EMAIL_FROM` (e.g. `Arhokita <noreply@mail.example.com>`) and `EMAIL_TO` in Vercel → redeploy. A scheduler (e.g. n8n) then calls `POST /api/public/n8n/reminders-send-email`.
 
 ### 6.4 Backups
 
 - **Manual:** **Settings → Data backup → Download backup (JSON)**. **Restore from backup** accepts that file (merge or replace-all mode).
-- **Scheduled:** import `n8n/05-dompetku-backup.json` into n8n — weekly backup to Google Drive (or email). See [N8N.md](N8N.md).
+- **Scheduled:** import `n8n/05-arthokito-backup.json` into n8n — weekly backup to Google Drive (or email). See [N8N.md](N8N.md).
 
 ### 6.5 Error monitoring (Sentry)
 
@@ -365,8 +365,8 @@ Server errors are always written as one JSON line to **Vercel → Logs** (filter
 **Requirements:** [Node.js 22](https://nodejs.org) and [Bun](https://bun.sh) (`bun.lock` is the lockfile and CI uses Bun). npm also works.
 
 ```sh
-git clone https://github.com/<your-username>/dompetku.git
-cd dompetku
+git clone https://github.com/<your-username>/arthokito.git
+cd arthokito
 cp .env.example .env        # then fill in at least the required values
 bun install                 # or: npm install
 bun run dev                 # or: npm run dev

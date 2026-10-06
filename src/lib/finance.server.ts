@@ -1204,7 +1204,7 @@ export function remindersEmail(list: Reminder[]): { subject: string; text: strin
     })
     .join("");
   const html = list.length
-    ? `<div style="font-family:sans-serif;max-width:560px;margin:auto"><h2 style="color:#1d3b2f">Pengingat Keuangan</h2><table style="width:100%;border-collapse:collapse;font-size:14px">${items}</table><p style="color:#999;font-size:12px">Dikirim otomatis oleh Dompetku via n8n.</p></div>`
+    ? `<div style="font-family:sans-serif;max-width:560px;margin:auto"><h2 style="color:#1d3b2f">Pengingat Keuangan</h2><table style="width:100%;border-collapse:collapse;font-size:14px">${items}</table><p style="color:#999;font-size:12px">Dikirim otomatis oleh Arhokita via n8n.</p></div>`
     : `<div style="font-family:sans-serif"><p>🎉 Tidak ada tagihan dalam waktu dekat.</p></div>`;
   return { subject, text, html };
 }
@@ -1660,7 +1660,7 @@ export async function exportBackup() {
     data[t] = (r.data ?? []) as any[];
   });
   await logActivity("backup.export", null, { tables: tables.length });
-  return { exportedAt: new Date().toISOString(), app: "dompetku", version: 1, data };
+  return { exportedAt: new Date().toISOString(), app: "arthokito", version: 1, data };
 }
 
 /* ---------------- Bot command (n8n) ---------------- */

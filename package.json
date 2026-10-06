@@ -7,11 +7,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ilramdhan/dompetku.git"
+    "url": "git+https://github.com/asetkomo/arthokito.git"
   },
-  "homepage": "https://github.com/ilramdhan/dompetku#readme",
+  "homepage": "https://github.com/asetkomo/arthokito#readme",
   "bugs": {
-    "url": "https://github.com/ilramdhan/dompetku/issues"
+    "url": "https://github.com/asetkomo/arthokito/issues"
   },
   "scripts": {
     "dev": "vite dev",

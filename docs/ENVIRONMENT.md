@@ -1,6 +1,6 @@
 # Environment variables
 
-Every setting Dompetku reads from its environment. New to this? An **environment variable** is a named setting (like `APP_PASSWORD`) that you give to the server instead of writing it into the code — so your secrets never end up on GitHub.
+Every setting Arhokita reads from its environment. New to this? An **environment variable** is a named setting (like `APP_PASSWORD`) that you give to the server instead of writing it into the code — so your secrets never end up on GitHub.
 
 **Where to set them**
 
@@ -74,7 +74,7 @@ All three are needed for `POST /api/public/n8n/reminders-send-email`. Not needed
 | Name             | Example                               | What it does                                                             | How to obtain                                                  |
 | ---------------- | ------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | `RESEND_API_KEY` | `re_…`                                | Resend API key. **Secret.**                                              | <https://resend.com> → API Keys.                               |
-| `EMAIL_FROM`     | `Dompetku <noreply@mail.example.com>` | Sender; the domain must be verified in Resend.                           | Resend → Domains → add DNS records your domain provider shows. |
+| `EMAIL_FROM`     | `Arhokita <noreply@mail.example.com>` | Sender; the domain must be verified in Resend.                           | Resend → Domains → add DNS records your domain provider shows. |
 | `EMAIL_TO`       | `you@example.com`                     | Default recipient(s), comma-separated. A request body `to` overrides it. | —                                                              |
 
 ## Monitoring (optional)
@@ -90,7 +90,7 @@ See [DEMO.md](DEMO.md).
 | Name              | Example                               | What it does                                                                                                                                                                                                                                           | Security                                                                                                      |
 | ----------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
 | `DEMO_MODE`       | `true` (only on a demo instance)      | Turns the instance into a **public demo**: shows `APP_USERNAME`/`APP_PASSWORD` on the login page with one-click sign-in, ignores 2FA, disables AI/uploads/import/restore/settings/n8n routes, caps rows and rate-limits writes. Any other value = off. | **Never** on an instance with real data — it publishes the login. Use a separate, throwaway Supabase project. |
-| `PUBLIC_DEMO_URL` | `https://demo.dompetku.ilramdhan.dev` | On your **main** instance: shows a **Coba demo** button (navbar, hero, final CTA) linking to a public demo. Must be `https://`; empty = hidden.                                                                                                        | Not secret.                                                                                                   |
+| `PUBLIC_DEMO_URL` | `https://demo.arthokito.asetkomo.dev` | On your **main** instance: shows a **Coba demo** button (navbar, hero, final CTA) linking to a public demo. Must be `https://`; empty = hidden.                                                                                                        | Not secret.                                                                                                   |
 
 ## Development only
 
@@ -114,7 +114,7 @@ These live in the **n8n** environment (not Vercel) and are read by the workflow 
 
 | Name                        | Used by            | Example                       | What it does                                                                                               |
 | --------------------------- | ------------------ | ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `FINTRACK_URL`              | 01, 02, 05         | `https://your-app.vercel.app` | Base URL of your Dompetku deployment (no trailing slash).                                                  |
+| `FINTRACK_URL`              | 01, 02, 05         | `https://your-app.vercel.app` | Base URL of your Arhokita deployment (no trailing slash).                                                  |
 | `TELEGRAM_BOT_TOKEN`        | 01, 02, 03, 04     | `<token from @BotFather>`     | Telegram Bot API token. **Secret.**                                                                        |
 | `TELEGRAM_ALLOWED_CHAT_IDS` | 01                 | `123456789`                   | Comma-separated chat IDs n8n forwards to the app (first filter; the app re-checks `BOT_ALLOWED_CHAT_IDS`). |
 | `TELEGRAM_ADMIN_CHAT_ID`    | 02, 03             | `123456789`                   | Chat that receives scheduled reminders/reports and workflow error alerts.                                  |

@@ -1,6 +1,6 @@
 # Accessibility
 
-Dompetku is a personal finance tracker. Everyone who manages their own money should be able to
+Arhokita is a personal finance tracker. Everyone who manages their own money should be able to
 use it, whether they use a keyboard, a screen reader, zoom or a small phone screen, and whether
 they read Indonesian or English. This document lists what we aim for, what contributors are
 expected to check, the gaps we already know about, and how to tell us when something gets in
@@ -9,7 +9,7 @@ your way.
 ## Priorities
 
 We work toward [WCAG 2.2](https://www.w3.org/TR/WCAG22/) level AA. This is a **goal, not a
-claim of conformance**: Dompetku has not been formally audited.
+claim of conformance**: Arhokita has not been formally audited.
 
 What we prioritise, in order:
 
@@ -48,8 +48,8 @@ still have to pass as usual.
 
 ## Reporting accessibility issues
 
-If something stops you from using Dompetku, please
-[open a bug report](https://github.com/ilramdhan/dompetku/issues/new?template=bug_report.yml) and
+If something stops you from using Arhokita, please
+[open a bug report](https://github.com/asetkomo/arthokito/issues/new?template=bug_report.yml) and
 start the title with **"Accessibility:"**. It helps to include:
 
 - what you were trying to do (for example "add a transaction" or "read the monthly report");
@@ -63,7 +63,7 @@ Screenshots or recordings are welcome but optional. You never need to tell us ab
 Please do not include real financial data, passwords, API keys or chat IDs.
 
 If the bug report form itself is hard to use, the shorter
-[question form](https://github.com/ilramdhan/dompetku/issues/new?template=question.yml) is fine
+[question form](https://github.com/asetkomo/arthokito/issues/new?template=question.yml) is fine
 too. Just say it is about accessibility and we will take it from there.
 
 ### Severity
@@ -78,7 +78,7 @@ You don't need to choose a severity; the maintainer sets it during triage.
 
 ### How we respond
 
-Dompetku is maintained by one person in their spare time, so these are goals, not guarantees:
+Arhokita is maintained by one person in their spare time, so these are goals, not guarantees:
 
 - We aim to reply to new reports within **7 days**.
 - Blockers are fixed before new features. If a fix will take a while, we suggest a workaround in
@@ -88,7 +88,7 @@ Dompetku is maintained by one person in their spare time, so these are goals, no
 
 ## Ownership and maintenance
 
-The project maintainer ([@ilramdhan](https://github.com/ilramdhan), see
+The project maintainer ([@asetkomo](https://github.com/asetkomo), see
 [`.github/CODEOWNERS`](.github/CODEOWNERS)) is responsible for accessibility: triaging reports,
 reviewing pull requests against the expectations above, and keeping this document up to date.
 We review this document at least once a year and whenever something major changes, such as a new
@@ -97,7 +97,7 @@ UI library or a new kind of screen. If ownership changes, the new maintainer is 
 
 ## Supported environments
 
-Dompetku is a web app (installable as a PWA) plus an optional Telegram bot.
+Arhokita is a web app (installable as a PWA) plus an optional Telegram bot.
 
 - **Browsers:** current versions of Chrome, Edge, Firefox and Safari on desktop, and Chrome on
   Android and Safari on iOS.
@@ -107,7 +107,7 @@ Dompetku is a web app (installable as a PWA) plus an optional Telegram bot.
 - **Telegram bot:** uses Telegram's own apps, so its accessibility depends on the Telegram client
   you use.
 
-We have **not** systematically tested Dompetku with screen readers (NVDA, JAWS, VoiceOver,
+We have **not** systematically tested Arhokita with screen readers (NVDA, JAWS, VoiceOver,
 TalkBack), voice control or switch access. It is built with those users in mind, but we can't yet
 promise they will work well. Reports from people who use them are especially welcome.
 
@@ -128,6 +128,6 @@ promise they will work well. Reports from people who use them are especially wel
 ## Feedback and improvements
 
 Suggestions for this document or for how we handle accessibility are welcome. Open a
-[feature request](https://github.com/ilramdhan/dompetku/issues/new?template=feature_request.yml)
+[feature request](https://github.com/asetkomo/arthokito/issues/new?template=feature_request.yml)
 or a pull request that changes this file. If something is stopping you from using the app right
 now, please use [the reporting process above](#reporting-accessibility-issues) instead.

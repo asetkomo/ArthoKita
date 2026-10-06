@@ -62,11 +62,11 @@ Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement privately:
 
 - Use GitHub's private reporting on this repository: open the
-  [**Security** tab → **Report a vulnerability**](https://github.com/ilramdhan/dompetku/security/advisories/new)
+  [**Security** tab → **Report a vulnerability**](https://github.com/asetkomo/arthokito/security/advisories/new)
   and start the title with `[Conduct]` (this form is private to the maintainer,
   even though it is meant for security reports), or
 - Contact the maintainer through the contact options on their GitHub profile,
-  [@ilramdhan](https://github.com/ilramdhan).
+  [@asetkomo](https://github.com/asetkomo).
 
 Please do not report conduct issues in public issues or pull requests.
 

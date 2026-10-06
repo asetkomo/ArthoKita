@@ -181,7 +181,7 @@ const DICT: Record<string, string> = {
   "Pilih berkas JSON": "Choose JSON file",
   "File maksimal 20 MB": "File must be 20 MB or less",
   "Berkas bukan JSON yang valid": "File is not valid JSON",
-  "Bukan berkas cadangan Dompetku": "Not a Dompetku backup file",
+  "Bukan berkas cadangan Arhokita": "Not a Arhokita backup file",
   "Tidak dipulihkan: ": "Not restored: ",
   Gabungkan: "Merge",
   "Data dengan ID sama diperbarui, data lain tetap ada.":
@@ -858,15 +858,15 @@ const DICT: Record<string, string> = {
   Naik: "Up",
   Turun: "Down",
   Tetap: "Unchanged",
-  'Dompetku adalah aplikasi open source yang di-host sendiri. Kebijakan ini menjelaskan data apa yang disimpan instance ini, di mana disimpan, dan siapa yang bisa mengaksesnya. "Pemilik instance" adalah orang yang memasang dan menjalankan salinan aplikasi ini.':
-    'Dompetku is self-hosted open-source software. This policy explains what data this instance stores, where it lives and who can access it. The "instance owner" is the person who deployed and runs this copy of the app.',
-  "Dengan memakai instance Dompetku ini, Anda menyetujui ketentuan singkat berikut. Ketentuan ini melengkapi, bukan menggantikan, lisensi MIT dari kode sumbernya.":
-    "By using this Dompetku instance you agree to the short terms below. They complement, and do not replace, the MIT license of the source code.",
+  'Arhokita adalah aplikasi open source yang di-host sendiri. Kebijakan ini menjelaskan data apa yang disimpan instance ini, di mana disimpan, dan siapa yang bisa mengaksesnya. "Pemilik instance" adalah orang yang memasang dan menjalankan salinan aplikasi ini.':
+    'Arhokita is self-hosted open-source software. This policy explains what data this instance stores, where it lives and who can access it. The "instance owner" is the person who deployed and runs this copy of the app.',
+  "Dengan memakai instance Arhokita ini, Anda menyetujui ketentuan singkat berikut. Ketentuan ini melengkapi, bukan menggantikan, lisensi MIT dari kode sumbernya.":
+    "By using this Arhokita instance you agree to the short terms below. They complement, and do not replace, the MIT license of the source code.",
   "Data yang disimpan": "Data we store",
   "Data keuangan yang Anda masukkan — akun, transaksi, budget, hutang, piutang, emas, target, foto struk, dan pengaturan — disimpan di proyek Supabase (PostgreSQL dan Storage) milik pemilik instance.":
     "The financial data you enter — accounts, transactions, budgets, debts, receivables, gold, goals, receipt photos and settings — is stored in the instance owner's own Supabase project (PostgreSQL and Storage).",
-  "Database hanya diakses oleh server aplikasi ini; browser tidak pernah terhubung langsung ke database. Pembuat Dompetku tidak memiliki akses ke instance ini.":
-    "The database is only accessed by this app's server; the browser never connects to it directly. The authors of Dompetku have no access to this instance.",
+  "Database hanya diakses oleh server aplikasi ini; browser tidak pernah terhubung langsung ke database. Pembuat Arhokita tidak memiliki akses ke instance ini.":
+    "The database is only accessed by this app's server; the browser never connects to it directly. The authors of Arhokita have no access to this instance.",
   "Tidak dijual, tidak dibagikan": "Not sold, not shared",
   "Pemilik instance tidak menjual, menyewakan, atau membagikan data Anda untuk iklan. Data hanya dikirim ke layanan pihak ketiga yang diaktifkan pemilik instance, sebatas yang dibutuhkan fitur tersebut (lihat di bawah).":
     "The instance owner does not sell, rent or share your data for advertising. Data is only sent to third-party services the owner has enabled, and only as far as that feature needs (see below).",
@@ -901,14 +901,14 @@ const DICT: Record<string, string> = {
   "Pertanyaan tentang data di instance ini ditujukan kepada pemilik instance yang mengoperasikannya. Masalah pada kode sumber dapat dilaporkan di repositori GitHub proyek.":
     "Questions about data on this instance go to the instance owner who operates it. Issues with the source code can be reported on the project's GitHub repository.",
   Lisensi: "License",
-  "Kode sumber Dompetku dirilis di bawah Lisensi MIT. Anda bebas memakai, menyalin, mengubah, dan mendistribusikannya selama pemberitahuan hak cipta dan lisensi tetap disertakan.":
-    "Dompetku's source code is released under the MIT License. You may use, copy, modify and distribute it as long as the copyright and license notice are kept.",
+  "Kode sumber Arhokita dirilis di bawah Lisensi MIT. Anda bebas memakai, menyalin, mengubah, dan mendistribusikannya selama pemberitahuan hak cipta dan lisensi tetap disertakan.":
+    "Arhokita's source code is released under the MIT License. You may use, copy, modify and distribute it as long as the copyright and license notice are kept.",
   "Tanpa jaminan": "No warranty",
   'Perangkat lunak ini disediakan "apa adanya", tanpa jaminan apa pun, tersurat maupun tersirat. Pembuat dan kontributor tidak bertanggung jawab atas kehilangan data, kerugian, atau kerusakan yang timbul dari penggunaannya.':
     'The software is provided "as is", without warranty of any kind, express or implied. The authors and contributors are not liable for any data loss, loss or damage arising from its use.',
   "Bukan nasihat keuangan": "Not financial advice",
-  "Dompetku adalah alat pencatatan. Angka, proyeksi, harga emas, dan hasil pembacaan AI bisa keliru dan bukan nasihat keuangan, investasi, atau pajak. Selalu periksa ulang sebelum mengambil keputusan.":
-    "Dompetku is a record-keeping tool. Figures, projections, gold prices and AI readings can be wrong and are not financial, investment or tax advice. Always double-check before making decisions.",
+  "Arhokita adalah alat pencatatan. Angka, proyeksi, harga emas, dan hasil pembacaan AI bisa keliru dan bukan nasihat keuangan, investasi, atau pajak. Selalu periksa ulang sebelum mengambil keputusan.":
+    "Arhokita is a record-keeping tool. Figures, projections, gold prices and AI readings can be wrong and are not financial, investment or tax advice. Always double-check before making decisions.",
   "Tanggung jawab Anda": "Your responsibilities",
   "Pemilik instance bertanggung jawab atas deployment, keamanan server, kunci API, kata sandi, dan backup-nya sendiri.":
     "The instance owner is responsible for their own deployment, server security, API keys, passwords and backups.",

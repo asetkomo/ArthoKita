@@ -1,4 +1,4 @@
-# Dompetku — 6 peningkatan
+# Arhokita — 6 peningkatan
 
 Arsitektur inti tetap: akses DB hanya lewat server (service role), n8n pakai `x-api-key`, input manual tetap ada, UI Bahasa Indonesia, desain dan font tidak berubah.
 

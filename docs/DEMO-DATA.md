@@ -1,6 +1,6 @@
 # Demo data (local throwaway database)
 
-Run Dompetku locally against a disposable Supabase stack filled with realistic, **fully fictional**
+Run Arhokita locally against a disposable Supabase stack filled with realistic, **fully fictional**
 Indonesian personal-finance data. Use it to try the app, develop features, or take reproducible
 screenshots, without touching a real database.
 

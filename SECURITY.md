@@ -1,10 +1,10 @@
 # Security Policy
 
-Dompetku stores personal financial data, so security reports are taken seriously. Thank you for helping keep self-hosters safe.
+Arhokita stores personal financial data, so security reports are taken seriously. Thank you for helping keep self-hosters safe.
 
 ## Supported versions
 
-Dompetku is a self-hosted app without numbered releases. Only the latest code on the **`main`** branch receives security fixes.
+Arhokita is a self-hosted app without numbered releases. Only the latest code on the **`main`** branch receives security fixes.
 
 | Version                 | Supported                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------- |
@@ -18,8 +18,8 @@ Dompetku is a self-hosted app without numbered releases. Only the latest code on
 
 Report privately through GitHub:
 
-1. Go to the repository's [**Security** tab](https://github.com/ilramdhan/dompetku/security).
-2. Click **Report a vulnerability** (or open [this link directly](https://github.com/ilramdhan/dompetku/security/advisories/new)).
+1. Go to the repository's [**Security** tab](https://github.com/asetkomo/arthokito/security).
+2. Click **Report a vulnerability** (or open [this link directly](https://github.com/asetkomo/arthokito/security/advisories/new)).
 3. Describe the issue. Helpful details:
    - what an attacker can do (impact),
    - steps to reproduce or a proof of concept,
@@ -52,14 +52,14 @@ This is a hobby project maintained by one person, so these are good-faith target
 
 **Out of scope:**
 
-- Vulnerabilities in third-party services or libraries themselves (Supabase, Vercel, Lovable, n8n, Telegram, Google, your AI provider) — report those upstream. A vulnerable _dependency version_ used by Dompetku is in scope.
+- Vulnerabilities in third-party services or libraries themselves (Supabase, Vercel, Lovable, n8n, Telegram, Google, your AI provider) — report those upstream. A vulnerable _dependency version_ used by Arhokita is in scope.
 - Problems caused by a misconfigured self-hosted instance (weak password, leaked keys, disabled RLS) — see the hardening checklist below.
 - Attacks requiring physical access to an unlocked device, or a compromised hosting/Supabase account.
 - Missing best-practice headers or rate limits without a demonstrated impact, denial of service by flooding, social engineering, spam.
 
 ## Hardening checklist for self-hosters
 
-Dompetku is a **single-user** app: whoever knows the login can see all your finances. Please go through this list after installing. Every variable is explained in [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+Arhokita is a **single-user** app: whoever knows the login can see all your finances. Please go through this list after installing. Every variable is explained in [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
 
 **Login**
 

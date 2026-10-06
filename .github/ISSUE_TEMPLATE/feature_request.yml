@@ -1,12 +1,12 @@
 name: 💡 Feature request
-description: Suggest an idea or improvement for Dompetku.
+description: Suggest an idea or improvement for Arhokita.
 title: "[Feature]: "
 labels: ["enhancement", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the idea! Please check [existing issues](https://github.com/ilramdhan/dompetku/issues?q=is%3Aissue) first — if someone already suggested it, add a 👍 there instead.
+        Thanks for the idea! Please check [existing issues](https://github.com/asetkomo/arthokito/issues?q=is%3Aissue) first — if someone already suggested it, add a 👍 there instead.
   - type: textarea
     id: problem
     attributes:
@@ -18,7 +18,7 @@ body:
     id: solution
     attributes:
       label: Proposed solution
-      description: What would you like Dompetku to do?
+      description: What would you like Arhokita to do?
     validations:
       required: true
   - type: textarea

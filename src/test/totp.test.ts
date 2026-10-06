@@ -117,9 +117,9 @@ describe("enrollment helpers", () => {
     const s = generateTotpSecret();
     expect(s).toMatch(/^[A-Z2-7]{32}$/);
     expect(base32Decode(s)!.length).toBe(20);
-    const uri = buildOtpauthUri({ secret: "ABCD", account: "ilham", issuer: "Dompetku" });
+    const uri = buildOtpauthUri({ secret: "ABCD", account: "ilham", issuer: "Arhokita" });
     expect(uri).toBe(
-      "otpauth://totp/Dompetku:ilham?secret=ABCD&issuer=Dompetku&algorithm=SHA1&digits=6&period=30",
+      "otpauth://totp/Arhokita:ilham?secret=ABCD&issuer=Arhokita&algorithm=SHA1&digits=6&period=30",
     );
     expect(formatSecret("ABCDEFGHIJ")).toBe("ABCD EFGH IJ");
   });

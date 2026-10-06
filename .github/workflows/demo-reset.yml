@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   reset:
-    if: github.repository == 'ilramdhan/dompetku'
+    if: github.repository == 'asetkomo/arthokito'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

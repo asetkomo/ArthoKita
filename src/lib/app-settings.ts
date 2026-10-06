@@ -10,7 +10,7 @@
 import { z } from "zod";
 import { CURRENCIES } from "./schemas";
 
-export const DEFAULT_APP_NAME = "Dompetku";
+export const DEFAULT_APP_NAME = "Arhokita";
 /** Default tagline is an i18n key (shown through `t()` while unchanged). */
 export const DEFAULT_TAGLINE = "buku kas pribadi";
 export const DEFAULT_TIMEZONE = "Asia/Jakarta";

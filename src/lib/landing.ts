@@ -1,6 +1,6 @@
 /** Pure, client-safe helpers for the public landing page at `/`. */
 
-export const DEFAULT_REPO_URL = "https://github.com/ilramdhan/dompetku";
+export const DEFAULT_REPO_URL = "https://github.com/asetkomo/arthokito";
 
 export type LandingRedirect = "/login" | "/dashboard" | null;
 

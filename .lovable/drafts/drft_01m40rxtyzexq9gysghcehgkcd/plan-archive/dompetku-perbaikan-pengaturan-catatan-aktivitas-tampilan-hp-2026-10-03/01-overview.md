@@ -1,4 +1,4 @@
-# Dompetku: perbaikan Pengaturan, catatan aktivitas, tampilan HP, kecepatan, Emas, Piutang, Tarik tunai
+# Arhokita: perbaikan Pengaturan, catatan aktivitas, tampilan HP, kecepatan, Emas, Piutang, Tarik tunai
 
 Tujuh pekerjaan dalam satu rangkaian. Semua teks baru memakai t() dan masuk kamus ID/EN. Semua akses data tetap lewat server.
 

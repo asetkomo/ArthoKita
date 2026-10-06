@@ -1,9 +1,9 @@
 {
-  "name": "Dompetku – Jadwal Laporan & Pengingat",
+  "name": "Arhokita – Jadwal Laporan & Pengingat",
   "nodes": [
     {
       "parameters": {
-        "content": "## ⏰ Dompetku — Schedules\nAll times use the workflow time zone **Asia/Jakarta** (change it in workflow Settings). Disable the triggers you don't need.\n\nEnv: `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`.\nCredential: Header Auth `x-api-key` (replace `REPLACE_ME` on all 4 HTTP nodes).\nReminders are only sent when something is due (≤3 days / overdue / budget almost used up). Reports use no AI tokens.",
+        "content": "## ⏰ Arhokita — Schedules\nAll times use the workflow time zone **Asia/Jakarta** (change it in workflow Settings). Disable the triggers you don't need.\n\nEnv: `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`.\nCredential: Header Auth `x-api-key` (replace `REPLACE_ME` on all 4 HTTP nodes).\nReminders are only sent when something is due (≤3 days / overdue / budget almost used up). Reports use no AI tokens.",
         "height": 220,
         "width": 640,
         "color": "6"

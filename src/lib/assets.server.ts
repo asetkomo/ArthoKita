@@ -35,7 +35,7 @@ async function fetchText(url: string, ms = 6000): Promise<string | null> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(ms),
-      headers: { "user-agent": "Mozilla/5.0 Dompetku" },
+      headers: { "user-agent": "Mozilla/5.0 Arhokita" },
     });
     return res.ok ? await res.text() : null;
   } catch (e) {

@@ -1,5 +1,5 @@
 export function pageHead(title: string, description: string) {
-  const t = `${title} — Dompetku`;
+  const t = `${title} — Arhokita`;
   return {
     meta: [
       { title: t },

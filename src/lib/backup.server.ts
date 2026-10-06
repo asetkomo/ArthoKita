@@ -1,5 +1,5 @@
 /**
- * Server-only restore of a Dompetku JSON backup. The browser validates the file with
+ * Server-only restore of a Arhokita JSON backup. The browser validates the file with
  * `parseBackup()` and sends it in pieces (≤ RESTORE_CHUNK_ROWS rows / ≤ 2 MB each, so Vercel's
  * 4.5 MB body limit is never hit even for a ~20 MB backup):
  *   1. `clearForReplace()` (replace mode only) — deletes current data in reverse FK order.

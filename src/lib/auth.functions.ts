@@ -97,7 +97,7 @@ export const generateTwoFactorSecret = createServerFn({ method: "POST" })
     const secret = generateTotpSecret();
     return {
       secret,
-      uri: buildOtpauthUri({ secret, account: context.user, issuer: "Dompetku" }),
+      uri: buildOtpauthUri({ secret, account: context.user, issuer: "Arhokita" }),
     };
   });
 

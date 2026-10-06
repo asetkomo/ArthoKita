@@ -1,5 +1,5 @@
 /**
- * Pure, client-safe helpers for restoring a Dompetku JSON backup (made by `exportBackup()`).
+ * Pure, client-safe helpers for restoring a Arhokita JSON backup (made by `exportBackup()`).
  * Used by the Settings restore card (validation + preview + chunking) and by
  * `backup.server.ts` (natural-key resolution, id remapping, column dropping). Unit-tested.
  */
@@ -114,7 +114,7 @@ export type Row = Record<string, unknown>;
 export type IdRemap = Partial<Record<RestoreTable, Record<string, string>>>;
 
 const backupSchema = z.object({
-  app: z.literal("dompetku"),
+  app: z.literal("arthokito"),
   version: z.number().int().min(1).max(1),
   exportedAt: z.string().optional(),
   data: z.record(z.string(), z.array(z.record(z.string(), z.unknown()))),
@@ -147,7 +147,7 @@ export function parseBackup(
   const parsed = backupSchema.safeParse(raw);
   if (!parsed.success) {
     const app = (raw as { app?: unknown } | null)?.app;
-    if (app !== "dompetku") return { ok: false, error: "Bukan berkas cadangan Dompetku" };
+    if (app !== "arthokito") return { ok: false, error: "Bukan berkas cadangan Arhokita" };
     const first = parsed.error.issues[0];
     return {
       ok: false,
@@ -289,5 +289,5 @@ export function dropColumn(rows: Row[], col: string): Row[] {
 
 /** Suggested file name for a backup made on `date` (YYYY-MM-DD). */
 export function backupFilename(date: Date = new Date()): string {
-  return `dompetku-cadangan-${date.toISOString().slice(0, 10)}.json`;
+  return `arthokito-cadangan-${date.toISOString().slice(0, 10)}.json`;
 }

@@ -1,17 +1,17 @@
 # n8n workflow templates
 
-Ready-to-import [n8n](https://n8n.io) workflows for Dompetku: the Telegram bot, scheduled reminders/reports, error alerts and weekly backups. n8n is only a thin relay; all logic lives in the web app (`/api/public/n8n/*`, protected by the `x-api-key` header = `N8N_API_KEY`).
+Ready-to-import [n8n](https://n8n.io) workflows for Arhokita: the Telegram bot, scheduled reminders/reports, error alerts and weekly backups. n8n is only a thin relay; all logic lives in the web app (`/api/public/n8n/*`, protected by the `x-api-key` header = `N8N_API_KEY`).
 
 > [!IMPORTANT]
 > **Full step-by-step guide: [docs/N8N.md](../docs/N8N.md)** (hosting n8n, env vars, credentials, Telegram bot, Google Drive OAuth, Gmail/Resend email, troubleshooting).
 
 | File                              | Purpose                                                                                  | Env vars (n8n)                                                    | Credentials                                |
 | --------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------ |
-| `01-dompetku-telegram-bot.json`   | Main bot: chat, receipt photos, `/` commands, inline buttons                             | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` | Telegram API, Header Auth `x-api-key`      |
-| `02-dompetku-jadwal.json`         | Bill reminders 08:00, daily recap 21:00, weekly (Mon) & monthly (1st) reports → Telegram | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`    | Header Auth `x-api-key`                    |
-| `03-dompetku-error-handler.json`  | Telegram alert when a workflow fails (set as _Error workflow_ of 01, 02, 05)             | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`                    | —                                          |
-| `04-dompetku-setup-commands.json` | Run once: registers the `/` command menu and shows webhook info                          | `TELEGRAM_BOT_TOKEN`                                              | —                                          |
-| `05-dompetku-backup.json`         | Weekly backup (Sun 02:00) → Google Drive, or email attachment (disabled node)            | `FINTRACK_URL` (+ `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO`)         | Header Auth, Google Drive OAuth2 (or SMTP) |
+| `01-arthokito-telegram-bot.json`   | Main bot: chat, receipt photos, `/` commands, inline buttons                             | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS` | Telegram API, Header Auth `x-api-key`      |
+| `02-arthokito-jadwal.json`         | Bill reminders 08:00, daily recap 21:00, weekly (Mon) & monthly (1st) reports → Telegram | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`    | Header Auth `x-api-key`                    |
+| `03-arthokito-error-handler.json`  | Telegram alert when a workflow fails (set as _Error workflow_ of 01, 02, 05)             | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`                    | —                                          |
+| `04-arthokito-setup-commands.json` | Run once: registers the `/` command menu and shows webhook info                          | `TELEGRAM_BOT_TOKEN`                                              | —                                          |
+| `05-arthokito-backup.json`         | Weekly backup (Sun 02:00) → Google Drive, or email attachment (disabled node)            | `FINTRACK_URL` (+ `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO`)         | Header Auth, Google Drive OAuth2 (or SMTP) |
 
 Quick start:
 

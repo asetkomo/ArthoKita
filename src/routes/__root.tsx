@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Dompetku — Pelacak Keuangan Pribadi" },
+      { title: "Arhokita — Pelacak Keuangan Pribadi" },
       {
         name: "description",
         content: "Catat pemasukan, pengeluaran, cicilan, dan langganan dalam satu tempat.",

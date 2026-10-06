@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains how Dompetku is put together: which tools it uses and why, where things
+This document explains how Arhokita is put together: which tools it uses and why, where things
 live in the repository, how the main features work behind the scenes, and the rules a contributor
 must follow. It is written for developers, but every section starts with a plain-language summary
 so you can follow along even if you are new to web development.
@@ -20,7 +20,7 @@ so you can follow along even if you are new to web development.
 
 ## Big picture
 
-Dompetku is a **single-user** personal finance app. In plain words:
+Arhokita is a **single-user** personal finance app. In plain words:
 
 - The **web app** (what you open in your browser) and the **server code** live in the same
   project. The browser never talks to the database directly; it always asks the server, and the

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/privacy")({
   head: () =>
     pageHead(
       "Kebijakan Privasi",
-      "Data apa yang disimpan instance Dompetku ini, di mana disimpan, dan layanan pihak ketiga yang mungkin dipakai.",
+      "Data apa yang disimpan instance Arhokita ini, di mana disimpan, dan layanan pihak ketiga yang mungkin dipakai.",
     ),
   beforeLoad: async () => ({ authenticated: await isAuthenticated() }),
   component: PrivacyPage,

@@ -22,7 +22,7 @@ export function formatLegalDate(iso: string, lang: "id" | "en"): string {
 }
 
 export const PRIVACY_INTRO =
-  'Dompetku adalah aplikasi open source yang di-host sendiri. Kebijakan ini menjelaskan data apa yang disimpan instance ini, di mana disimpan, dan siapa yang bisa mengaksesnya. "Pemilik instance" adalah orang yang memasang dan menjalankan salinan aplikasi ini.';
+  'Arhokita adalah aplikasi open source yang di-host sendiri. Kebijakan ini menjelaskan data apa yang disimpan instance ini, di mana disimpan, dan siapa yang bisa mengaksesnya. "Pemilik instance" adalah orang yang memasang dan menjalankan salinan aplikasi ini.';
 
 export const PRIVACY: LegalSection[] = [
   {
@@ -30,7 +30,7 @@ export const PRIVACY: LegalSection[] = [
     title: "Data yang disimpan",
     body: [
       "Data keuangan yang Anda masukkan — akun, transaksi, budget, hutang, piutang, emas, target, foto struk, dan pengaturan — disimpan di proyek Supabase (PostgreSQL dan Storage) milik pemilik instance.",
-      "Database hanya diakses oleh server aplikasi ini; browser tidak pernah terhubung langsung ke database. Pembuat Dompetku tidak memiliki akses ke instance ini.",
+      "Database hanya diakses oleh server aplikasi ini; browser tidak pernah terhubung langsung ke database. Pembuat Arhokita tidak memiliki akses ke instance ini.",
     ],
   },
   {
@@ -80,14 +80,14 @@ export const PRIVACY: LegalSection[] = [
 ];
 
 export const TERMS_INTRO =
-  "Dengan memakai instance Dompetku ini, Anda menyetujui ketentuan singkat berikut. Ketentuan ini melengkapi, bukan menggantikan, lisensi MIT dari kode sumbernya.";
+  "Dengan memakai instance Arhokita ini, Anda menyetujui ketentuan singkat berikut. Ketentuan ini melengkapi, bukan menggantikan, lisensi MIT dari kode sumbernya.";
 
 export const TERMS: LegalSection[] = [
   {
     id: "lisensi",
     title: "Lisensi",
     body: [
-      "Kode sumber Dompetku dirilis di bawah Lisensi MIT. Anda bebas memakai, menyalin, mengubah, dan mendistribusikannya selama pemberitahuan hak cipta dan lisensi tetap disertakan.",
+      "Kode sumber Arhokita dirilis di bawah Lisensi MIT. Anda bebas memakai, menyalin, mengubah, dan mendistribusikannya selama pemberitahuan hak cipta dan lisensi tetap disertakan.",
     ],
   },
   {
@@ -101,7 +101,7 @@ export const TERMS: LegalSection[] = [
     id: "bukan-nasihat",
     title: "Bukan nasihat keuangan",
     body: [
-      "Dompetku adalah alat pencatatan. Angka, proyeksi, harga emas, dan hasil pembacaan AI bisa keliru dan bukan nasihat keuangan, investasi, atau pajak. Selalu periksa ulang sebelum mengambil keputusan.",
+      "Arhokita adalah alat pencatatan. Angka, proyeksi, harga emas, dan hasil pembacaan AI bisa keliru dan bukan nasihat keuangan, investasi, atau pajak. Selalu periksa ulang sebelum mengambil keputusan.",
     ],
   },
   {

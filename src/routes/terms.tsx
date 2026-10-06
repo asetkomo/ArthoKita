@@ -8,7 +8,7 @@ export const Route = createFileRoute("/terms")({
   head: () =>
     pageHead(
       "Syarat & Ketentuan",
-      "Ketentuan penggunaan Dompetku: lisensi MIT, tanpa jaminan, bukan nasihat keuangan.",
+      "Ketentuan penggunaan Arhokita: lisensi MIT, tanpa jaminan, bukan nasihat keuangan.",
     ),
   beforeLoad: async () => ({ authenticated: await isAuthenticated() }),
   component: TermsPage,

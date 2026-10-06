@@ -123,7 +123,7 @@ export const BOT_COMMANDS: { command: string; description: string }[] = [
 
 export function botHelp(): string {
   return [
-    "🤖 Dompetku Bot",
+    "🤖 Arhokita Bot",
     "",
     "Catat transaksi cukup dengan chat, contoh:",
     "• kopi 25rb",

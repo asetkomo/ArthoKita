@@ -1,6 +1,6 @@
-# Releasing Dompetku
+# Releasing Arhokita
 
-Dompetku uses [release-please](https://github.com/googleapis/release-please) to turn [Conventional Commits](https://www.conventionalcommits.org) on `main` into versioned releases. There is nothing to build or publish: a release is a **git tag + GitHub Release + CHANGELOG entry** that tells self-hosters what changed.
+Arhokita uses [release-please](https://github.com/googleapis/release-please) to turn [Conventional Commits](https://www.conventionalcommits.org) on `main` into versioned releases. There is nothing to build or publish: a release is a **git tag + GitHub Release + CHANGELOG entry** that tells self-hosters what changed.
 
 ## How it works
 
@@ -88,7 +88,7 @@ Use this if the action is broken or you need to release a specific version.
 
 ## Why no npm package or Docker image?
 
-Dompetku is an application that every user deploys for themselves with their own Supabase project and secrets — not a library. Nothing consumes it from a registry:
+Arhokita is an application that every user deploys for themselves with their own Supabase project and secrets — not a library. Nothing consumes it from a registry:
 
 - The maintainer's Vercel (and Lovable) deploy straight from `main`; releases are only a label on a commit.
 - Self-hosters who forked the repo update with **Sync fork** on GitHub (their Vercel redeploys automatically), or pin a known-good tag (`git checkout v1.2.3` / deploy that tag).
@@ -99,7 +99,7 @@ Dompetku is an application that every user deploys for themselves with their own
 ## How self-hosters follow releases
 
 - On the repository page click **Watch → Custom → Releases → Apply** to get a notification for each new version.
-- Or subscribe to the Atom feed `https://github.com/ilramdhan/dompetku/releases.atom`.
+- Or subscribe to the Atom feed `https://github.com/asetkomo/arthokito/releases.atom`.
 - Before updating, read the release notes for any new `supabase/schema.sql` section to run.
 - The app itself shows the running version (sidebar, Settings → **Tentang aplikasi**, landing footer) and, once a day at most, checks `https://api.github.com/repos/<owner>/<repo>/releases/latest` (repo from Settings `github_url`, else upstream). When a newer release exists it shows **Update tersedia: vX.Y.Z**; on a fork click **Sync fork → Update branch** and Vercel redeploys.
 - The version comes from `package.json` `"version"` (bumped by release-please), so the badge updates automatically with each release build; the commit SHA comes from `VERCEL_GIT_COMMIT_SHA` (or `git` locally, empty when unavailable).

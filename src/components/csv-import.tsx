@@ -105,7 +105,7 @@ export function CsvImport() {
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = "template-impor-dompetku.csv";
+    a.download = "template-impor-arthokito.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
