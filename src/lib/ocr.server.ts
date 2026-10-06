@@ -47,7 +47,7 @@ async function aiJson(messages: unknown[], vision: boolean, meta: AiMeta = WEB):
   const url = process.env["AI_API_URL"] || "https://ai.gateway.lovable.dev/v1/chat/completions";
   const key = process.env["AI_API_KEY"] || process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI_API_KEY belum diatur untuk fitur OCR.");
-  const base = process.env["AI_MODEL"] || "google/gemini-2.5-flash";
+  const base = process.env["AI_MODEL"] || "google/gemini-3.8-flash";
   // AI_MODEL_TEXT lets chat parsing use a cheaper model (e.g. flash-lite) than receipt OCR.
   const model = vision ? base : process.env["AI_MODEL_TEXT"] || base;
   let res: Response;
