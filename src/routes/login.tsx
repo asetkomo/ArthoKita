@@ -14,7 +14,7 @@ import { useDemoInfo } from "@/components/demo";
 import { FlaskConical, LogIn } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
-  head: () => pageHead("Masuk", "Masuk ke Dompetku — pelacak keuangan pribadi."),
+  head: () => pageHead("Masuk", "Masuk ke ArthoKita — pelacak keuangan pribadi."),
   beforeLoad: async () => {
     const { getSession } = await import("@/lib/auth.functions");
     const { clearSessionCache } = await import("@/lib/session-cache");
