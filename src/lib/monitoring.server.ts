@@ -34,7 +34,7 @@ export function logError(
       method: "POST",
       headers: {
         "Content-Type": "application/x-sentry-envelope",
-        "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${dsn.publicKey}, sentry_client=arthokito/1.0`,
+        "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${dsn.publicKey}, sentry_client=Arhokita/1.0`,
       },
       body,
       signal: controller.signal,

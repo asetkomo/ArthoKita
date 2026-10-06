@@ -6,9 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug! Please check the [FAQ](https://github.com/asetkomo/arthokito/blob/main/docs/FAQ.md) and [existing issues](https://github.com/asetkomo/arthokito/issues?q=is%3Aissue) first.
+        Thanks for taking the time to report a bug! Please check the [FAQ](https://github.com/asetkomo/Arhokita/blob/main/docs/FAQ.md) and [existing issues](https://github.com/asetkomo/Arhokita/issues?q=is%3Aissue) first.
 
-        > **Security issue?** Do not file it here — follow [SECURITY.md](https://github.com/asetkomo/arthokito/blob/main/SECURITY.md) instead.
+        > **Security issue?** Do not file it here — follow [SECURITY.md](https://github.com/asetkomo/Arhokita/blob/main/SECURITY.md) instead.
 
         **Never paste secrets** (API keys, passwords, `SESSION_SECRET`, Supabase keys, bot tokens, chat IDs) or real financial data. Replace them with placeholders.
   - type: textarea

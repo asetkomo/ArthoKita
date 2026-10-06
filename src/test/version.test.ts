@@ -45,14 +45,14 @@ describe("version", () => {
   });
 
   it("parses owner/repo from GitHub URLs", () => {
-    expect(repoFromUrl(null)).toBe("asetkomo/arthokito");
+    expect(repoFromUrl(null)).toBe("asetkomo/Arhokita");
     expect(repoFromUrl("https://github.com/alice/my-fork")).toBe("alice/my-fork");
     expect(repoFromUrl("https://github.com/alice/my-fork.git")).toBe("alice/my-fork");
     expect(repoFromUrl("https://github.com/alice/my-fork/tree/main")).toBe("alice/my-fork");
-    expect(repoFromUrl("https://gitlab.com/alice/x")).toBe("asetkomo/arthokito");
-    expect(repoFromUrl("http://github.com/alice/x")).toBe("asetkomo/arthokito");
-    expect(repoFromUrl("https://github.com/alice")).toBe("asetkomo/arthokito");
-    expect(repoFromUrl("not a url")).toBe("asetkomo/arthokito");
+    expect(repoFromUrl("https://gitlab.com/alice/x")).toBe("asetkomo/Arhokita");
+    expect(repoFromUrl("http://github.com/alice/x")).toBe("asetkomo/Arhokita");
+    expect(repoFromUrl("https://github.com/alice")).toBe("asetkomo/Arhokita");
+    expect(repoFromUrl("not a url")).toBe("asetkomo/Arhokita");
   });
 
   it("builds release URLs", () => {

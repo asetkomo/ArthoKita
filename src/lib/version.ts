@@ -4,7 +4,7 @@
  * guards keep vitest and any non-Vite runtime working with safe fallbacks.
  */
 
-export const DEFAULT_REPO = "asetkomo/arthokito";
+export const DEFAULT_REPO = "asetkomo/Arhokita";
 
 export function appVersion(): string {
   return typeof __APP_VERSION__ === "string" && __APP_VERSION__ ? __APP_VERSION__ : "0.0.0";

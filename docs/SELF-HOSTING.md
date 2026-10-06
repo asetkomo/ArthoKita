@@ -76,10 +76,10 @@ Optional, only for the Full path:
 
 A **fork** is your own copy of the project on GitHub. Vercel will build the website from your fork, and you can pull in future updates with one click.
 
-1. Sign in to GitHub and open <https://github.com/asetkomo/arthokito>.
+1. Sign in to GitHub and open <https://github.com/asetkomo/Arhokita>.
 2. Click **Fork** (top right).
-3. Leave **Owner** as your account and the name as `arthokito` (you can rename it). Keep **Copy the `main` branch only** ticked.
-4. Click **Create fork**. After a few seconds you are on `github.com/<your-username>/arthokito`.
+3. Leave **Owner** as your account and the name as `Arhokita` (you can rename it). Keep **Copy the `main` branch only** ticked.
+4. Click **Create fork**. After a few seconds you are on `github.com/<your-username>/Arhokita`.
 
 > [!NOTE]
 > **Public or private?** Forks of a public repo are public. That is fine: **your data and secrets never live in the code** — they live in Supabase and in Vercel's environment variables. If you prefer a private repo, use **Use this template** / _Import repository_ (<https://github.com/new/import>) instead of Fork; you then lose the one-click _Sync fork_ button and must pull updates manually.
@@ -93,7 +93,7 @@ A **fork** is your own copy of the project on GitHub. Vercel will build the webs
 ### 2.1 Create a project
 
 1. Go to <https://supabase.com/dashboard> → **New project**.
-2. Pick your organization, enter a **Project name** (e.g. `arthokito`).
+2. Pick your organization, enter a **Project name** (e.g. `Arhokita`).
 3. **Database Password**: click **Generate a password** and save it in your password manager (you rarely need it, but you cannot see it again).
 4. **Region**: choose the one closest to you. For Indonesia, choose **Southeast Asia (Singapore)**.
 5. Click **Create new project** and wait 1–2 minutes until the dashboard is ready.
@@ -230,8 +230,8 @@ Keep these four values — plus `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` f
 ### 4.1 Import the project
 
 1. Go to <https://vercel.com/new>.
-2. Under **Import Git Repository**, click **Continue with GitHub** if asked, and allow Vercel to access your `arthokito` repository (you can grant access to only that repo).
-3. Click **Import** next to `arthokito`.
+2. Under **Import Git Repository**, click **Continue with GitHub** if asked, and allow Vercel to access your `Arhokita` repository (you can grant access to only that repo).
+3. Click **Import** next to `Arhokita`.
 4. **Framework Preset**: choose **Other** if Vercel picked something else. Leave **Root Directory** as `./`.
 5. **Build and Output Settings**: leave them on default. Vercel detects `bun.lock` and runs `bun install` + `bun run build`; the build automatically targets Vercel (it checks the `VERCEL` variable that Vercel sets). If you override anything, the build command is `bun run build` (or `npm run build`) and the output directory must stay empty.
 
@@ -258,7 +258,7 @@ Every variable, with details and security notes: **[ENVIRONMENT.md](ENVIRONMENT.
 
 1. Click **Deploy**. The build takes about 1–3 minutes.
 2. When you see **Congratulations!**, click **Continue to Dashboard**.
-3. Your address is shown under **Domains**, e.g. `https://arthokito-yourname.vercel.app`. Bookmark it.
+3. Your address is shown under **Domains**, e.g. `https://Arhokita-yourname.vercel.app`. Bookmark it.
 
 **Check the region:** Project → **Settings → Functions → Function Region** should show the region from `vercel.json` (Singapore `sin1` by default).
 
@@ -352,7 +352,7 @@ Two options:
 ### 6.4 Backups
 
 - **Manual:** **Settings → Data backup → Download backup (JSON)**. **Restore from backup** accepts that file (merge or replace-all mode).
-- **Scheduled:** import `n8n/05-arthokito-backup.json` into n8n — weekly backup to Google Drive (or email). See [N8N.md](N8N.md).
+- **Scheduled:** import `n8n/05-Arhokita-backup.json` into n8n — weekly backup to Google Drive (or email). See [N8N.md](N8N.md).
 
 ### 6.5 Error monitoring (Sentry)
 
@@ -365,8 +365,8 @@ Server errors are always written as one JSON line to **Vercel → Logs** (filter
 **Requirements:** [Node.js 22](https://nodejs.org) and [Bun](https://bun.sh) (`bun.lock` is the lockfile and CI uses Bun). npm also works.
 
 ```sh
-git clone https://github.com/<your-username>/arthokito.git
-cd arthokito
+git clone https://github.com/<your-username>/Arhokita.git
+cd Arhokita
 cp .env.example .env        # then fill in at least the required values
 bun install                 # or: npm install
 bun run dev                 # or: npm run dev

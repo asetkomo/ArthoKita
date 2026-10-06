@@ -9,76 +9,76 @@ Starting with v1.0.0, versioned entries (`## [x.y.z]`) are generated automatical
 > [!NOTE]
 > When an entry mentions a **schema section** (`v2`…`v13`), self-hosters must run that section of [`supabase/schema.sql`](supabase/schema.sql) on their Supabase project. Every section is safe to run more than once, and the app keeps working (with the feature disabled) until you do.
 
-## [1.4.0](https://github.com/asetkomo/arthokito/compare/v1.3.0...v1.4.0) (2026-10-05)
+## [1.4.0](https://github.com/asetkomo/Arhokita/compare/v1.3.0...v1.4.0) (2026-10-05)
 
 
 ### Features
 
-* **bot:** guard AI token usage with an amount gate, length cap and daily quota ([#17](https://github.com/asetkomo/arthokito/issues/17)) ([85e86dc](https://github.com/asetkomo/arthokito/commit/85e86dc4d04cf060d0e048cf00fa5d60be55a3d3))
+* **bot:** guard AI token usage with an amount gate, length cap and daily quota ([#17](https://github.com/asetkomo/Arhokita/issues/17)) ([85e86dc](https://github.com/asetkomo/Arhokita/commit/85e86dc4d04cf060d0e048cf00fa5d60be55a3d3))
 
 
 ### Documentation
 
-* add accessibility statement ([#16](https://github.com/asetkomo/arthokito/issues/16)) ([b5b9fbe](https://github.com/asetkomo/arthokito/commit/b5b9fbefcd4f1cd5e8ea7cb76faa829c0eff104f))
-* point repository links at asetkomo/arthokito ([#18](https://github.com/asetkomo/arthokito/issues/18)) ([a937710](https://github.com/asetkomo/arthokito/commit/a937710bb16528c3b5731cb0069c73dcf046de41))
+* add accessibility statement ([#16](https://github.com/asetkomo/Arhokita/issues/16)) ([b5b9fbe](https://github.com/asetkomo/Arhokita/commit/b5b9fbefcd4f1cd5e8ea7cb76faa829c0eff104f))
+* point repository links at asetkomo/Arhokita ([#18](https://github.com/asetkomo/Arhokita/issues/18)) ([a937710](https://github.com/asetkomo/Arhokita/commit/a937710bb16528c3b5731cb0069c73dcf046de41))
 
-## [1.3.0](https://github.com/asetkomo/arthokito/compare/v1.2.0...v1.3.0) (2026-10-04)
+## [1.3.0](https://github.com/asetkomo/Arhokita/compare/v1.2.0...v1.3.0) (2026-10-04)
 
 
 ### Features
 
-* **dashboard:** align stat cards and add share-of-income ratio widget ([dce1664](https://github.com/asetkomo/arthokito/commit/dce166409859a40005c4ce7d30a943d0ab63bf0a))
-* **lists:** paginate debts, goals, subscriptions, recurring and reminders ([194e876](https://github.com/asetkomo/arthokito/commit/194e876b8e0dbdfffd8a7b135a3ee9caa505f59a))
-* sticky mobile nav, list pagination, back-to-top and dashboard income-ratio widget ([b85e83b](https://github.com/asetkomo/arthokito/commit/b85e83b4d1bbe1aca8fdce8c48675e81379a4740))
+* **dashboard:** align stat cards and add share-of-income ratio widget ([dce1664](https://github.com/asetkomo/Arhokita/commit/dce166409859a40005c4ce7d30a943d0ab63bf0a))
+* **lists:** paginate debts, goals, subscriptions, recurring and reminders ([194e876](https://github.com/asetkomo/Arhokita/commit/194e876b8e0dbdfffd8a7b135a3ee9caa505f59a))
+* sticky mobile nav, list pagination, back-to-top and dashboard income-ratio widget ([b85e83b](https://github.com/asetkomo/Arhokita/commit/b85e83b4d1bbe1aca8fdce8c48675e81379a4740))
 
 
 ### Bug Fixes
 
-* **shell:** pin mobile nav while scrolling, add app-wide back-to-top and smooth scroll ([8061e16](https://github.com/asetkomo/arthokito/commit/8061e160269a32a3437000e8a3a71aa11969451c))
+* **shell:** pin mobile nav while scrolling, add app-wide back-to-top and smooth scroll ([8061e16](https://github.com/asetkomo/Arhokita/commit/8061e160269a32a3437000e8a3a71aa11969451c))
 
 
 ### Documentation
 
-* add CLAUDE.md and record scroll, pagination and ratio rules ([182f8a3](https://github.com/asetkomo/arthokito/commit/182f8a3c2aa9779d7119859594e8a17a182adfbb))
+* add CLAUDE.md and record scroll, pagination and ratio rules ([182f8a3](https://github.com/asetkomo/Arhokita/commit/182f8a3c2aa9779d7119859594e8a17a182adfbb))
 
-## [1.2.0](https://github.com/asetkomo/arthokito/compare/v1.1.0...v1.2.0) (2026-10-04)
+## [1.2.0](https://github.com/asetkomo/Arhokita/compare/v1.1.0...v1.2.0) (2026-10-04)
 
 
 ### Features
 
-* **demo:** daily demo reset workflow and safer, fuller seed reset ([3837701](https://github.com/asetkomo/arthokito/commit/383770184c3abdee2ef0f6a3a3514ada384b187f))
-* **demo:** DEMO_MODE server guards, row caps, write rate limit and PUBLIC_DEMO_URL ([9eee011](https://github.com/asetkomo/arthokito/commit/9eee011c04ce8c065231c4b0ec03c46c245bd44c))
-* **demo:** one-click demo login, in-app banner, disabled controls and Coba demo links ([f093107](https://github.com/asetkomo/arthokito/commit/f0931072cc2f0504e4191ec0d7ebe85ac67d6b1a))
-* **demo:** public demo mode with one-click login, server guardrails, daily reset and Coba demo links ([4d42c33](https://github.com/asetkomo/arthokito/commit/4d42c33d62487bbee5d521b6dbf6aca1e6190dc3))
+* **demo:** daily demo reset workflow and safer, fuller seed reset ([3837701](https://github.com/asetkomo/Arhokita/commit/383770184c3abdee2ef0f6a3a3514ada384b187f))
+* **demo:** DEMO_MODE server guards, row caps, write rate limit and PUBLIC_DEMO_URL ([9eee011](https://github.com/asetkomo/Arhokita/commit/9eee011c04ce8c065231c4b0ec03c46c245bd44c))
+* **demo:** one-click demo login, in-app banner, disabled controls and Coba demo links ([f093107](https://github.com/asetkomo/Arhokita/commit/f0931072cc2f0504e4191ec0d7ebe85ac67d6b1a))
+* **demo:** public demo mode with one-click login, server guardrails, daily reset and Coba demo links ([4d42c33](https://github.com/asetkomo/Arhokita/commit/4d42c33d62487bbee5d521b6dbf6aca1e6190dc3))
 
 
 ### Documentation
 
-* **demo:** public demo guide, env vars, README live demo link and security note ([3138ec9](https://github.com/asetkomo/arthokito/commit/3138ec9150e26a96faab5536af0a93d83a473ed8))
+* **demo:** public demo guide, env vars, README live demo link and security note ([3138ec9](https://github.com/asetkomo/Arhokita/commit/3138ec9150e26a96faab5536af0a93d83a473ed8))
 
-## [1.1.0](https://github.com/asetkomo/arthokito/compare/v1.0.0...v1.1.0) (2026-10-04)
+## [1.1.0](https://github.com/asetkomo/Arhokita/compare/v1.0.0...v1.1.0) (2026-10-04)
 
 
 ### Features
 
-* **app-shell:** show app version under sidebar and in the icon rail ([44c8140](https://github.com/asetkomo/arthokito/commit/44c8140c718994f175e4ef9aae356183e7cc4a16))
-* **landing:** sticky header, logo marquee, back-to-top and scoped smooth scroll ([e9bafa8](https://github.com/asetkomo/arthokito/commit/e9bafa81813b4066b3eed72be213536e146087f2))
-* **landing:** sticky nav, tech-icon marquee, back-to-top, legal pages & app version badge with update check ([c23d0da](https://github.com/asetkomo/arthokito/commit/c23d0daa6cc6064f3cb8ff1a8ba2742136d33285))
-* **legal:** add public /privacy and /terms pages ([4a8d6c5](https://github.com/asetkomo/arthokito/commit/4a8d6c551da4f514d3364b8e3d45e660bc902eb5))
-* **settings:** add About card with version, commit, build date and links ([1bbf905](https://github.com/asetkomo/arthokito/commit/1bbf9055c7e4ac3095e55df03a922b489dbf85da))
-* **version:** inject app version/commit at build and add VersionBadge ([a1f8504](https://github.com/asetkomo/arthokito/commit/a1f85041bac3fa2801044a612877ebe7ec2014fe))
+* **app-shell:** show app version under sidebar and in the icon rail ([44c8140](https://github.com/asetkomo/Arhokita/commit/44c8140c718994f175e4ef9aae356183e7cc4a16))
+* **landing:** sticky header, logo marquee, back-to-top and scoped smooth scroll ([e9bafa8](https://github.com/asetkomo/Arhokita/commit/e9bafa81813b4066b3eed72be213536e146087f2))
+* **landing:** sticky nav, tech-icon marquee, back-to-top, legal pages & app version badge with update check ([c23d0da](https://github.com/asetkomo/Arhokita/commit/c23d0daa6cc6064f3cb8ff1a8ba2742136d33285))
+* **legal:** add public /privacy and /terms pages ([4a8d6c5](https://github.com/asetkomo/Arhokita/commit/4a8d6c551da4f514d3364b8e3d45e660bc902eb5))
+* **settings:** add About card with version, commit, build date and links ([1bbf905](https://github.com/asetkomo/Arhokita/commit/1bbf9055c7e4ac3095e55df03a922b489dbf85da))
+* **version:** inject app version/commit at build and add VersionBadge ([a1f8504](https://github.com/asetkomo/Arhokita/commit/a1f85041bac3fa2801044a612877ebe7ec2014fe))
 
 
 ### Bug Fixes
 
-* **root:** suppress expected html class hydration warning from the pre-paint theme script ([3c6a381](https://github.com/asetkomo/arthokito/commit/3c6a3811553b6785535fa0f823a2ebe82b58484a))
+* **root:** suppress expected html class hydration warning from the pre-paint theme script ([3c6a381](https://github.com/asetkomo/Arhokita/commit/3c6a3811553b6785535fa0f823a2ebe82b58484a))
 
 
 ### Documentation
 
-* describe app version badge and update check ([832cc0d](https://github.com/asetkomo/arthokito/commit/832cc0d8e2ea44ee99fd108acefaa6c19713edf7))
-* mention legal pages and credit Simple Icons ([10fad5e](https://github.com/asetkomo/arthokito/commit/10fad5eeb4eda196462ce3b0a2db34882fe7b4c6))
-* **screenshots:** regenerate with sticky header, tech icons, legal links and version badge ([e0a3af2](https://github.com/asetkomo/arthokito/commit/e0a3af2105fbb13d54bb0206e0d3d6b501282663))
+* describe app version badge and update check ([832cc0d](https://github.com/asetkomo/Arhokita/commit/832cc0d8e2ea44ee99fd108acefaa6c19713edf7))
+* mention legal pages and credit Simple Icons ([10fad5e](https://github.com/asetkomo/Arhokita/commit/10fad5eeb4eda196462ce3b0a2db34882fe7b4c6))
+* **screenshots:** regenerate with sticky header, tech icons, legal links and version badge ([e0a3af2](https://github.com/asetkomo/Arhokita/commit/e0a3af2105fbb13d54bb0206e0d3d6b501282663))
 
 ## 1.0.0 (2026-10-04)
 

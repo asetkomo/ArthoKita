@@ -7,7 +7,7 @@ This guide sets up everything Arhokita does **outside the browser**: the Telegra
 
 **Contents**
 
-1. [What n8n is and why Arhokita uses it](#1-what-n8n-is-and-why-arthokito-uses-it)
+1. [What n8n is and why Arhokita uses it](#1-what-n8n-is-and-why-Arhokita-uses-it)
 2. [n8n environment variables](#2-n8n-environment-variables)
 3. [Credentials](#3-credentials)
 4. [Telegram bot](#4-telegram-bot)
@@ -213,11 +213,11 @@ For each JSON file in [`n8n/`](../n8n):
 
 | File                              | Purpose                                                                                                                      | Trigger                                   | Env vars                                                            | Credentials                                |
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------ |
-| `01-arthokito-telegram-bot.json`   | Main bot: chat, receipt photos, `/` commands, inline buttons                                                                 | Telegram Trigger (messages + button taps) | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS`   | Telegram API, Header Auth                  |
-| `02-arthokito-jadwal.json`         | Bill reminders 08:00 (only if something is due), daily recap 21:00, weekly report Mon 07:30, monthly report on the 1st 07:00 | Schedule                                  | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`      | Header Auth                                |
-| `03-arthokito-error-handler.json`  | Telegram alert when another workflow fails                                                                                   | Error Trigger                             | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`                      | —                                          |
-| `04-arthokito-setup-commands.json` | One-off: registers the `/` command menu, shows webhook info                                                                  | Manual                                    | `TELEGRAM_BOT_TOKEN`                                                | —                                          |
-| `05-arthokito-backup.json`         | Weekly full backup → Google Drive (or email attachment)                                                                      | Schedule, Sunday 02:00                    | `FINTRACK_URL` (+ `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO` for email) | Header Auth, Google Drive OAuth2 (or SMTP) |
+| `01-Arhokita-telegram-bot.json`   | Main bot: chat, receipt photos, `/` commands, inline buttons                                                                 | Telegram Trigger (messages + button taps) | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_IDS`   | Telegram API, Header Auth                  |
+| `02-Arhokita-jadwal.json`         | Bill reminders 08:00 (only if something is due), daily recap 21:00, weekly report Mon 07:30, monthly report on the 1st 07:00 | Schedule                                  | `FINTRACK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`      | Header Auth                                |
+| `03-Arhokita-error-handler.json`  | Telegram alert when another workflow fails                                                                                   | Error Trigger                             | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`                      | —                                          |
+| `04-Arhokita-setup-commands.json` | One-off: registers the `/` command menu, shows webhook info                                                                  | Manual                                    | `TELEGRAM_BOT_TOKEN`                                                | —                                          |
+| `05-Arhokita-backup.json`         | Weekly full backup → Google Drive (or email attachment)                                                                      | Schedule, Sunday 02:00                    | `FINTRACK_URL` (+ `BACKUP_EMAIL_FROM`, `BACKUP_EMAIL_TO` for email) | Header Auth, Google Drive OAuth2 (or SMTP) |
 
 All schedules use the workflow time zone **Asia/Jakarta** — change it under **⋯ → Settings → Timezone**, and keep it equal to the app's `APP_TIMEZONE` so "today" means the same day.
 
@@ -231,7 +231,7 @@ All requests send the header `x-api-key: <N8N_API_KEY>` (`Authorization: Bearer 
 | 01       | `POST /api/public/n8n/bot` body `{ update_id, chat_id, text?, image_base64?, mime_type?, callback_data? }` (`mime_type` required with an image: `image/jpeg`, `image/png`, `image/webp`; body max 4.5 MB → 413) | `method` (`send`/`edit`), `text`, `reply_markup`, `toast`                                                   |
 | 02       | `GET /api/public/n8n/reminders?days=3`                                                                                                                                                                          | `count`, `message`                                                                                          |
 | 02       | `GET /api/public/n8n/report?period=today\|lastweek\|lastmonth`                                                                                                                                                  | `message`                                                                                                   |
-| 05       | `GET /api/public/n8n/backup`                                                                                                                                                                                    | Whole body saved as a file; `Content-Disposition: attachment; filename="arthokito-cadangan-YYYY-MM-DD.json"` |
+| 05       | `GET /api/public/n8n/backup`                                                                                                                                                                                    | Whole body saved as a file; `Content-Disposition: attachment; filename="Arhokita-cadangan-YYYY-MM-DD.json"` |
 
 Other routes under `src/routes/api/public/n8n/` (`reminders-email`, `reminders-send-email`, `summary`, `transactions`, …) are available for your own workflows.
 
@@ -267,7 +267,7 @@ Workflow 05 uploads the backup with your own Google account. Google requires you
 6. **Pick the destination folder.** Create a folder in Google Drive (e.g. `Arhokita backups`) and open it. The URL looks like
    `https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz?usp=sharing` — the **folder ID** is the part after `/folders/` and before `?` (`1AbCdEf…`).
    In workflow 05 open **Upload ke Google Drive** → _Folder_ → replace `REPLACE_ME_FOLDER_ID` with that ID (mode _By ID_), or switch the mode to **From list** and click the folder.
-7. **Test:** click **Test workflow**. A file named `arthokito-cadangan-YYYY-MM-DD.json` (the server's file name; `arthokito-backup-YYYY-MM-DD.json` if the header is missing) appears in the folder. Then activate the workflow.
+7. **Test:** click **Test workflow**. A file named `Arhokita-cadangan-YYYY-MM-DD.json` (the server's file name; `Arhokita-backup-YYYY-MM-DD.json` if the header is missing) appears in the folder. Then activate the workflow.
 
 > [!NOTE]
 > Workflow 05 doesn't keep execution data (`saveDataSuccessExecution`/`saveDataErrorExecution: none`), so copies of your finances don't pile up in n8n's database. Delete old backups in Drive now and then. To restore: web app → **Settings → Restore from backup**.
@@ -347,7 +347,7 @@ HTTPS (port 443) is almost never blocked, so you can send through Resend's API i
      subject: 'Arhokita backup ' + $now.setZone('Asia/Jakarta').toFormat('yyyy-MM-dd'),
      text: 'Your weekly Arhokita backup is attached.',
      attachments: [{
-       filename: 'arthokito-backup-' + $now.setZone('Asia/Jakarta').toFormat('yyyy-MM-dd') + '.json',
+       filename: 'Arhokita-backup-' + $now.setZone('Asia/Jakarta').toFormat('yyyy-MM-dd') + '.json',
        content: $json.data
      }]
    }) }}

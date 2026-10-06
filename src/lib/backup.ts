@@ -114,7 +114,7 @@ export type Row = Record<string, unknown>;
 export type IdRemap = Partial<Record<RestoreTable, Record<string, string>>>;
 
 const backupSchema = z.object({
-  app: z.literal("arthokito"),
+  app: z.literal("Arhokita"),
   version: z.number().int().min(1).max(1),
   exportedAt: z.string().optional(),
   data: z.record(z.string(), z.array(z.record(z.string(), z.unknown()))),
@@ -147,7 +147,7 @@ export function parseBackup(
   const parsed = backupSchema.safeParse(raw);
   if (!parsed.success) {
     const app = (raw as { app?: unknown } | null)?.app;
-    if (app !== "arthokito") return { ok: false, error: "Bukan berkas cadangan Arhokita" };
+    if (app !== "Arhokita") return { ok: false, error: "Bukan berkas cadangan Arhokita" };
     const first = parsed.error.issues[0];
     return {
       ok: false,
@@ -289,5 +289,5 @@ export function dropColumn(rows: Row[], col: string): Row[] {
 
 /** Suggested file name for a backup made on `date` (YYYY-MM-DD). */
 export function backupFilename(date: Date = new Date()): string {
-  return `arthokito-cadangan-${date.toISOString().slice(0, 10)}.json`;
+  return `Arhokita-cadangan-${date.toISOString().slice(0, 10)}.json`;
 }

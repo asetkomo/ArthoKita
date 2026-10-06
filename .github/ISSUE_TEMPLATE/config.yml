@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: 📚 FAQ
-    url: https://github.com/asetkomo/arthokito/blob/main/docs/FAQ.md
+    url: https://github.com/asetkomo/Arhokita/blob/main/docs/FAQ.md
     about: Answers to common questions — please check here first.
   - name: 🛠️ Self-hosting guide
-    url: https://github.com/asetkomo/arthokito/blob/main/docs/SELF-HOSTING.md
+    url: https://github.com/asetkomo/Arhokita/blob/main/docs/SELF-HOSTING.md
     about: Step-by-step installation, updating and troubleshooting.
   - name: 🔒 Report a security vulnerability
-    url: https://github.com/asetkomo/arthokito/security/advisories/new
+    url: https://github.com/asetkomo/Arhokita/security/advisories/new
     about: Please report security issues privately, never in a public issue.

@@ -26,7 +26,7 @@ export async function latestRelease(): Promise<LatestRelease | null> {
     const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": `arthokito-update-check/${appVersion()}`,
+        "User-Agent": `Arhokita-update-check/${appVersion()}`,
       },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

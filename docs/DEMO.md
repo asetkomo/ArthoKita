@@ -4,7 +4,7 @@ Arhokita can run as a **public demo**: a separate deployment with its own throwa
 fake data and a login that is shown to everyone. It uses the same code as a normal instance; one
 environment variable, `DEMO_MODE=true`, turns on the demo behaviour.
 
-**Official demo:** <https://demo.arthokito.asetkomo.dev> — the login is shown on the login page
+**Official demo:** <https://demo.Arhokita.asetkomo.dev> — the login is shown on the login page
 ("Masuk ke demo" signs you in with one click). Data resets every day at **00:00 WIB**.
 
 > [!CAUTION]
@@ -76,7 +76,7 @@ You need a **second** Supabase project and a **second** Vercel project from the 
    `DEMO_SUPABASE_URL` and `DEMO_SUPABASE_SERVICE_ROLE_KEY` (demo project only!). The workflow
    [`demo-reset.yml`](../.github/workflows/demo-reset.yml) runs daily at 17:00 UTC (= 00:00 WIB)
    and can be started by hand (**Actions → Demo reset → Run workflow**). It only runs on the
-   upstream repository (`if: github.repository == 'asetkomo/arthokito'`); in a fork, change that
+   upstream repository (`if: github.repository == 'asetkomo/Arhokita'`); in a fork, change that
    line to your own `owner/repo`.
 5. **Domain (optional):** in Vercel → the demo project → **Settings → Domains**, add e.g.
    `demo.example.com`. At Cloudflare (or your DNS provider) add a `CNAME` record

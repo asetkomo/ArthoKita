@@ -7,11 +7,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/asetkomo/arthokito.git"
+    "url": "git+https://github.com/asetkomo/Arhokita.git"
   },
-  "homepage": "https://github.com/asetkomo/arthokito#readme",
+  "homepage": "https://github.com/asetkomo/Arhokita#readme",
   "bugs": {
-    "url": "https://github.com/asetkomo/arthokito/issues"
+    "url": "https://github.com/asetkomo/Arhokita/issues"
   },
   "scripts": {
     "dev": "vite dev",

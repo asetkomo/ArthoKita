@@ -16,7 +16,7 @@ import { activityDetail, activityLabel } from "@/lib/activity";
 const file = (data: Record<string, unknown[]>, extra: Record<string, unknown> = {}) =>
   JSON.stringify({
     exportedAt: "2026-10-01T00:00:00Z",
-    app: "arthokito",
+    app: "Arhokita",
     version: 1,
     data,
     ...extra,
@@ -71,7 +71,7 @@ describe("parseBackup", () => {
     );
   });
   it("accepts parsed objects and the n8n endpoint shape", () => {
-    const r = parseBackup({ ok: true, filename: "x.json", app: "arthokito", version: 1, data: {} });
+    const r = parseBackup({ ok: true, filename: "x.json", app: "Arhokita", version: 1, data: {} });
     expect(r.ok).toBe(true);
   });
 });
@@ -158,7 +158,7 @@ describe("restore helpers", () => {
   });
   it("names files and labels activity", () => {
     expect(backupFilename(new Date("2026-10-04T10:00:00Z"))).toBe(
-      "arthokito-cadangan-2026-10-04.json",
+      "Arhokita-cadangan-2026-10-04.json",
     );
     expect(activityLabel("backup.restore")).toBe("Cadangan dipulihkan");
     expect(activityDetail({ restored: 12 }, () => "")).toBe("12 baris");

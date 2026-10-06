@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   reset:
-    if: github.repository == 'asetkomo/arthokito'
+    if: github.repository == 'asetkomo/Arhokita'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

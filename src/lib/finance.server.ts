@@ -1660,7 +1660,7 @@ export async function exportBackup() {
     data[t] = (r.data ?? []) as any[];
   });
   await logActivity("backup.export", null, { tables: tables.length });
-  return { exportedAt: new Date().toISOString(), app: "arthokito", version: 1, data };
+  return { exportedAt: new Date().toISOString(), app: "Arhokita", version: 1, data };
 }
 
 /* ---------------- Bot command (n8n) ---------------- */
