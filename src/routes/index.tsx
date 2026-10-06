@@ -50,9 +50,9 @@ import { isAuthenticated } from "@/components/landing/public-session";
 import { DEFAULT_BRANDING } from "@/lib/app-settings";
 // import { landingRedirect } from "@/lib/landing";  ← tidak dipakai lagi
 
-const TITLE = "Dompetku — Pelacak Keuangan Pribadi Open Source";
+const TITLE = "ArthoKita — Pelacak Keuangan Pribadi";
 const DESCRIPTION =
-  "Pelacak keuangan pribadi yang Anda host sendiri: transaksi, budget, hutang, emas, laporan, dan bot Telegram dengan OCR struk. Gratis dan open source.";
+  "Pelacak keuangan pribadi: transaksi, budget, hutang, emas, laporan, dan bot Telegram dengan OCR struk.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
