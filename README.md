@@ -12,7 +12,7 @@
 [![Live demo](https://img.shields.io/badge/Live%20demo-demo.Arthokita.ilramdhan.dev-2f7d5b?logo=googlechrome&logoColor=white)]
 (https://artho-kita.vercel.app)
 
-### 🚀 [Live demo → artho-kita.vercel.app](https://artho-kita.vercel.app/)
+### 🚀 Live demo → artho-kita.vercel.app(https://artho-kita.vercel.app/)
 
 Demo credentials are shown on the login page (one-click **Masuk ke demo**). Fake data, resets daily at 00:00 WIB.
 
